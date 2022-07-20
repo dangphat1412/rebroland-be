@@ -2,11 +2,11 @@ version: '3.8'
 
 services:
   app:
-    container_name: foms_api
-    image: 'foms'
+    container_name: rebroland_be
+    image: 'rebroland_be'
     build:
       context: .
     env_file:
       - application.properties
     ports:
-      - "9090:9090"
+      - "8080:8080"

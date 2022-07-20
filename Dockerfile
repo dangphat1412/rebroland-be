@@ -6,5 +6,5 @@ RUN gradle build
 FROM openjdk:17-alpine
 EXPOSE 9090
 RUN mkdir /app
-COPY --from=build /home/gradle/src/build/libs/api-0.0.1-SNAPSHOT.jar /app/app.jar
+COPY --from=build /home/gradle/src/build/libs/backend-0.0.1-SNAPSHOT.jar /app/app.jar
 ENTRYPOINT [ "java", "-jar", "/app/app.jar" ]
