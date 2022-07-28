@@ -276,9 +276,6 @@ public class PostController {
             SearchResponse list = postService.searchPosts(ward, district, province, minPrice, maxPrice,
                     minArea, maxArea, listPropertyType, keyword, listDirectionId, numberBedroom,
                     pageNumber, pageSize, sortValue);
-            if (list.getPosts().size() == 0) {
-                return new ResponseEntity<>(list, HttpStatus.NOT_FOUND);
-            }
             return new ResponseEntity<>(list, HttpStatus.OK);
         } catch (Exception e) {
             return new ResponseEntity<>("Đã xảy ra lỗi!", HttpStatus.BAD_REQUEST);
