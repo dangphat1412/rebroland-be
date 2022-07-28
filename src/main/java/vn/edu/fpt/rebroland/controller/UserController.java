@@ -34,7 +34,7 @@ import java.util.*;
 
 @RestController
 @RequestMapping("/api/users")
-@CrossOrigin(origins = "http://localhost:3000")
+@CrossOrigin(origins = "https://rebroland-frontend.vercel.app")
 public class UserController {
     private UserService userService;
 

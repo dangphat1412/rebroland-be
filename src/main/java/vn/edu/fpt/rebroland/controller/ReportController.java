@@ -17,7 +17,7 @@ import javax.validation.Valid;
 import java.util.Base64;
 
 @RestController
-@CrossOrigin(origins = "http://localhost:3000")
+@CrossOrigin(origins = "https://rebroland-frontend.vercel.app")
 @RequestMapping("/api/report")
 public class ReportController {
 

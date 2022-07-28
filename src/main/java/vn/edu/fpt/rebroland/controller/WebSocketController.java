@@ -14,7 +14,7 @@ import org.springframework.web.bind.annotation.*;
 import java.security.Principal;
 
 @RestController
-@CrossOrigin(origins = "http://localhost:3000")
+@CrossOrigin(origins = "https://rebroland-frontend.vercel.app")
 @RequestMapping("/socket")
 public class WebSocketController {
     @Autowired

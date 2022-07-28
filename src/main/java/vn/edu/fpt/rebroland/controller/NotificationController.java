@@ -15,7 +15,7 @@ import java.util.Base64;
 import java.util.List;
 
 @RestController
-@CrossOrigin(origins = "http://localhost:3000")
+@CrossOrigin(origins = "https://rebroland-frontend.vercel.app")
 @RequestMapping("/api/notification")
 public class NotificationController {
 

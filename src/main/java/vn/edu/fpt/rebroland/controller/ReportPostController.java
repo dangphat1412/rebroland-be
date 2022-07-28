@@ -9,7 +9,7 @@ import vn.edu.fpt.rebroland.service.ReportPostService;
 import javax.validation.Valid;
 
 @RestController
-@CrossOrigin(origins = "http://localhost:3000")
+@CrossOrigin(origins = "https://rebroland-frontend.vercel.app")
 @RequestMapping("/api/report_post")
 public class ReportPostController {
 
