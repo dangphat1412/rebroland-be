@@ -1,5 +1,8 @@
 package vn.edu.fpt.rebroland.config;
 
+import vn.edu.fpt.rebroland.security.CustomUserDetailService;
+import vn.edu.fpt.rebroland.security.JwtAuthenticationEntryPoint;
+import vn.edu.fpt.rebroland.security.JwtAuthenticationFilter;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -14,9 +17,7 @@ import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
-import vn.edu.fpt.rebroland.security.CustomUserDetailService;
-import vn.edu.fpt.rebroland.security.JwtAuthenticationEntryPoint;
-import vn.edu.fpt.rebroland.security.JwtAuthenticationFilter;
+import org.springframework.security.core.userdetails.User;
 
 @Configuration
 @EnableWebSecurity
@@ -51,8 +52,18 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
                 .authorizeRequests()
                 .antMatchers(HttpMethod.GET, "/api/**").permitAll()
                 .antMatchers("/api/users/**").permitAll()
+                .antMatchers("/socket/**").permitAll()
+                .antMatchers("/ws-message/**").permitAll()
                 .and()
                 .authorizeRequests().antMatchers("/api/posts/**").permitAll()
+                .and()
+                .authorizeRequests().antMatchers("/api/report/**").permitAll()
+                .and()
+                .authorizeRequests().antMatchers("/api/user-care/**").permitAll()
+                .and()
+                .authorizeRequests().antMatchers("/api/contact/**").permitAll()
+                .and()
+                .authorizeRequests().antMatchers("/api/notification/**").permitAll()
                 .and()
                 .authorizeRequests()
                 .anyRequest()

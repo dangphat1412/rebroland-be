@@ -1,4 +1,4 @@
-package vn.edu.fpt.rebroland.entity;//package vn.edu.fpt.rebroland.entity;
+//package vn.edu.fpt.rebroland.entity;
 //
 //import lombok.AllArgsConstructor;
 //import lombok.Data;

@@ -39,6 +39,7 @@ dependencies {
     implementation "com.cloudinary:cloudinary-http44:1.17.0"
     implementation "org.springframework.boot:spring-boot-test"
     implementation "org.junit.jupiter:junit-jupiter-api:5.8.2"
+    implementation "org.springframework.boot:spring-boot-starter-websocket"
 }
 
 tasks.named('test') {

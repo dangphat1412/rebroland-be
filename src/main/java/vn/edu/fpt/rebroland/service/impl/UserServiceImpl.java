@@ -1,5 +1,15 @@
 package vn.edu.fpt.rebroland.service.impl;
 
+import vn.edu.fpt.rebroland.entity.Role;
+import vn.edu.fpt.rebroland.entity.User;
+
+import vn.edu.fpt.rebroland.payload.ChangePasswordDTO;
+import vn.edu.fpt.rebroland.payload.PostDTO;
+import vn.edu.fpt.rebroland.payload.RegisterDTO;
+import vn.edu.fpt.rebroland.payload.UserDTO;
+import vn.edu.fpt.rebroland.repository.RoleRepository;
+import vn.edu.fpt.rebroland.repository.UserRepository;
+import vn.edu.fpt.rebroland.service.UserService;
 import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
@@ -8,14 +18,8 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
-import vn.edu.fpt.rebroland.entity.Role;
-import vn.edu.fpt.rebroland.entity.User;
-import vn.edu.fpt.rebroland.payload.RegisterDTO;
-import vn.edu.fpt.rebroland.payload.UserDTO;
-import vn.edu.fpt.rebroland.repository.RoleRepository;
-import vn.edu.fpt.rebroland.repository.UserRepository;
-import vn.edu.fpt.rebroland.service.UserService;
 
+import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.Collections;
 import java.util.Date;
@@ -85,12 +89,59 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
-    public List<UserDTO> getAllBroker(int pageNo, int pageSize) {
+    public List<UserDTO> getAllBrokerPaging(int pageNo, int pageSize) {
         Pageable pageable = PageRequest.of(pageNo, pageSize);
-        Page<User> listBroker = userRepository.getAllBroker(pageable);
+        Page<User> listBroker = userRepository.getAllBrokerPaging(pageable);
         List<UserDTO> list = listBroker.stream().map(user -> mapToDTO(user)).collect(Collectors.toList());
 
         return list;
+    }
+
+    @Override
+    public List<UserDTO> getAllBroker() {
+        List<User> listBroker = userRepository.getAllBroker();
+        List<UserDTO> list = listBroker.stream().map(user -> mapToDTO(user)).collect(Collectors.toList());
+
+        return list;
+    }
+
+    @Override
+    public List<UserDTO> searchBroker(String fullName, String ward, String district, String province, String address, int pageNo, int pageSize, String option) {
+        int sortOption = Integer.parseInt(option);
+        Pageable pageable = PageRequest.of(pageNo, pageSize);
+        Page<User> userPage = null;
+        //star rate desc
+        if(sortOption == 0){
+            userPage = userRepository.searchBrokerByStarRateDesc(fullName, ward, district, province, address, pageable);
+        }
+        //star rate asc
+        if(sortOption == 1){
+            userPage = userRepository.searchBrokerByStarRateAsc(fullName, ward, district, province, address, pageable);
+        }
+        //name A-Z
+        if(sortOption == 2){
+            userPage = userRepository.searchBrokerByNameAsc(fullName, ward, district, province, address, pageable);
+        }
+        //name Z-A
+        if(sortOption == 3){
+            userPage = userRepository.searchBrokerByNameDesc(fullName, ward, district, province, address, pageable);
+        }
+        List<User> listUser = userPage.getContent();
+        List<UserDTO> listUserDto = listUser.stream().map(user -> mapToDTO(user)).collect(Collectors.toList());
+        return listUserDto;
+
+    }
+
+    @Override
+    public boolean changePassword(User user, ChangePasswordDTO changePasswordDTO) {
+        if(passwordEncoder.matches(changePasswordDTO.getOldPassword(), user.getPassword())){
+            user.setPassword(passwordEncoder.encode(changePasswordDTO.getNewPassword()));
+            userRepository.save(user);
+            return true;
+        }else {
+            return false;
+        }
+
     }
 
     @Override

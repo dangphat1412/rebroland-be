@@ -1,5 +1,14 @@
 package vn.edu.fpt.rebroland.controller;
 
+import vn.edu.fpt.rebroland.entity.Role;
+import vn.edu.fpt.rebroland.entity.User;
+import vn.edu.fpt.rebroland.exception.ResourceNotFoundException;
+import vn.edu.fpt.rebroland.payload.*;
+import vn.edu.fpt.rebroland.repository.RoleRepository;
+import vn.edu.fpt.rebroland.repository.UserRepository;
+import vn.edu.fpt.rebroland.security.JwtTokenProvider;
+import vn.edu.fpt.rebroland.service.*;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.twilio.Twilio;
 import com.twilio.rest.api.v2010.account.Message;
 import com.twilio.type.PhoneNumber;
@@ -15,15 +24,10 @@ import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.web.bind.annotation.*;
-import vn.edu.fpt.rebroland.entity.Role;
-import vn.edu.fpt.rebroland.entity.User;
-import vn.edu.fpt.rebroland.exception.ResourceNotFoundException;
-import vn.edu.fpt.rebroland.payload.*;
-import vn.edu.fpt.rebroland.repository.RoleRepository;
-import vn.edu.fpt.rebroland.repository.UserRepository;
-import vn.edu.fpt.rebroland.security.JwtTokenProvider;
-import vn.edu.fpt.rebroland.service.*;
+import org.springframework.web.multipart.MultipartFile;
 
+import javax.persistence.Entity;
+import javax.persistence.criteria.CriteriaBuilder;
 import javax.validation.Valid;
 import java.util.*;
 
@@ -269,10 +273,13 @@ public class UserController {
         int pageNumber = Integer.parseInt(pageNo);
         int pageSize = 8;
         try{
-            List<UserDTO> listBroker = userService.getAllBroker(pageNumber, pageSize);
+            List<UserDTO> listBroker = userService.getAllBrokerPaging(pageNumber, pageSize);
             if(listBroker == null){
                 return new ResponseEntity<>("Đã xảy ra lỗi !", HttpStatus.BAD_REQUEST);
             }
+            List<UserDTO> listAllBroker = userService.getAllBroker();
+            int totalResult = listAllBroker.size();
+
             int totalPage = 0;
             if(listBroker.size() % pageSize == 0){
                 totalPage = listBroker.size() / pageSize;
@@ -283,9 +290,10 @@ public class UserController {
                 return new ResponseEntity<>("Không tìm thấy kết quả phù hợp!", HttpStatus.BAD_REQUEST);
             }
             Map<String, Object> map = new HashMap<>();
-            map.put("listBroker", listBroker);
-            map.put("pageNumber", pageNumber+1);
-            map.put("totalPage", totalPage);
+            map.put("list", listBroker);
+            map.put("pageNo", pageNumber+1);
+            map.put("totalPages", totalPage);
+            map.put("totalResult", totalResult);
             return new ResponseEntity<>(map, HttpStatus.OK);
         }catch (Exception e){
             return new ResponseEntity<>("Không tồn tại trang!", HttpStatus.OK);
@@ -322,14 +330,36 @@ public class UserController {
         return new ResponseEntity<>(updateStatus, HttpStatus.OK);
     }
 
+    //search broker
     @GetMapping("/search")
-    public ResponseEntity<?> searchBroker(@RequestParam(name = "name", defaultValue = "") String fullName,
-                                          @RequestParam(name = "ward", defaultValue = "") String ward,
-                                          @RequestParam(name = "district", defaultValue = "") String district,
-                                          @RequestParam(name = "province", defaultValue = "") String province,
-                                          @RequestParam(name = "address", defaultValue = "") String address){
+    public ResponseEntity<?> searchBroker(@RequestParam(name = "name", required = false) String fullName,
+                                          @RequestParam(name = "ward", required = false) String ward,
+                                          @RequestParam(name = "district", required = false) String district,
+                                          @RequestParam(name = "province", required = false) String province,
+                                          @RequestParam(name = "address", required = false) String address,
+                                          @RequestParam(name = "pageNo", defaultValue = "0") String pageNo,
+                                          @RequestParam(name = "sortValue", defaultValue = "0") String sortValue){
+        int pageNumber = Integer.parseInt(pageNo);
+        int pageSize = 5;
+        List<UserDTO> listUserDto = userService.searchBroker(fullName, ward, district, province, address, pageNumber, pageSize, sortValue);
 
+        return new ResponseEntity<>(listUserDto, HttpStatus.OK);
+    }
 
-        return new ResponseEntity<>(null, HttpStatus.OK);
+    //change password
+    @PutMapping("/change-password")
+    public ResponseEntity<?> changePassword(@RequestHeader(name = "Authorization") String token,
+                                            @Valid @RequestBody ChangePasswordDTO changePasswordDTO){
+        String[] parts = token.split("\\.");
+        JSONObject payload = new JSONObject(decode(parts[1]));
+        String phone = payload.getString("sub");
+        User user = userRepository.findByPhone(phone).
+                orElseThrow(() -> new UsernameNotFoundException("User not found with phone: " + phone));
+        if(userService.changePassword(user, changePasswordDTO)){
+            return new ResponseEntity<>("Đổi mật khẩu thành công!", HttpStatus.CREATED);
+        }else{
+            return new ResponseEntity<>("Đổi mật khẩu thất bại!", HttpStatus.BAD_REQUEST);
+        }
+
     }
 }

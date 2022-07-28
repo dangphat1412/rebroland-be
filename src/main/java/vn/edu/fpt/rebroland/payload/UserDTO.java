@@ -2,8 +2,11 @@ package vn.edu.fpt.rebroland.payload;
 
 import lombok.Data;
 
-import javax.validation.constraints.Email;
-import javax.validation.constraints.Pattern;
+import javax.validation.constraints.*;
+import java.sql.Blob;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
+import java.util.Date;
 
 @Data
 public class UserDTO {
@@ -43,4 +46,6 @@ public class UserDTO {
     private String description;
 
     private boolean block;
+
+    private int unreadNotification;
 }

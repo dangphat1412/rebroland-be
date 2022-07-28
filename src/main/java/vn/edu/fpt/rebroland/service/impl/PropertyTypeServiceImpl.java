@@ -1,12 +1,13 @@
 package vn.edu.fpt.rebroland.service.impl;
 
-import org.modelmapper.ModelMapper;
-import org.springframework.stereotype.Service;
+import vn.edu.fpt.rebroland.entity.Direction;
 import vn.edu.fpt.rebroland.entity.PropertyType;
 import vn.edu.fpt.rebroland.exception.ResourceNotFoundException;
 import vn.edu.fpt.rebroland.payload.PropertyTypeDTO;
 import vn.edu.fpt.rebroland.repository.PropertyTypeRepository;
 import vn.edu.fpt.rebroland.service.PropertyTypeService;
+import org.modelmapper.ModelMapper;
+import org.springframework.stereotype.Service;
 
 import java.util.List;
 import java.util.stream.Collectors;

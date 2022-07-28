@@ -1,14 +1,15 @@
 package vn.edu.fpt.rebroland.service.impl;
 
-import org.modelmapper.ModelMapper;
-import org.springframework.stereotype.Service;
 import vn.edu.fpt.rebroland.entity.Apartment;
 import vn.edu.fpt.rebroland.entity.Post;
+import vn.edu.fpt.rebroland.entity.ResidentialHouse;
 import vn.edu.fpt.rebroland.exception.ResourceNotFoundException;
 import vn.edu.fpt.rebroland.payload.ApartmentDTO;
 import vn.edu.fpt.rebroland.repository.ApartmentRepository;
 import vn.edu.fpt.rebroland.repository.PostRepository;
 import vn.edu.fpt.rebroland.service.ApartmentService;
+import org.modelmapper.ModelMapper;
+import org.springframework.stereotype.Service;
 
 @Service
 public class ApartmentServiceImpl implements ApartmentService {
@@ -42,8 +43,9 @@ public class ApartmentServiceImpl implements ApartmentService {
     @Override
     public void deleteApartmentByPostId(int postId) {
         try {
-            Apartment apartment = apartmentRepository.findByPostId(postId);
-            apartmentRepository.delete(apartment);
+//            Apartment apartment = apartmentRepository.findByPostId(postId);
+//            apartmentRepository.delete(apartment);
+            apartmentRepository.deleteByPostId(postId);
         } catch (Exception e) {
 
         }

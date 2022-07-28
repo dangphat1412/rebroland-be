@@ -1,7 +1,5 @@
 package vn.edu.fpt.rebroland.service.impl;
 
-import org.modelmapper.ModelMapper;
-import org.springframework.stereotype.Service;
 import vn.edu.fpt.rebroland.entity.Coordinate;
 import vn.edu.fpt.rebroland.entity.Post;
 import vn.edu.fpt.rebroland.exception.ResourceNotFoundException;
@@ -10,6 +8,8 @@ import vn.edu.fpt.rebroland.payload.RealEstateCoordinateDTO;
 import vn.edu.fpt.rebroland.repository.CoordinateRepository;
 import vn.edu.fpt.rebroland.repository.PostRepository;
 import vn.edu.fpt.rebroland.service.CoordinateService;
+import org.modelmapper.ModelMapper;
+import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
 import java.util.List;

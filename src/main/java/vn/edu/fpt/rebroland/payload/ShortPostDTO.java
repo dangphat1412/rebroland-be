@@ -2,9 +2,9 @@ package vn.edu.fpt.rebroland.payload;
 
 import lombok.Data;
 
-import javax.validation.constraints.NotEmpty;
-import javax.validation.constraints.Size;
+import javax.validation.constraints.*;
 import java.util.Date;
+import java.util.Set;
 
 @Data
 public class ShortPostDTO {
@@ -18,7 +18,7 @@ public class ShortPostDTO {
 
     private Integer originalPost;
 
-    private UserDTO user;
+//    private UserDTO user;
 
     private String thumbnail;
 

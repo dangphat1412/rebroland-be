@@ -5,7 +5,7 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import javax.persistence.*;
-import java.sql.Date;
+import java.util.Date;
 
 @Data
 @AllArgsConstructor
@@ -19,9 +19,6 @@ public class UserCareDetail {
     @Column(name = "detail_id", nullable = false)
     private int detailId;
 
-    @Column(length = 10, nullable = false)
-    private String phone;
-
     @Column(nullable = false)
     private Date dateCreate;
 
@@ -29,12 +26,16 @@ public class UserCareDetail {
     private Date appointmentTime;
 
     @Column(nullable = false)
-    private float alertTime;
+    private Float alertTime;
 
     @Column(length = 200)
     private String description;
 
+    @Enumerated(EnumType.STRING)
+    private Type type;
+
     private boolean status;
+
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "care_id", nullable = false)

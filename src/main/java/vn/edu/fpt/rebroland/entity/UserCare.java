@@ -5,7 +5,7 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import javax.persistence.*;
-import java.sql.Date;
+import java.util.Date;
 import java.util.HashSet;
 import java.util.Set;
 
@@ -29,7 +29,17 @@ public class UserCare {
     @Column(length = 50)
     private String email;
 
+    @Column(length = 200)
+    private String summarize;
+
     private boolean status;
+
+    @ManyToMany(fetch = FetchType.EAGER, cascade = CascadeType.ALL)
+    @JoinTable(name = "post_cares",
+            joinColumns = @JoinColumn(name = "care_id", referencedColumnName = "care_id"),
+            inverseJoinColumns = @JoinColumn(name = "post_id", referencedColumnName = "post_id")
+    )
+    private Set<Post> posts;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id", nullable = false)

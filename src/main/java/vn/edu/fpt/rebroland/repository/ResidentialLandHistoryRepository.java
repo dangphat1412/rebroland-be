@@ -1,8 +1,8 @@
 package vn.edu.fpt.rebroland.repository;
 
+import vn.edu.fpt.rebroland.entity.ResidentialLandHistory;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
-import vn.edu.fpt.rebroland.entity.ResidentialLandHistory;
 
 import java.util.List;
 

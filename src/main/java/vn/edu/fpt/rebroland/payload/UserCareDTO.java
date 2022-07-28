@@ -23,10 +23,17 @@ public class UserCareDTO {
     @Email(regexp = "^[_A-Za-z0-9-\\+]+(\\.[_A-Za-z0-9-]+)*@[A-Za-z0-9-]+(\\.[A-Za-z0-9]+)*(\\.[A-Za-z]{2,})$", message = "Email không hợp lệ!")
     private String email;
 
+    @Size(max = 200)
+    private String summarize;
+
     @NotNull(message = "Cập nhập thông tin này.")
     private boolean status;
 
-    private UserDTO user;
+    private Integer postId;
 
-    private Set<UserCareDetailDTO> userCareDetails;
+//    private UserDTO user;
+//
+//    private Set<ShortPostDTO> posts;
+//
+//    private Set<UserCareDetailDTO> userCareDetails;
 }

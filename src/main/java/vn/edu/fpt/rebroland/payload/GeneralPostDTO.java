@@ -1,10 +1,14 @@
 package vn.edu.fpt.rebroland.payload;
 
+import vn.edu.fpt.rebroland.entity.Coordinate;
+import vn.edu.fpt.rebroland.entity.Image;
+import lombok.Data;
 import lombok.Getter;
 import lombok.Setter;
-import vn.edu.fpt.rebroland.entity.Coordinate;
+import org.springframework.web.multipart.MultipartFile;
 
 import javax.validation.constraints.*;
+import java.sql.Date;
 import java.util.List;
 
 @Getter
@@ -101,7 +105,7 @@ public class GeneralPostDTO {
     //    @NotNull(message = "floor number is not empty")
     @Min(value = 0)
     @Max(value = 100)
-    private int floorNumber;
+    private Integer floorNumber;
 
     @Size(max = 10)
     private String roomNumber;

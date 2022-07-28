@@ -1,12 +1,17 @@
 package vn.edu.fpt.rebroland.service.impl;
 
-import org.modelmapper.ModelMapper;
-import org.springframework.stereotype.Service;
+import vn.edu.fpt.rebroland.entity.Apartment;
+
 import vn.edu.fpt.rebroland.entity.ApartmentHistory;
+import vn.edu.fpt.rebroland.entity.ResidentialHouse;
+import vn.edu.fpt.rebroland.entity.ResidentialHouseHistory;
 import vn.edu.fpt.rebroland.exception.ResourceNotFoundException;
 import vn.edu.fpt.rebroland.payload.ApartmentHistoryDTO;
 import vn.edu.fpt.rebroland.repository.ApartmentHistoryRepository;
+import vn.edu.fpt.rebroland.repository.ApartmentRepository;
 import vn.edu.fpt.rebroland.service.ApartmentHistoryService;
+import org.modelmapper.ModelMapper;
+import org.springframework.stereotype.Service;
 
 @Service
 public class ApartmentHistoryServiceImpl implements ApartmentHistoryService {

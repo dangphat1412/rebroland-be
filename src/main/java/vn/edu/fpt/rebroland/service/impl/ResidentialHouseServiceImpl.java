@@ -1,7 +1,5 @@
 package vn.edu.fpt.rebroland.service.impl;
 
-import org.modelmapper.ModelMapper;
-import org.springframework.stereotype.Service;
 import vn.edu.fpt.rebroland.entity.Post;
 import vn.edu.fpt.rebroland.entity.ResidentialHouse;
 import vn.edu.fpt.rebroland.exception.ResourceNotFoundException;
@@ -9,6 +7,8 @@ import vn.edu.fpt.rebroland.payload.ResidentialHouseDTO;
 import vn.edu.fpt.rebroland.repository.PostRepository;
 import vn.edu.fpt.rebroland.repository.ResidentialHouseRepository;
 import vn.edu.fpt.rebroland.service.ResidentialHouseService;
+import org.modelmapper.ModelMapper;
+import org.springframework.stereotype.Service;
 
 @Service
 public class ResidentialHouseServiceImpl implements ResidentialHouseService {
@@ -48,8 +48,9 @@ public class ResidentialHouseServiceImpl implements ResidentialHouseService {
     @Override
     public void deleteResidentialHouseByPostId(int postId) {
         try {
-            ResidentialHouse residentialHouse = residentialHouseRepository.findByPostId(postId);
-            residentialHouseRepository.delete(residentialHouse);
+//            ResidentialHouse residentialHouse = residentialHouseRepository.findByPostId(postId);
+//            residentialHouseRepository.delete(residentialHouse);
+            residentialHouseRepository.deleteByPostId(postId);
         } catch (Exception e) {
 
         }

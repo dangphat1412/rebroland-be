@@ -24,7 +24,7 @@ public class ApartmentDTO extends  RealEstatePostDTO{
 
     @Min(value = 0)
     @Max(value = 100)
-    private int floorNumber;
+    private Integer floorNumber;
 
 
 
@@ -36,5 +36,11 @@ public class ApartmentDTO extends  RealEstatePostDTO{
     private String barcode;
     @Size(max = 50)
     private String buildingName;
+
+    @Size(max = 50)
+    private String owner;
+
+    @Pattern(regexp = "(84|0[3|5|7|8|9])+([0-9]{8})\\b", message = "Số điện thoại không hợp lệ.")
+    private String ownerPhone;
 
 }

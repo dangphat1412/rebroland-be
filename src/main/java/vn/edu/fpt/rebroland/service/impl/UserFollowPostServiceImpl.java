@@ -1,5 +1,14 @@
 package vn.edu.fpt.rebroland.service.impl;
 
+import vn.edu.fpt.rebroland.entity.Post;
+import vn.edu.fpt.rebroland.entity.User;
+import vn.edu.fpt.rebroland.entity.UserFollowPost;
+import vn.edu.fpt.rebroland.exception.ResourceNotFoundException;
+import vn.edu.fpt.rebroland.payload.*;
+import vn.edu.fpt.rebroland.repository.PostRepository;
+import vn.edu.fpt.rebroland.repository.UserFollowPostRepository;
+import vn.edu.fpt.rebroland.repository.UserRepository;
+import vn.edu.fpt.rebroland.service.UserFollowPostService;
 import org.modelmapper.ModelMapper;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -8,17 +17,6 @@ import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
-import vn.edu.fpt.rebroland.entity.Post;
-import vn.edu.fpt.rebroland.entity.User;
-import vn.edu.fpt.rebroland.entity.UserFollowPost;
-import vn.edu.fpt.rebroland.payload.DerivativeDTO;
-import vn.edu.fpt.rebroland.payload.PostDTO;
-import vn.edu.fpt.rebroland.payload.SearchDTO;
-import vn.edu.fpt.rebroland.payload.ShortPostDTO;
-import vn.edu.fpt.rebroland.repository.PostRepository;
-import vn.edu.fpt.rebroland.repository.UserFollowPostRepository;
-import vn.edu.fpt.rebroland.repository.UserRepository;
-import vn.edu.fpt.rebroland.service.UserFollowPostService;
 
 import java.sql.Date;
 import java.text.SimpleDateFormat;
@@ -81,11 +79,9 @@ public class UserFollowPostServiceImpl implements UserFollowPostService {
     }
 
     @Override
-    public List<DerivativeDTO> getFollowPostByUserPaging (String phone, String propertyId, int pageNo, int pageSize) {
-        String sortByStartDate = "start_date";
-        String sortDir = "desc";
-        Sort sortStartDate = sortDir.equalsIgnoreCase(Sort.Direction.ASC.name())?
-                Sort.by(sortByStartDate).ascending(): Sort.by(sortByStartDate).descending();
+    public List<DerivativeDTO> getFollowPostByUserPaging (String phone, String propertyId, int pageNo, int pageSize, String option) {
+        User user = userRepository.findByPhone(phone).
+                orElseThrow(() -> new UsernameNotFoundException("User not found with phone: " + phone));
 
         String check = null;
         int typeId = 0;
@@ -94,24 +90,80 @@ public class UserFollowPostServiceImpl implements UserFollowPostService {
             check = "";
         }
 
-        Pageable pageable = PageRequest.of(pageNo, pageSize, sortStartDate);
+        int sortOption = Integer.parseInt(option);
+        String sortOpt = "";
+        String sortDir = "";
+        Sort sort = null;
+        Pageable pageable = null;
+        Page<Post> listPosts = null;
+        List<Post> list = null;
+        List<DerivativeDTO> listDto = null;
+        switch (sortOption){
+            case 0:
+                sortOpt = "start_date";
+                sortDir = "desc";
+                sort = sortDir.equalsIgnoreCase(Sort.Direction.ASC.name())?
+                        Sort.by(sortOpt).ascending(): Sort.by(sortOpt).descending();
+                break;
+            case 1:
+                pageable = PageRequest.of(pageNo, pageSize);
+                listPosts = postRepository.getFollowPostIdByUserPagingOrderByPriceAsc(user.getId(), user.getCurrentRole(), typeId, check, pageable);
+                list = listPosts.getContent();
+                listDto = list.stream().map(post -> mapper.map(post, DerivativeDTO.class)).collect(Collectors.toList());
+                return listDto;
+            case 2:
+                pageable = PageRequest.of(pageNo, pageSize);
+                listPosts = postRepository.getFollowPostIdByUserPagingOrderByPriceDesc(user.getId(), user.getCurrentRole(), typeId, check, pageable);
+                list = listPosts.getContent();
+                listDto = list.stream().map(post -> mapper.map(post, DerivativeDTO.class)).collect(Collectors.toList());
+                return listDto;
+            case 3:
+                //giá trên m2 từ thấp đến cao
+                pageable = PageRequest.of(pageNo, pageSize);
+                listPosts = postRepository.getFollowPostIdByUserPagingOrderByPricePerSquareAsc(user.getId(), user.getCurrentRole(), typeId, check, pageable);
+                list = listPosts.getContent();
+                listDto = list.stream().map(post -> mapper.map(post, DerivativeDTO.class)).collect(Collectors.toList());
+                return listDto;
+            case 4:
+                pageable = PageRequest.of(pageNo, pageSize);
+                listPosts = postRepository.getFollowPostIdByUserPagingOrderByPricePerSquareDesc(user.getId(), user.getCurrentRole(), typeId, check, pageable);
+                list = listPosts.getContent();
+                listDto = list.stream().map(post -> mapper.map(post, DerivativeDTO.class)).collect(Collectors.toList());
+                return listDto;
+            case 5:
+                sortOpt = "area";
+                sortDir = "asc";
+                sort = sortDir.equalsIgnoreCase(Sort.Direction.ASC.name())?
+                        Sort.by(sortOpt).ascending(): Sort.by(sortOpt).descending();
+                break;
+            case 6:
+                sortOpt = "area";
+                sortDir = "desc";
+                sort = sortDir.equalsIgnoreCase(Sort.Direction.ASC.name())?
+                        Sort.by(sortOpt).ascending(): Sort.by(sortOpt).descending();
+                break;
+        }
 
-        User user = userRepository.findByPhone(phone).
-                orElseThrow(() -> new UsernameNotFoundException("User not found with phone: " + phone));
+        pageable = PageRequest.of(pageNo, pageSize, sort);
+        listPosts = postRepository.getFollowPostIdByUserPaging(user.getId(), user.getCurrentRole(), typeId, check, pageable);
+        listDto = listPosts.getContent().stream().map(derivativePost -> mapper.map(derivativePost, DerivativeDTO.class)).collect(Collectors.toList());
 
-        Page<Post> listPost = postRepository.getFollowPostIdByUserPaging(user.getId(), user.getCurrentRole(), typeId, check, pageable);
-
-        List<DerivativeDTO> list = listPost.getContent().stream().map(derivativePost -> mapper.map(derivativePost, DerivativeDTO.class)).collect(Collectors.toList());
-
-        return list;
+        return listDto;
     }
 
     @Override
-    public List<DerivativeDTO> getFollowPostByUser(String phone) {
+    public List<DerivativeDTO> getFollowPostByUser(String phone, String propertyId) {
+        String check = null;
+        int typeId = 0;
+        if(propertyId != null){
+            typeId = Integer.parseInt(propertyId);
+            check = "";
+        }
+
         User user = userRepository.findByPhone(phone).
                 orElseThrow(() -> new UsernameNotFoundException("User not found with phone: " + phone));
 
-        List<Post> listPost = postRepository.getFollowPostIdByUser(user.getId(), user.getCurrentRole());
+        List<Post> listPost = postRepository.getAllFollowPostIdByUser(user.getId(), user.getCurrentRole(), typeId, check);
 
         List<DerivativeDTO> list = listPost.stream().map(derivativePost -> mapper.map(derivativePost, DerivativeDTO.class)).collect(Collectors.toList());
         return list;
@@ -126,6 +178,15 @@ public class UserFollowPostServiceImpl implements UserFollowPostService {
 
         List<ShortPostDTO> list = listPost.stream().map(derivativePost -> mapper.map(derivativePost, ShortPostDTO.class)).collect(Collectors.toList());
         return list;
+    }
+
+    @Override
+    public void deleteFollowByPostId(int postId) {
+        try {
+            followPostRepository.deleteFollowByPostId(postId);
+        }catch (Exception e){
+            e.printStackTrace();
+        }
     }
 
     @Override

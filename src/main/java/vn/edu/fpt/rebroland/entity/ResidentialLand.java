@@ -19,7 +19,9 @@ public class ResidentialLand {
     private String barcode;
     private String plotNumber;
     private float frontispiece;
+    private String owner;
 
+    private String ownerPhone;
     @OneToOne(cascade = CascadeType.ALL)
     @JoinColumn(name = "post_id", referencedColumnName = "post_id")
     private Post post;

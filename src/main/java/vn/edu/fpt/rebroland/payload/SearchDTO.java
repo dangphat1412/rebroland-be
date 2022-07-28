@@ -3,6 +3,8 @@ package vn.edu.fpt.rebroland.payload;
 import lombok.Data;
 
 import javax.validation.constraints.*;
+import java.util.List;
+import java.util.Set;
 
 @Data
 public class SearchDTO {

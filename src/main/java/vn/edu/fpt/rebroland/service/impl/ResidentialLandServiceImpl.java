@@ -1,14 +1,12 @@
 package vn.edu.fpt.rebroland.service.impl;
 
-import org.modelmapper.ModelMapper;
-import org.springframework.stereotype.Service;
-import vn.edu.fpt.rebroland.entity.Post;
-import vn.edu.fpt.rebroland.entity.ResidentialLand;
+import vn.edu.fpt.rebroland.entity.*;
 import vn.edu.fpt.rebroland.exception.ResourceNotFoundException;
 import vn.edu.fpt.rebroland.payload.ResidentialLandDTO;
-import vn.edu.fpt.rebroland.repository.PostRepository;
-import vn.edu.fpt.rebroland.repository.ResidentialLandRepository;
+import vn.edu.fpt.rebroland.repository.*;
 import vn.edu.fpt.rebroland.service.ResidentialLandService;
+import org.modelmapper.ModelMapper;
+import org.springframework.stereotype.Service;
 
 @Service
 public class ResidentialLandServiceImpl implements ResidentialLandService {
@@ -41,12 +39,12 @@ public class ResidentialLandServiceImpl implements ResidentialLandService {
     }
 
 
-
     @Override
     public void deleteResidentialLandByPostId(int postId) {
         try {
-            ResidentialLand residentialLand = residentialLandRepository.findByPostId(postId);
-            residentialLandRepository.delete(residentialLand);
+//            ResidentialLand residentialLand = residentialLandRepository.findByPostId(postId);
+//            residentialLandRepository.delete(residentialLand);
+            residentialLandRepository.deleteByPostId(postId);
         } catch (Exception e) {
 
         }

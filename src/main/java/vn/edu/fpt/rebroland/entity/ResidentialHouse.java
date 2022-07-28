@@ -24,6 +24,9 @@ public class ResidentialHouse {
     private int numberOfFloor;
     private float frontispiece;
 
+    private String owner;
+
+    private String ownerPhone;
 
     @OneToOne(cascade = CascadeType.ALL)
     @JoinColumn(name = "post_id", referencedColumnName = "post_id")

@@ -23,13 +23,14 @@ public class Report {
     private User user;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "post_id", nullable = false)
+    @JoinColumn(name = "post_id", nullable = true)
     private Post post;
     private Integer userReportedId;
     private String content;
+
     private Date reportDate;
     private boolean status;
     private int roleId;
-    private Integer roleReportedId;
+//    private Integer roleReportedId;
 
 }

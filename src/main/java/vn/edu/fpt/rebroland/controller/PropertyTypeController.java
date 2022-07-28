@@ -1,12 +1,13 @@
 package vn.edu.fpt.rebroland.controller;
 
+import vn.edu.fpt.rebroland.payload.PropertyTypeDTO;
+import vn.edu.fpt.rebroland.service.PropertyTypeService;
 import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
-import vn.edu.fpt.rebroland.payload.PropertyTypeDTO;
-import vn.edu.fpt.rebroland.service.PropertyTypeService;
 
+import java.util.ArrayList;
 import java.util.List;
 
 @RestController

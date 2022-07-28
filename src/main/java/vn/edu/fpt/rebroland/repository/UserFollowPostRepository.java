@@ -1,8 +1,12 @@
 package vn.edu.fpt.rebroland.repository;
 
-import org.springframework.data.jpa.repository.JpaRepository;
-import org.springframework.data.jpa.repository.Query;
+import vn.edu.fpt.rebroland.entity.Post;
 import vn.edu.fpt.rebroland.entity.UserFollowPost;
+import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
+import org.springframework.data.jpa.repository.Query;
+
+import java.util.List;
 
 public interface UserFollowPostRepository extends JpaRepository<UserFollowPost, Integer> {
 
@@ -11,6 +15,10 @@ public interface UserFollowPostRepository extends JpaRepository<UserFollowPost, 
             "AND post_id = :postId " +
             "AND role_id = :roleId ", nativeQuery = true)
     UserFollowPost getUserFollowPost(int userId, int postId, int roleId);
+
+    @Query(value = "DELETE FROM user_follow_posts WHERE post_id = :postId", nativeQuery = true)
+    @Modifying
+    void deleteFollowByPostId(int postId);
 
 
 }

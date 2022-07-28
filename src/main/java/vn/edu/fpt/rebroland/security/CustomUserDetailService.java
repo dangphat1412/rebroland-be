@@ -1,14 +1,16 @@
 package vn.edu.fpt.rebroland.security;
 
+import vn.edu.fpt.rebroland.entity.Role;
+import vn.edu.fpt.rebroland.entity.User;
+
+import vn.edu.fpt.rebroland.repository.UserRepository;
+
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
-import vn.edu.fpt.rebroland.entity.Role;
-import vn.edu.fpt.rebroland.entity.User;
-import vn.edu.fpt.rebroland.repository.UserRepository;
 
 import java.util.Collection;
 import java.util.Set;

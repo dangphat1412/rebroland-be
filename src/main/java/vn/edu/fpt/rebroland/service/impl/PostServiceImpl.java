@@ -1,22 +1,26 @@
 package vn.edu.fpt.rebroland.service.impl;
 
+import vn.edu.fpt.rebroland.entity.*;
+import vn.edu.fpt.rebroland.exception.ResourceNotFoundException;
+import vn.edu.fpt.rebroland.payload.*;
+import vn.edu.fpt.rebroland.repository.*;
+import vn.edu.fpt.rebroland.service.ImageService;
+import vn.edu.fpt.rebroland.service.PostService;
+import vn.edu.fpt.rebroland.service.UnitPriceService;
 import org.modelmapper.ModelMapper;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
-import vn.edu.fpt.rebroland.entity.*;
-import vn.edu.fpt.rebroland.exception.ResourceNotFoundException;
-import vn.edu.fpt.rebroland.payload.*;
-import vn.edu.fpt.rebroland.repository.*;
-import vn.edu.fpt.rebroland.service.PostService;
 
 import javax.persistence.EntityManager;
 import javax.persistence.Query;
 import java.sql.Date;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -183,6 +187,7 @@ public class PostServiceImpl implements PostService {
         searchResponse.setPosts(listSearchDto);
         searchResponse.setPageNo(pageNo+1);
         searchResponse.setTotalPages(listPosts.getTotalPages());
+        searchResponse.setTotalResult(listPosts.getTotalElements());
         return searchResponse;
     }
 
@@ -209,79 +214,113 @@ public class PostServiceImpl implements PostService {
         searchResponse.setPosts(listDto);
         searchResponse.setPageNo(pageNo+1);
         searchResponse.setTotalPages(posts.getTotalPages());
+        searchResponse.setTotalResult(posts.getTotalElements());
         return searchResponse;
     }
 
     @Override
-    public SearchResponse getAllPostForBroker(int pageNo, int pageSize, String propertyId) {
-        String sortByStartDate = "start_date";
-        String sortDir = "desc";
-        Sort sortStartDate = sortDir.equalsIgnoreCase(Sort.Direction.ASC.name())?
-                Sort.by(sortByStartDate).ascending(): Sort.by(sortByStartDate).descending();
-        Pageable pageable = PageRequest.of(pageNo, pageSize, sortStartDate);
+    public SearchResponse getAllPostForBroker(int pageNo, int pageSize, String propertyId, String option) {
         String check = null;
         int typeId = 0;
         if (propertyId != null) {
             check = "";
             typeId = Integer.parseInt(propertyId);
         }
-        Page<Post> posts = postRepository.findAllPostForBroker(typeId, check, pageable);
-        List<Post> listPosts = posts.getContent();
-        List<PostDTO> list = listPosts.stream().map(post -> mapToDTO(post)).collect(Collectors.toList());
 
-        List<SearchDTO> listDto = new ArrayList<>();
-        for (PostDTO postDto: list) {
+        int sortOption = Integer.parseInt(option);
+        String sortOpt = "";
+        String sortDir = "";
+        Sort sort = null;
+        Pageable pageable = null;
+        Page<Post> listPosts = null;
+        List<Post> list = null;
+        List<PostDTO> listDto = null;
+        switch (sortOption){
+            case 0:
+                sortOpt = "start_date";
+                sortDir = "desc";
+                sort = sortDir.equalsIgnoreCase(Sort.Direction.ASC.name())?
+                        Sort.by(sortOpt).ascending(): Sort.by(sortOpt).descending();
+                pageable = PageRequest.of(pageNo, pageSize, sort);
+                listPosts = postRepository.findAllPostForBroker(typeId, check, pageable);
+                list = listPosts.getContent();
+                listDto = list.stream().map(post -> mapToDTO(post)).collect(Collectors.toList());
+                break;
+            case 1:
+                pageable = PageRequest.of(pageNo, pageSize);
+                listPosts = postRepository.findAllPostForBrokerOrderByPriceAsc(typeId, check, pageable);
+                list = listPosts.getContent();
+                listDto = list.stream().map(post -> mapToDTO(post)).collect(Collectors.toList());
+
+                break;
+            case 2:
+                pageable = PageRequest.of(pageNo, pageSize);
+                listPosts = postRepository.findAllPostForBrokerOrderByPriceDesc(typeId, check, pageable);
+                list = listPosts.getContent();
+                listDto = list.stream().map(post -> mapToDTO(post)).collect(Collectors.toList());
+                break;
+            case 3:
+                //giá trên m2 từ thấp đến cao
+                pageable = PageRequest.of(pageNo, pageSize);
+                listPosts = postRepository.findAllPostForBrokerOrderByPricePerSquareAsc(typeId, check, pageable);
+                list = listPosts.getContent();
+                listDto = list.stream().map(post -> mapToDTO(post)).collect(Collectors.toList());
+                break;
+            case 4:
+                pageable = PageRequest.of(pageNo, pageSize);
+                listPosts = postRepository.findAllPostForBrokerOrderByPricePerSquareDesc(typeId, check, pageable);
+                list = listPosts.getContent();
+                listDto = list.stream().map(post -> mapToDTO(post)).collect(Collectors.toList());
+                break;
+            case 5:
+                sortOpt = "area";
+                sortDir = "asc";
+                sort = sortDir.equalsIgnoreCase(Sort.Direction.ASC.name())?
+                        Sort.by(sortOpt).ascending(): Sort.by(sortOpt).descending();
+                pageable = PageRequest.of(pageNo, pageSize, sort);
+                listPosts = postRepository.findAllPostForBroker(typeId, check, pageable);
+                list = listPosts.getContent();
+                listDto = list.stream().map(post -> mapToDTO(post)).collect(Collectors.toList());
+                break;
+            case 6:
+                sortOpt = "area";
+                sortDir = "desc";
+                sort = sortDir.equalsIgnoreCase(Sort.Direction.ASC.name())?
+                        Sort.by(sortOpt).ascending(): Sort.by(sortOpt).descending();
+                pageable = PageRequest.of(pageNo, pageSize, sort);
+                listPosts = postRepository.findAllPostForBroker(typeId, check, pageable);
+                list = listPosts.getContent();
+                listDto = list.stream().map(post -> mapToDTO(post)).collect(Collectors.toList());
+                break;
+        }
+
+//        Page<Post> posts = postRepository.findAllPostForBroker(typeId, check, pageable);
+//        List<Post> listPosts = posts.getContent();
+//        List<PostDTO> list = listPosts.stream().map(post -> mapToDTO(post)).collect(Collectors.toList());
+
+        List<SearchDTO> listSearchDto = new ArrayList<>();
+        for (PostDTO postDto: listDto) {
             SearchDTO dto = new SearchDTO();
             setDataToSearchDTO(dto, postDto);
-            listDto.add(dto);
+            listSearchDto.add(dto);
         }
         SearchResponse searchResponse = new SearchResponse();
-        searchResponse.setPosts(listDto);
+        searchResponse.setPosts(listSearchDto);
         searchResponse.setPageNo(pageNo+1);
-        searchResponse.setTotalPages(posts.getTotalPages());
+        searchResponse.setTotalPages(listPosts.getTotalPages());
+        searchResponse.setTotalResult(listPosts.getTotalElements());
         return searchResponse;
     }
 
-    public List<Post> search(String ward, String district, String province, Long minPrice, Long maxPrice,
-                             Float minArea, Float maxArea, List<Integer> propertyType, String keyword,
-                             List<Integer> direction, int bedroom){
-        String search = " SELECT p.post_id,p.title,p.description,p.start_date,p.area,p.price,p.ward,p.district,p.province,p.address FROM `posts` p " +
-                "WHERE (p.post_id IN " +
-                "      (SELECT post_id FROM `apartments` " +
-                "       WHERE number_of_bedroom >= 1) " +
-                "OR p.post_id IN " +
-                "      (SELECT post_id FROM `residential_houses` " +
-                "       WHERE number_of_bedroom >= 1) " +
-                "OR p.post_id IN " +
-                "      (SELECT post_id FROM `residential_lands`)) ";
-//                "AND p.ward LIKE CONCAT('%',:ward,'%')" +
-//                "AND p.district LIKE CONCAT('%',:district,'%') " +
-//                "AND p.province LIKE CONCAT('%',:province,'%') " +
-//                "AND (p.price BETWEEN :minPrice AND :maxPrice) " +
-//                "AND (p.area BETWEEN :minArea AND :maxArea) "+
-//                "AND ((p.title LIKE CONCAT('%',:keyword,'%')) OR (p.description LIKE CONCAT('%',:keyword,'%'))) "+
-//                "AND (p.property_id IN :propertyType) " +
-//                "AND IF(:check IS NULL, 1 = 1, p.direction_id IN :listDirections) ";
-
-        Query query = entityManager.createNativeQuery(search, "SearchPostResult");
-//        query.setParameter("bedroom", bedroom);
-        List<Post> list = query.getResultList();
-        return list;
-    }
 
     @Override
     public SearchResponse searchPosts(String ward, String district, String province, String minPrice, String maxPrice,
                                      String minArea, String maxArea, List<String> propertyType, String keyword,
-                                     List<String> direction, int bedroom, int pageNo, int pageSize) {
-//        String sortByPrice = "price";
-        String sortByStartDate = "start_date";
-        String sortDir = "desc";
-
-//        Sort sortPrice = sortDir.equalsIgnoreCase(Sort.Direction.ASC.name())?
-//                    Sort.by(sortByPrice).ascending(): Sort.by(sortByPrice).descending();
-        Sort sortStartDate = sortDir.equalsIgnoreCase(Sort.Direction.ASC.name())?
-                    Sort.by(sortByStartDate).ascending(): Sort.by(sortByStartDate).descending();
-//        Sort sort = sortPrice.and(sortStartDate);
+                                     List<String> direction, int bedroom, int pageNo, int pageSize, String option) {
+//        String sortByStartDate = "start_date";
+//        String sortDir = "desc";
+//        Sort sortStartDate = sortDir.equalsIgnoreCase(Sort.Direction.ASC.name())?
+//                    Sort.by(sortByStartDate).ascending(): Sort.by(sortByStartDate).descending();
 
         Long minP = Long.parseLong(minPrice);
         Long maxP = 0L;
@@ -313,30 +352,97 @@ public class PostServiceImpl implements PostService {
         for (String s : propertyType) {
             listType.add(Integer.parseInt(s));
         }
-        Pageable pageable = PageRequest.of(pageNo, pageSize, sortStartDate);
-        Page<Post> posts = postRepository.searchPosts(ward, district, province, minP, maxP,
-                minA, maxA, listType, keyword, check, listId, bedroom, pageable);
-//        List<Post> listPosts = search(ward, district, province, minP, maxP,
-//                minA, maxA, listType, keyword, listId, bedroom);
-        List<Post> listPosts = posts.getContent();
-        if(minP == 0 && maxP == 0){
-            for (Post post: listPosts){
-                if(post.getUnitPrice().getId() != 3){
-                    listPosts.remove(post);
-                }
-            }
+
+        int sortOption = Integer.parseInt(option);
+        String sortOpt = "";
+        String sortDir = "";
+        Sort sort = null;
+        Pageable pageable = null;
+        Page<Post> listPosts = null;
+        List<Post> list = null;
+        List<PostDTO> listDto = null;
+        switch (sortOption){
+            case 0:
+                sortOpt = "start_date";
+                sortDir = "desc";
+                sort = sortDir.equalsIgnoreCase(Sort.Direction.ASC.name())?
+                        Sort.by(sortOpt).ascending(): Sort.by(sortOpt).descending();
+                pageable = PageRequest.of(pageNo, pageSize, sort);
+                listPosts = postRepository.searchPosts(ward, district, province, minP, maxP,
+                            minA, maxA, listType, keyword, check, listId, bedroom, pageable);
+                list = listPosts.getContent();
+                listDto = list.stream().map(post -> mapToDTO(post)).collect(Collectors.toList());
+                break;
+            case 1:
+                pageable = PageRequest.of(pageNo, pageSize);
+                listPosts = postRepository.searchPostOrderByPriceAsc(ward, district, province, minP, maxP,
+                        minA, maxA, listType, keyword, check, listId, bedroom, pageable);
+                list = listPosts.getContent();
+                listDto = list.stream().map(post -> mapToDTO(post)).collect(Collectors.toList());
+
+                break;
+            case 2:
+                pageable = PageRequest.of(pageNo, pageSize);
+                listPosts = postRepository.searchPostOrderByPriceDesc(ward, district, province, minP, maxP,
+                        minA, maxA, listType, keyword, check, listId, bedroom, pageable);
+                list = listPosts.getContent();
+                listDto = list.stream().map(post -> mapToDTO(post)).collect(Collectors.toList());
+                break;
+            case 3:
+                //giá trên m2 từ thấp đến cao
+                pageable = PageRequest.of(pageNo, pageSize);
+                listPosts = postRepository.searchPostOrderByPricePerSquareAsc(ward, district, province, minP, maxP,
+                        minA, maxA, listType, keyword, check, listId, bedroom, pageable);
+                list = listPosts.getContent();
+                listDto = list.stream().map(post -> mapToDTO(post)).collect(Collectors.toList());
+                break;
+            case 4:
+                pageable = PageRequest.of(pageNo, pageSize);
+                listPosts = postRepository.searchPostOrderByPricePerSquareDesc(ward, district, province, minP, maxP,
+                        minA, maxA, listType, keyword, check, listId, bedroom, pageable);
+                list = listPosts.getContent();
+                listDto = list.stream().map(post -> mapToDTO(post)).collect(Collectors.toList());
+                break;
+            case 5:
+                sortOpt = "area";
+                sortDir = "asc";
+                sort = sortDir.equalsIgnoreCase(Sort.Direction.ASC.name())?
+                        Sort.by(sortOpt).ascending(): Sort.by(sortOpt).descending();
+                pageable = PageRequest.of(pageNo, pageSize, sort);
+                listPosts = postRepository.searchPosts(ward, district, province, minP, maxP,
+                        minA, maxA, listType, keyword, check, listId, bedroom, pageable);
+                list = listPosts.getContent();
+                listDto = list.stream().map(post -> mapToDTO(post)).collect(Collectors.toList());
+                break;
+            case 6:
+                sortOpt = "area";
+                sortDir = "desc";
+                sort = sortDir.equalsIgnoreCase(Sort.Direction.ASC.name())?
+                        Sort.by(sortOpt).ascending(): Sort.by(sortOpt).descending();
+                pageable = PageRequest.of(pageNo, pageSize, sort);
+                listPosts = postRepository.searchPosts(ward, district, province, minP, maxP,
+                        minA, maxA, listType, keyword, check, listId, bedroom, pageable);
+                list = listPosts.getContent();
+                listDto = list.stream().map(post -> mapToDTO(post)).collect(Collectors.toList());
+                break;
         }
-        List<PostDTO> list = listPosts.stream().map(post -> mapToDTO(post)).collect(Collectors.toList());
-        List<SearchDTO> listDto = new ArrayList<>();
-        for (PostDTO postDto: list) {
+
+//        Pageable pageable = PageRequest.of(pageNo, pageSize, sortStartDate);
+//        Page<Post> posts = postRepository.searchPosts(ward, district, province, minP, maxP,
+//                minA, maxA, listType, keyword, check, listId, bedroom, pageable);
+//        List<Post> listPosts = posts.getContent();
+//        List<PostDTO> list = listPosts.stream().map(post -> mapToDTO(post)).collect(Collectors.toList());
+        List<SearchDTO> listSearchDto = new ArrayList<>();
+        for (PostDTO postDto: listDto) {
             SearchDTO dto = new SearchDTO();
             setDataToSearchDTO(dto, postDto);
-            listDto.add(dto);
+            listSearchDto.add(dto);
         }
         SearchResponse searchResponse = new SearchResponse();
-        searchResponse.setPosts(listDto);
+        searchResponse.setPosts(listSearchDto);
         searchResponse.setPageNo(pageNo+1);
-        searchResponse.setTotalPages(posts.getTotalPages());
+        searchResponse.setTotalPages(listPosts.getTotalPages());
+        searchResponse.setTotalResult(listPosts.getTotalElements());
         return searchResponse;
 
     }
@@ -392,7 +498,7 @@ public class PostServiceImpl implements PostService {
         post.setArea(postDTO.getArea());
         post.setCertification(postDTO.isCertification());
         long millis = System.currentTimeMillis();
-        Date date = new Date(millis);
+        java.sql.Date date = new java.sql.Date(millis);
         post.setStartDate(date);
         // unit name "thoa thuan" price null
         if (post.getUnitPrice().getId() == 3 || postDTO.getPrice() < 0) {
@@ -566,6 +672,96 @@ public class PostServiceImpl implements PostService {
     }
 
     @Override
+    public SearchResponse getDerivativePostOfBrokerPaging(int userId, String propertyId, int pageNo, int pageSize, String option) {
+        String check = null;
+        int typeId = 0;
+        if (propertyId != null) {
+            check = "";
+            typeId = Integer.parseInt(propertyId);
+        }
+
+        int sortOption = Integer.parseInt(option);
+        String sortOpt = "";
+        String sortDir = "";
+        Sort sort = null;
+        Pageable pageable = null;
+        Page<Post> listPosts = null;
+        List<Post> list = null;
+        List<PostDTO> listDto = null;
+        switch (sortOption){
+            case 0:
+                sortOpt = "start_date";
+                sortDir = "desc";
+                sort = sortDir.equalsIgnoreCase(Sort.Direction.ASC.name())?
+                        Sort.by(sortOpt).ascending(): Sort.by(sortOpt).descending();
+                pageable = PageRequest.of(pageNo, pageSize, sort);
+                listPosts = postRepository.findDerivativePostOfBroker(typeId, check, pageable);
+                list = listPosts.getContent();
+                listDto = list.stream().map(post -> mapToDTO(post)).collect(Collectors.toList());
+                break;
+            case 1:
+                pageable = PageRequest.of(pageNo, pageSize);
+                listPosts = postRepository.findDerivativePostOfBrokerOrderByPriceAsc(typeId, check, pageable);
+                list = listPosts.getContent();
+                listDto = list.stream().map(post -> mapToDTO(post)).collect(Collectors.toList());
+
+                break;
+            case 2:
+                pageable = PageRequest.of(pageNo, pageSize);
+                listPosts = postRepository.findDerivativePostOfBrokerOrderByPriceDesc(typeId, check, pageable);
+                list = listPosts.getContent();
+                listDto = list.stream().map(post -> mapToDTO(post)).collect(Collectors.toList());
+                break;
+            case 3:
+                //giá trên m2 từ thấp đến cao
+                pageable = PageRequest.of(pageNo, pageSize);
+                listPosts = postRepository.findDerivativePostOfBrokerOrderByPricePerSquareAsc(typeId, check, pageable);
+                list = listPosts.getContent();
+                listDto = list.stream().map(post -> mapToDTO(post)).collect(Collectors.toList());
+                break;
+            case 4:
+                pageable = PageRequest.of(pageNo, pageSize);
+                listPosts = postRepository.findDerivativePostOfBrokerOrderByPricePerSquareDesc(typeId, check, pageable);
+                list = listPosts.getContent();
+                listDto = list.stream().map(post -> mapToDTO(post)).collect(Collectors.toList());
+                break;
+            case 5:
+                sortOpt = "area";
+                sortDir = "asc";
+                sort = sortDir.equalsIgnoreCase(Sort.Direction.ASC.name())?
+                        Sort.by(sortOpt).ascending(): Sort.by(sortOpt).descending();
+                pageable = PageRequest.of(pageNo, pageSize, sort);
+                listPosts = postRepository.findDerivativePostOfBroker(typeId, check, pageable);
+                list = listPosts.getContent();
+                listDto = list.stream().map(post -> mapToDTO(post)).collect(Collectors.toList());
+                break;
+            case 6:
+                sortOpt = "area";
+                sortDir = "desc";
+                sort = sortDir.equalsIgnoreCase(Sort.Direction.ASC.name())?
+                        Sort.by(sortOpt).ascending(): Sort.by(sortOpt).descending();
+                pageable = PageRequest.of(pageNo, pageSize, sort);
+                listPosts = postRepository.findDerivativePostOfBroker(typeId, check, pageable);
+                list = listPosts.getContent();
+                listDto = list.stream().map(post -> mapToDTO(post)).collect(Collectors.toList());
+                break;
+        }
+
+        List<SearchDTO> listSearchDto = new ArrayList<>();
+        for (PostDTO postDto: listDto) {
+            SearchDTO dto = new SearchDTO();
+            setDataToSearchDTO(dto, postDto);
+            listSearchDto.add(dto);
+        }
+        SearchResponse searchResponse = new SearchResponse();
+        searchResponse.setPosts(listSearchDto);
+        searchResponse.setPageNo(pageNo+1);
+        searchResponse.setTotalPages(listPosts.getTotalPages());
+        searchResponse.setTotalResult(listPosts.getTotalElements());
+        return searchResponse;
+    }
+
+    @Override
     public List<DerivativeDTO> getDerivativePostByUserId(int userId) {
         List<Post> listPosts = postRepository.getAllDerivativePostByUserId(userId);
 
@@ -648,8 +844,17 @@ public class PostServiceImpl implements PostService {
     // set information residential house from general post and create
     public ResidentialHouseDTO setDataToResidentialHouse(GeneralPostDTO generalPostDTO) {
         ResidentialHouseDTO residentialHouseDTO = new ResidentialHouseDTO();
-        residentialHouseDTO.setBarcode(generalPostDTO.getBarcode());
-        residentialHouseDTO.setPlotNumber(generalPostDTO.getPlotNumber());
+        if(!generalPostDTO.isCertification()){
+            residentialHouseDTO.setBarcode(null);
+            residentialHouseDTO.setPlotNumber(null);
+            residentialHouseDTO.setOwner(null);
+            residentialHouseDTO.setOwnerPhone(null);
+        }else{
+            residentialHouseDTO.setBarcode(generalPostDTO.getBarcode());
+            residentialHouseDTO.setPlotNumber(generalPostDTO.getPlotNumber());
+            residentialHouseDTO.setOwner(generalPostDTO.getOwner());
+            residentialHouseDTO.setOwnerPhone(generalPostDTO.getOwnerPhone());
+        }
         residentialHouseDTO.setNumberOfBedroom(generalPostDTO.getNumberOfBedroom());
         residentialHouseDTO.setNumberOfBathroom(generalPostDTO.getNumberOfBathroom());
         residentialHouseDTO.setNumberOfFloor(generalPostDTO.getNumberOfFloor());
@@ -671,12 +876,23 @@ public class PostServiceImpl implements PostService {
     // set information apartment from general post and create
     public ApartmentDTO setDataToApartment(GeneralPostDTO generalPostDTO) {
         ApartmentDTO apartmentDTO = new ApartmentDTO();
+        if(!generalPostDTO.isCertification()){
+            apartmentDTO.setBarcode(null);
+            apartmentDTO.setBuildingName(null);
+            apartmentDTO.setFloorNumber(null);
+            apartmentDTO.setRoomNumber(null);
+            apartmentDTO.setOwner(null);
+            apartmentDTO.setOwnerPhone(null);
+        }else{
+            apartmentDTO.setBarcode(generalPostDTO.getBarcode());
+            apartmentDTO.setBuildingName(generalPostDTO.getBuildingName());
+            apartmentDTO.setFloorNumber(generalPostDTO.getFloorNumber());
+            apartmentDTO.setRoomNumber(generalPostDTO.getRoomNumber());
+            apartmentDTO.setOwner(generalPostDTO.getOwner());
+            apartmentDTO.setOwnerPhone(generalPostDTO.getOwnerPhone());
+        }
         apartmentDTO.setNumberOfBedroom(generalPostDTO.getNumberOfBedroom());
         apartmentDTO.setNumberOfBathroom(generalPostDTO.getNumberOfBathroom());
-        apartmentDTO.setFloorNumber(generalPostDTO.getFloorNumber());
-        apartmentDTO.setRoomNumber(generalPostDTO.getRoomNumber());
-        apartmentDTO.setBarcode(generalPostDTO.getBarcode());
-        apartmentDTO.setBuildingName(generalPostDTO.getBuildingName());
         return apartmentDTO;
     }
 
@@ -694,9 +910,19 @@ public class PostServiceImpl implements PostService {
     // set information residential land from general post and create
     public ResidentialLandDTO setDataToResidentialLand(GeneralPostDTO generalPostDTO) {
         ResidentialLandDTO residentialLandDTO = new ResidentialLandDTO();
-        residentialLandDTO.setBarcode(generalPostDTO.getBarcode());
+        if(!generalPostDTO.isCertification()){
+            residentialLandDTO.setBarcode(null);
+            residentialLandDTO.setPlotNumber(null);
+            residentialLandDTO.setOwner(null);
+            residentialLandDTO.setOwnerPhone(null);
+        }else{
+            residentialLandDTO.setBarcode(generalPostDTO.getBarcode());
+            residentialLandDTO.setPlotNumber(generalPostDTO.getPlotNumber());
+            residentialLandDTO.setOwner(generalPostDTO.getOwner());
+            residentialLandDTO.setOwnerPhone(generalPostDTO.getOwnerPhone());
+        }
         residentialLandDTO.setFrontispiece(generalPostDTO.getFrontispiece());
-        residentialLandDTO.setPlotNumber(generalPostDTO.getPlotNumber());
+
         return residentialLandDTO;
     }
 

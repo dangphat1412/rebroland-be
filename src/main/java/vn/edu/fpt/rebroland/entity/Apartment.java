@@ -5,6 +5,8 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import javax.persistence.*;
+import java.util.HashSet;
+import java.util.Set;
 
 @Data
 @AllArgsConstructor
@@ -18,10 +20,12 @@ public class Apartment {
     private int id;
     private int numberOfBedroom;
     private int numberOfBathroom;
-    private int floorNumber;
+    private Integer floorNumber;
     private String roomNumber;
     private String barcode;
     private String buildingName;
+    private String owner;
+    private String ownerPhone;
 
 
     @OneToOne(cascade = CascadeType.ALL)

@@ -1,6 +1,12 @@
 package vn.edu.fpt.rebroland.service;
 
+import vn.edu.fpt.rebroland.entity.Post;
+import vn.edu.fpt.rebroland.entity.ResidentialHouseHistory;
+import vn.edu.fpt.rebroland.payload.PostDTO;
+import vn.edu.fpt.rebroland.payload.SearchResponse;
 import vn.edu.fpt.rebroland.payload.*;
+import org.springframework.data.domain.Pageable;
+
 
 import java.sql.Date;
 import java.util.List;
@@ -14,12 +20,12 @@ public interface PostService {
 
     SearchResponse getPostByUserId(int pageNo, int pageSize, int userId, String propertyId);
 
-    SearchResponse getAllPostForBroker(int pageNo, int pageSize, String propertyId);
+    SearchResponse getAllPostForBroker(int pageNo, int pageSize, String propertyId, String option);
 
 
     SearchResponse searchPosts(String ward, String district, String province, String minPrice, String maxPrice,
                            String minArea, String maxArea, List<String> propertyType, String keyword,
-                           List<String> direction, int bedroom, int pageNo, int pageSize);
+                           List<String> direction, int bedroom, int pageNo, int pageSize, String sortValue);
 
     List<PostDTO> getPostByPropertyTypeId(int propertyTypeId);
 
@@ -40,6 +46,9 @@ public interface PostService {
     List<DerivativeDTO> getAllDerivativePost();
 
     List<DerivativeDTO> getDerivativePostByUserIdPaging(int userId, String propertyTypeId, int pageNumber, int pageSize, String sortValue);
+
+    SearchResponse getDerivativePostOfBrokerPaging(int userId, String propertyTypeId, int pageNumber, int pageSize, String sortValue);
+
 
     List<DerivativeDTO> getDerivativePostByUserId(int userId);
 
