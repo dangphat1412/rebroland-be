@@ -11,4 +11,6 @@ public interface ContactService {
     ContactDTO getContactById(int contactId);
 
     ContactResponse getContactByUserId(int userId, int pageNo, int pageSize);
+
+    void deleteContactByPostId(int postId);
 }

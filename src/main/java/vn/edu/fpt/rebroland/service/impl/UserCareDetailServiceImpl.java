@@ -6,7 +6,6 @@ import vn.edu.fpt.rebroland.entity.UserCare;
 import vn.edu.fpt.rebroland.entity.UserCareDetail;
 import vn.edu.fpt.rebroland.exception.ResourceNotFoundException;
 import vn.edu.fpt.rebroland.payload.CareDetailResponse;
-import vn.edu.fpt.rebroland.payload.DerivativeDTO;
 import vn.edu.fpt.rebroland.payload.UserCareDetailDTO;
 import vn.edu.fpt.rebroland.repository.UserCareDetailRepository;
 import vn.edu.fpt.rebroland.repository.UserCareRepository;
@@ -47,7 +46,7 @@ public class UserCareDetailServiceImpl implements UserCareDetailService {
         UserCareDetail userCareDetail = new UserCareDetail();
         UserCare userCare = userCareRepository.findById(careId).orElseThrow(() -> new ResourceNotFoundException("Care", "id", careId));
         long millis = System.currentTimeMillis();
-        java.sql.Date date = new java.sql.Date(millis);
+        Date date = new Date(millis);
         userCareDetail.setDateCreate(date);
         userCareDetail.setDescription(userCareDetailDTO.getDescription());
 
@@ -74,5 +73,12 @@ public class UserCareDetailServiceImpl implements UserCareDetailService {
         SimpleDateFormat simpleDateFormat = new SimpleDateFormat("dd-MM-yyyy HH:mm:ss");
 
         return userCareDetails.stream().map(post -> modelMapper.map(post, CareDetailResponse.class)).collect(Collectors.toList());
+    }
+
+    @Override
+    public UserCareDetailDTO updateUserCareDetail(int detailId) {
+        UserCareDetail userCareDetail = userCareDetailRepository.findById(detailId).orElseThrow(() -> new ResourceNotFoundException("Detail", "id", detailId));
+        userCareDetail.setStatus(true);
+        return mapToDTO(userCareDetail);
     }
 }

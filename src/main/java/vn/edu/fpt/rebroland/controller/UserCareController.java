@@ -15,7 +15,6 @@ import org.springframework.web.bind.annotation.*;
 
 import javax.validation.Valid;
 import java.text.SimpleDateFormat;
-import java.time.LocalDateTime;
 import java.util.*;
 
 @RestController
@@ -184,6 +183,21 @@ public class UserCareController {
         }
     }
 
+    @PutMapping("/details/{detailId}")
+    @Transactional
+    public ResponseEntity<?> updateUserCare(@PathVariable int detailId,
+                                                 @RequestHeader(name = "Authorization") String token) {
+        int userId = getUserIdFromToken(token);
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new ResourceNotFoundException("User", "id", userId));
+        if (user.getCurrentRole() == 3) {
+            UserCareDetailDTO userCareDetailDTO = userCareDetailService.updateUserCareDetail(detailId);
+            return new ResponseEntity<>(userCareDetailDTO, HttpStatus.OK);
+        } else {
+            return new ResponseEntity<>("You need to change broker role!", HttpStatus.OK);
+        }
+    }
+
 
 
     @PutMapping("/finish/{careId}")
@@ -203,8 +217,8 @@ public class UserCareController {
 
     @DeleteMapping("/{careId}")
     @Transactional
-    public ResponseEntity<String> deleteUserCareWithNotAccept(@PathVariable int careId,
-                                                              @RequestHeader(name = "Authorization") String token) {
+    public ResponseEntity<String> deleteUserCare(@PathVariable int careId,
+                                                 @RequestHeader(name = "Authorization") String token) {
         int userId = getUserIdFromToken(token);
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new ResourceNotFoundException("User", "id", userId));

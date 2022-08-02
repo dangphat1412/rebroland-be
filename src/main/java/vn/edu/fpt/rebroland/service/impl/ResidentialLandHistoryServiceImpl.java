@@ -1,13 +1,9 @@
 package vn.edu.fpt.rebroland.service.impl;
 
-import vn.edu.fpt.rebroland.entity.ResidentialHouseHistory;
-import vn.edu.fpt.rebroland.entity.ResidentialLand;
 import vn.edu.fpt.rebroland.entity.ResidentialLandHistory;
 import vn.edu.fpt.rebroland.exception.ResourceNotFoundException;
-import vn.edu.fpt.rebroland.payload.ResidentialLandDTO;
 import vn.edu.fpt.rebroland.payload.ResidentialLandHistoryDTO;
 import vn.edu.fpt.rebroland.repository.ResidentialLandHistoryRepository;
-import vn.edu.fpt.rebroland.repository.ResidentialLandRepository;
 import vn.edu.fpt.rebroland.service.ResidentialLandHistoryService;
 import org.modelmapper.ModelMapper;
 import org.springframework.stereotype.Service;

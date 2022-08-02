@@ -110,6 +110,15 @@ public class ContactServiceImpl implements ContactService {
         return contactResponse;
     }
 
+    @Override
+    public void deleteContactByPostId(int postId) {
+        try {
+            contactRepository.deleteContactByPostId(postId);
+        }catch (Exception e){
+
+        }
+    }
+
     private ContactDTO mapToDTO(Contact contact) {
         return modelMapper.map(contact, ContactDTO.class);
     }

@@ -3,7 +3,6 @@ package vn.edu.fpt.rebroland.service.impl;
 import vn.edu.fpt.rebroland.entity.Post;
 import vn.edu.fpt.rebroland.entity.User;
 import vn.edu.fpt.rebroland.entity.UserCare;
-
 import vn.edu.fpt.rebroland.exception.ResourceNotFoundException;
 import vn.edu.fpt.rebroland.payload.CareDTO;
 import vn.edu.fpt.rebroland.payload.CareResponse;
@@ -160,6 +159,15 @@ public class UserCareServiceImpl implements UserCareService {
         List<ShortPostDTO> list = listPosts.stream().map(post -> modelMapper.map(post, ShortPostDTO.class)).collect(Collectors.toList());
 
         return list;
+    }
+
+    @Override
+    public void deletePostCareByPostId(int postId) {
+        try {
+            userCareRepository.deletePostCareByPostId(postId);
+        }catch (Exception e){
+
+        }
     }
 
     public void setDataUserCare(UserCare userCare, UserCare oldUserCare) {

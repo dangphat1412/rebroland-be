@@ -1,13 +1,9 @@
 package vn.edu.fpt.rebroland.payload;
 
 
-import vn.edu.fpt.rebroland.entity.Coordinate;
-import vn.edu.fpt.rebroland.entity.Image;
 import lombok.Data;
 
 import javax.validation.constraints.*;
-import java.sql.Date;
-import java.util.List;
 import java.util.Set;
 
 @Data
@@ -71,6 +67,8 @@ public class RealEstatePostDTO {
     private String thumbnail;
 
     private Integer originalPost;
+
+    private boolean allowDerivative;
 
     private UserDTO user;
     private PropertyTypeDTO propertyType;

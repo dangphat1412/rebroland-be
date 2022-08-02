@@ -2,7 +2,8 @@ package vn.edu.fpt.rebroland.payload;
 
 import lombok.Data;
 
-import javax.validation.constraints.*;
+import javax.validation.constraints.NotEmpty;
+import javax.validation.constraints.NotNull;
 import java.util.Date;
 
 @Data
@@ -29,5 +30,5 @@ public class UserCareDetailDTO {
     @NotNull(message = "Cập nhập thông tin này.")
     private boolean status;
 
-//    private UserCareDTO userCare;
+    private UserCareDTO userCare;
 }

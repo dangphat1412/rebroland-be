@@ -1,8 +1,9 @@
 package vn.edu.fpt.rebroland.service.impl;
 
-import vn.edu.fpt.rebroland.entity.User;
+import vn.edu.fpt.rebroland.entity.AvgRate;
 import vn.edu.fpt.rebroland.entity.UserRate;
 import vn.edu.fpt.rebroland.payload.UserRateDTO;
+import vn.edu.fpt.rebroland.repository.AvgRateRepository;
 import vn.edu.fpt.rebroland.repository.UserRateRepository;
 import vn.edu.fpt.rebroland.service.UserRateService;
 import org.modelmapper.ModelMapper;
@@ -16,9 +17,13 @@ public class UserRateServiceImpl implements UserRateService {
     private UserRateRepository userRateRepository;
     private ModelMapper mapper;
 
-    public UserRateServiceImpl(UserRateRepository userRateRepository, ModelMapper mapper) {
+    private AvgRateRepository rateRepository;
+
+    public UserRateServiceImpl(UserRateRepository userRateRepository, ModelMapper mapper,
+                               AvgRateRepository rateRepository) {
         this.userRateRepository = userRateRepository;
         this.mapper = mapper;
+        this.rateRepository = rateRepository;
     }
 
 
@@ -34,6 +39,23 @@ public class UserRateServiceImpl implements UserRateService {
 
         UserRate userRate = mapToEntity(userRateDTO);
         UserRate newUserRate = userRateRepository.save(userRate);
+
+        //insert to average_rates
+        int userRatedId = userRateDTO.getUserRated();
+        int userRoleRatedId = userRateDTO.getUserRoleRated();
+        List<UserRate> starRate = userRateRepository.getStarRateOfUserRated(userRatedId, userRoleRatedId);
+        float average = 0;
+        for (UserRate i : starRate) {
+            average += i.getStarRate();
+        }
+//        AvgRate avgRate = new AvgRate(userRatedId, userRoleRatedId, average / starRate.size());
+        AvgRate avgRate = rateRepository.getAvgRateByUserIdAndRoleId(userRatedId, userRoleRatedId);
+
+//        DecimalFormat df = new DecimalFormat("#.0");
+//        avgRate.setAvgRate(Float.parseFloat(df.format(average / starRate.size())));
+
+        avgRate.setAvgRate((float) Math.round((average / starRate.size()) * 10) / 10);
+        rateRepository.save(avgRate);
         return mapToDTO(newUserRate);
     }
 
@@ -47,6 +69,8 @@ public class UserRateServiceImpl implements UserRateService {
         for (UserRate i : starRate) {
             average += i.getStarRate();
         }
+//        AvgRate avgRate = new AvgRate(userRatedId, userRoleRatedId, average / starRate.size());
+//        rateRepository.save(avgRate);
         DecimalFormat df = new DecimalFormat("#.0");
 
         return Float.parseFloat(df.format(average / starRate.size()));

@@ -33,4 +33,8 @@ public interface UserCareRepository extends JpaRepository<UserCare, Integer> {
     @Query(value = "select * from `user_cares` where user_id =:userId", nativeQuery = true)
     List<UserCare> getListUserCareByUserId(int userId);
 
+    @Query(value = "delete from `post_cares`  where post_id =:postId", nativeQuery = true)
+    @Modifying
+    void deletePostCareByPostId(int postId);
+
 }

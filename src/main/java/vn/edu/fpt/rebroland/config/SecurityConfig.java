@@ -17,7 +17,6 @@ import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
-import org.springframework.security.core.userdetails.User;
 
 @Configuration
 @EnableWebSecurity
@@ -64,6 +63,10 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
                 .authorizeRequests().antMatchers("/api/contact/**").permitAll()
                 .and()
                 .authorizeRequests().antMatchers("/api/notification/**").permitAll()
+                .and()
+                .authorizeRequests().antMatchers("/api/payment/**").permitAll()
+                .and()
+                .authorizeRequests().antMatchers("/api/report/**").permitAll()
                 .and()
                 .authorizeRequests()
                 .anyRequest()

@@ -3,7 +3,6 @@ package vn.edu.fpt.rebroland.entity;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
-import org.hibernate.annotations.Type;
 
 import javax.persistence.*;
 import java.util.Date;
@@ -49,6 +48,10 @@ public class User {
     private int currentRole;
 
     private int unreadNotification;
+
+    private String facebookLink;
+
+    private String zaloLink;
 //    @OneToMany(mappedBy = "user")
 //    private Set<UserRole> userRoles;
 
@@ -69,4 +72,7 @@ public class User {
 
     @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
     private Set<Notification> notifications = new HashSet<>();
+
+    @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
+    private Set<Payment> payments = new HashSet<>();
 }

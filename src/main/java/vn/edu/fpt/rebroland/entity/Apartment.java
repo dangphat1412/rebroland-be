@@ -5,8 +5,6 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import javax.persistence.*;
-import java.util.HashSet;
-import java.util.Set;
 
 @Data
 @AllArgsConstructor
@@ -26,6 +24,7 @@ public class Apartment {
     private String buildingName;
     private String owner;
     private String ownerPhone;
+    private int plotNumber;
 
 
     @OneToOne(cascade = CascadeType.ALL)

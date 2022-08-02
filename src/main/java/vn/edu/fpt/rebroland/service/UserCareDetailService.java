@@ -11,4 +11,5 @@ public interface UserCareDetailService {
     UserCareDetailDTO createUserCareDetail(int careId, UserCareDetailDTO userCareDetailDTO, Date date);
 
     List<CareDetailResponse> getListUserCareByCareId(int careId);
+    UserCareDetailDTO updateUserCareDetail(int detailId);
 }

@@ -2,8 +2,6 @@ package vn.edu.fpt.rebroland.service;
 
 import vn.edu.fpt.rebroland.payload.ResidentialHouseHistoryDTO;
 
-import java.sql.Date;
-
 public interface ResidentialHouseHistoryService {
     ResidentialHouseHistoryDTO createResidentialHouseHistory
             (ResidentialHouseHistoryDTO residentialHouseHistoryDTO);

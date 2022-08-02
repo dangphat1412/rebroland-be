@@ -1,20 +1,15 @@
 package vn.edu.fpt.rebroland.controller;
 
-import vn.edu.fpt.rebroland.entity.Post;
 import vn.edu.fpt.rebroland.entity.User;
 import vn.edu.fpt.rebroland.payload.ReportDTO;
 import vn.edu.fpt.rebroland.payload.UserRateDTO;
-import vn.edu.fpt.rebroland.service.PostService;
 import vn.edu.fpt.rebroland.service.ReportService;
 import vn.edu.fpt.rebroland.service.UserRateService;
-import org.cloudinary.json.JSONObject;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.web.bind.annotation.*;
 
 import javax.validation.Valid;
-import java.util.Base64;
 
 @RestController
 @CrossOrigin(origins = "https://rebroland-frontend.vercel.app")
@@ -32,8 +27,8 @@ public class ReportController {
 
     @PostMapping("/post/{postId}")
     public ResponseEntity<?> createReportPost(@RequestHeader(name = "Authorization") String token,
-                                            @Valid @RequestBody ReportDTO reportPostDTO,
-                                              @PathVariable(name = "postId") String id){
+                                              @Valid @RequestBody ReportDTO reportPostDTO,
+                                              @PathVariable(name = "postId") String id) {
         User user = reportService.getUserByToken(token);
         reportPostDTO.setUserId(user.getId());
         reportPostDTO.setRoleId(user.getCurrentRole());
@@ -42,7 +37,7 @@ public class ReportController {
         reportPostDTO.setPostId(postId);
 
         ReportDTO dto = reportService.createReport(reportPostDTO);
-        if(dto == null){
+        if (dto == null) {
             return new ResponseEntity<>("Báo cáo thất bại!", HttpStatus.BAD_REQUEST);
         }
         return new ResponseEntity<>(dto, HttpStatus.CREATED);
@@ -51,7 +46,7 @@ public class ReportController {
     @PostMapping("/user/{userId}")
     public ResponseEntity<?> createReportUser(@RequestHeader(name = "Authorization") String token,
                                               @Valid @RequestBody ReportDTO reportDTO,
-                                              @PathVariable(name = "userId") String id){
+                                              @PathVariable(name = "userId") String id) {
         User user = reportService.getUserByToken(token);
         reportDTO.setUserId(user.getId());
         reportDTO.setRoleId(user.getCurrentRole());
@@ -61,7 +56,7 @@ public class ReportController {
         reportDTO.setUserReportedId(userReportedId);
 
         ReportDTO dto = reportService.createReport(reportDTO);
-        if(dto == null){
+        if (dto == null) {
             return new ResponseEntity<>("Báo cáo thất bại!", HttpStatus.BAD_REQUEST);
         }
         return new ResponseEntity<>(dto, HttpStatus.CREATED);
@@ -154,7 +149,6 @@ public class ReportController {
             return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
         }
     }
-
 
 
 }

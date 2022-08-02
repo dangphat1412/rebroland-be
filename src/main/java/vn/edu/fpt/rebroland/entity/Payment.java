@@ -1,35 +1,32 @@
 package vn.edu.fpt.rebroland.entity;
 
 import lombok.AllArgsConstructor;
-import lombok.Getter;
+import lombok.Data;
 import lombok.NoArgsConstructor;
-import lombok.Setter;
 
 import javax.persistence.*;
 import java.util.Date;
 
-@Getter
-@Setter
+@Data
 @AllArgsConstructor
 @NoArgsConstructor
 @Entity
-@Table(name = "user_rates")
-public class UserRate {
+@Table(name = "payments")
+public class Payment {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(nullable = false)
     private int id;
-    private int userRoleId;
+
+    private int amount;
+
     private String description;
-    private float starRate;
-    private Date startDate;
-    private int userRated;
-    private int userRoleRated;
+
+    private Date date;
+
+    private String type;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id", nullable = false)
     private User user;
-
-    public UserRate(float starRate) {
-        this.starRate = starRate;
-    }
 }

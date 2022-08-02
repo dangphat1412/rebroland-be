@@ -3,7 +3,6 @@ package vn.edu.fpt.rebroland.service.impl;
 import vn.edu.fpt.rebroland.entity.Post;
 import vn.edu.fpt.rebroland.entity.User;
 import vn.edu.fpt.rebroland.entity.UserFollowPost;
-import vn.edu.fpt.rebroland.exception.ResourceNotFoundException;
 import vn.edu.fpt.rebroland.payload.*;
 import vn.edu.fpt.rebroland.repository.PostRepository;
 import vn.edu.fpt.rebroland.repository.UserFollowPostRepository;

@@ -25,4 +25,6 @@ public interface UserCareService {
     UserCareDTO getUserCareByCareId(int careId);
 
     List<ShortPostDTO> getPostCareByCareId(int careId);
+
+    void deletePostCareByPostId(int postId);
 }

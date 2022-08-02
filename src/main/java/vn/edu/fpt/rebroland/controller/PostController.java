@@ -1,10 +1,12 @@
 package vn.edu.fpt.rebroland.controller;
 
 
+import vn.edu.fpt.rebroland.entity.AvgRate;
 import vn.edu.fpt.rebroland.entity.Post;
 import vn.edu.fpt.rebroland.entity.User;
 import vn.edu.fpt.rebroland.exception.ResourceNotFoundException;
 import vn.edu.fpt.rebroland.payload.*;
+import vn.edu.fpt.rebroland.repository.AvgRateRepository;
 import vn.edu.fpt.rebroland.repository.PostRepository;
 import vn.edu.fpt.rebroland.repository.UserRepository;
 import vn.edu.fpt.rebroland.service.*;
@@ -39,18 +41,24 @@ public class PostController {
     private ResidentialLandHistoryService residentialLandHistoryService;
     private PostRepository postRepository;
     private UserRepository userRepository;
+    private AvgRateRepository rateRepository;
+
     private ModelMapper mapper;
     private UserFollowPostService userFollowPostService;
 
     private ReportService reportService;
 
+    private ContactService contactService;
+
+    private UserCareService userCareService;
 
     public PostController(PostService postService, CoordinateService coordinateService, ImageService imageService,
                           ApartmentService apartmentService, ResidentialLandService residentialLandService,
                           ResidentialHouseService residentialHouseService, ApartmentHistoryService apartmentHistoryService,
                           ResidentialHouseHistoryService residentialHouseHistoryService, ResidentialLandHistoryService residentialLandHistoryService,
-                          UserRepository userRepository, ModelMapper mapper,
-                          UserFollowPostService userFollowPostService, PostRepository postRepository, ReportService reportService) {
+                          PostRepository postRepository, UserRepository userRepository, ModelMapper mapper,
+                          UserFollowPostService userFollowPostService, ReportService reportService, ContactService contactService,
+                          UserCareService userCareService, AvgRateRepository rateRepository) {
         this.postService = postService;
         this.coordinateService = coordinateService;
         this.imageService = imageService;
@@ -60,17 +68,19 @@ public class PostController {
         this.apartmentHistoryService = apartmentHistoryService;
         this.residentialHouseHistoryService = residentialHouseHistoryService;
         this.residentialLandHistoryService = residentialLandHistoryService;
-        this.userRepository = userRepository;
-        this.userFollowPostService = userFollowPostService;
         this.postRepository = postRepository;
+        this.userRepository = userRepository;
         this.mapper = mapper;
+        this.userFollowPostService = userFollowPostService;
         this.reportService = reportService;
+        this.contactService = contactService;
+        this.userCareService = userCareService;
+        this.rateRepository = rateRepository;
     }
-
 
     //view detail real estate post from post id
     @GetMapping("/{postId}")
-    public ResponseEntity<RealEstatePostDTO> getDetailPost(@PathVariable int postId) {
+    public ResponseEntity<?> getDetailPost(@PathVariable int postId) {
         RealEstatePostDTO realEstatePostDTO = new RealEstatePostDTO();
         PostDTO postDTO = postService.getPostByPostId(postId);
         switch (postDTO.getPropertyType().getId()) {
@@ -88,11 +98,15 @@ public class PostController {
                 break;
         }
         postService.setDataToRealEstateDTO(realEstatePostDTO, postDTO, postId);
-        return new ResponseEntity<>(realEstatePostDTO, HttpStatus.OK);
+        List<BrokerInfoOfPostDTO> list = postService.getDerivativePostOfOriginalPost(postId);
+        Map<String, Object> map = new HashMap<>();
+        map.put("post", realEstatePostDTO);
+        map.put("brokers", list);
+        return new ResponseEntity<>(map, HttpStatus.OK);
     }
 
-   //  create derivative post
-    @PostMapping("derivative/{id}")
+    //  create derivative post
+    @PostMapping("/derivative/{id}")
     @Transactional
     public ResponseEntity<String> createDerivativePost(@PathVariable(name = "id") int postId,
                                                        @Valid @RequestBody GeneralPostDTO generalPostDTO,
@@ -102,39 +116,69 @@ public class PostController {
         java.sql.Date date = new java.sql.Date(millis);
         User user = userRepository.findById(userId).orElseThrow(() -> new ResourceNotFoundException("User", "id", userId));
         Post post = postRepository.findPostByPostId(postId);
-        if (user.getCurrentRole() == 3) {
-            if (user.getId() != post.getUser().getId()) {
-                PostDTO postDTO = postService.setDataToPostDTO(generalPostDTO, userId, date);
-                postDTO.setOriginalPost(postId);
-                PostDTO newPostDTO = postService.createPost(postDTO, userId, generalPostDTO.getDirectionId(), generalPostDTO.getPropertyTypeId(),
-                        generalPostDTO.getUnitPriceId(), 2, generalPostDTO.getLongevityId());
-                imageService.createImage(generalPostDTO.getImages(), newPostDTO.getPostId());
-                coordinateService.createCoordinate(generalPostDTO.getCoordinates(), newPostDTO.getPostId());
-                switch (generalPostDTO.getPropertyTypeId()) {
-                    case 1:
-                        ResidentialHouseDTO newResidentialHouse = postService.setDataToResidentialHouse(generalPostDTO);
-                        residentialHouseService.createResidentialHouse(newResidentialHouse, newPostDTO.getPostId());
+        if (post.isAllowDerivative()) {
+            if (user.getCurrentRole() == 3) {
+                if (user.getId() != post.getUser().getId()) {
+                    PostDTO postDTO = postService.setDataToPostDTO(generalPostDTO, userId, date);
+                    postDTO.setOriginalPost(postId);
+                    PostDTO newPostDTO = postService.createPost(postDTO, userId, generalPostDTO.getDirectionId(), generalPostDTO.getPropertyTypeId(),
+                            generalPostDTO.getUnitPriceId(), 2, generalPostDTO.getLongevityId());
+                    imageService.createImage(generalPostDTO.getImages(), newPostDTO.getPostId());
+                    coordinateService.createCoordinate(generalPostDTO.getCoordinates(), newPostDTO.getPostId());
+                    switch (generalPostDTO.getPropertyTypeId()) {
+                        case 1:
+                            ResidentialHouseDTO newResidentialHouse = postService.setDataToResidentialHouse(generalPostDTO);
+                            residentialHouseService.createResidentialHouse(newResidentialHouse, newPostDTO.getPostId());
 
-                        break;
-                    case 2:
-                        ApartmentDTO newApartmentDTO = postService.setDataToApartment(generalPostDTO);
-                        apartmentService.createApartment(newApartmentDTO, newPostDTO.getPostId());
-                        break;
-                    case 3:
-                        ResidentialLandDTO newResidentialLand = postService.setDataToResidentialLand(generalPostDTO);
-                        residentialLandService.createResidentialLand(newResidentialLand, newPostDTO.getPostId());
-                        break;
+                            break;
+                        case 2:
+                            ApartmentDTO newApartmentDTO = postService.setDataToApartment(generalPostDTO);
+                            apartmentService.createApartment(newApartmentDTO, newPostDTO.getPostId());
+                            break;
+                        case 3:
+                            ResidentialLandDTO newResidentialLand = postService.setDataToResidentialLand(generalPostDTO);
+                            residentialLandService.createResidentialLand(newResidentialLand, newPostDTO.getPostId());
+                            break;
+                    }
+                } else {
+                    return new ResponseEntity<>("You can not create derivative post with your original post", HttpStatus.BAD_REQUEST);
                 }
             } else {
-                return new ResponseEntity<>("You can not create derivative post with your original post", HttpStatus.BAD_REQUEST);
+                return new ResponseEntity<>("You need change to be broker", HttpStatus.BAD_REQUEST);
             }
         } else {
-            return new ResponseEntity<>("You need change to be broker", HttpStatus.BAD_REQUEST);
+            return new ResponseEntity<>("Bài viết này không cho phép tạo bài phái sinh! ", HttpStatus.CREATED);
         }
+
 
         return new ResponseEntity<>(" Derivative Post success", HttpStatus.CREATED);
     }
 
+    //switch mode of post
+    @PutMapping("/allow-derivative/switch/{postId}")
+    public ResponseEntity<?> switchPostMode(@RequestHeader(name = "Authorization") String token,
+                                            @PathVariable(name = "postId") String id){
+        int postId = Integer.parseInt(id);
+        int userId = getUserIdFromToken(token);
+
+        Post post = postRepository.findPostByPostId(postId);
+        if(post == null){
+            return new ResponseEntity<>("Bài viết không tồn tại!", HttpStatus.BAD_REQUEST);
+        }
+        if(userId == post.getUser().getId()){
+            if(post.isAllowDerivative()){
+                post.setAllowDerivative(false);
+                postRepository.save(post);
+                return new ResponseEntity<>("Bài viết không cho phép đăng bài phái sinh", HttpStatus.OK);
+            }else{
+                post.setAllowDerivative(true);
+                postRepository.save(post);
+                return new ResponseEntity<>("Bài viết cho phép đăng bài phái sinh", HttpStatus.OK);
+            }
+        }else{
+            return new ResponseEntity<>("Người dùng không thể thay đổi chế độ bài viết!", HttpStatus.BAD_REQUEST);
+        }
+    }
 
     // create general post
     @PostMapping(consumes = "*/*")
@@ -153,25 +197,29 @@ public class PostController {
 //            startDate = "20" + generalPostDTO.getBarcode().substring(7, 9);
 //        }
         if (user.getCurrentRole() == 2) {
-            PostDTO postDTO = postService.setDataToPostDTO(generalPostDTO, userId, date);
-            PostDTO newPostDTO = postService.createPost(postDTO, userId, generalPostDTO.getDirectionId(), generalPostDTO.getPropertyTypeId(),
-                    generalPostDTO.getUnitPriceId(), 2, generalPostDTO.getLongevityId());
-            imageService.createImage(generalPostDTO.getImages(), newPostDTO.getPostId());
-            coordinateService.createCoordinate(generalPostDTO.getCoordinates(), newPostDTO.getPostId());
-            if (generalPostDTO.getPropertyTypeId() == 1) {
-                ResidentialHouseDTO newResidentialHouse = postService.setDataToResidentialHouse(generalPostDTO);
-                residentialHouseService.createResidentialHouse(newResidentialHouse, newPostDTO.getPostId());
-                return new ResponseEntity<>(" House success", HttpStatus.CREATED);
-            }
-            if (generalPostDTO.getPropertyTypeId() == 2) {
-                ApartmentDTO newApartmentDTO = postService.setDataToApartment(generalPostDTO);
-                apartmentService.createApartment(newApartmentDTO, newPostDTO.getPostId());
-                return new ResponseEntity<>("Apartment success", HttpStatus.CREATED);
-            }
-            if (generalPostDTO.getPropertyTypeId() == 3) {
-                ResidentialLandDTO newResidentialLand = postService.setDataToResidentialLand(generalPostDTO);
-                residentialLandService.createResidentialLand(newResidentialLand, newPostDTO.getPostId());
-                return new ResponseEntity<>("Land success", HttpStatus.CREATED);
+            if (generalPostDTO.getBarcode().length() == 14) {
+                return new ResponseEntity<>("Độ dài từ 13 hoặc 15 ký tự.", HttpStatus.BAD_REQUEST);
+
+            } else {
+                PostDTO postDTO = postService.setDataToPostDTO(generalPostDTO, userId, date);
+                PostDTO newPostDTO = postService.createPost(postDTO, userId, generalPostDTO.getDirectionId(), generalPostDTO.getPropertyTypeId(),
+                        generalPostDTO.getUnitPriceId(), 2, generalPostDTO.getLongevityId());
+                imageService.createImage(generalPostDTO.getImages(), newPostDTO.getPostId());
+                coordinateService.createCoordinate(generalPostDTO.getCoordinates(), newPostDTO.getPostId());
+                switch (generalPostDTO.getPropertyTypeId()) {
+                    case 1:
+                        ResidentialHouseDTO newResidentialHouse = postService.setDataToResidentialHouse(generalPostDTO);
+                        residentialHouseService.createResidentialHouse(newResidentialHouse, newPostDTO.getPostId());
+                        return new ResponseEntity<>(" House success", HttpStatus.CREATED);
+                    case 2:
+                        ApartmentDTO newApartmentDTO = postService.setDataToApartment(generalPostDTO);
+                        apartmentService.createApartment(newApartmentDTO, newPostDTO.getPostId());
+                        return new ResponseEntity<>("Apartment success", HttpStatus.CREATED);
+                    case 3:
+                        ResidentialLandDTO newResidentialLand = postService.setDataToResidentialLand(generalPostDTO);
+                        residentialLandService.createResidentialLand(newResidentialLand, newPostDTO.getPostId());
+                        return new ResponseEntity<>("Land success", HttpStatus.CREATED);
+                }
             }
         } else {
             return new ResponseEntity<>("You need change to customer", HttpStatus.BAD_REQUEST);
@@ -243,13 +291,16 @@ public class PostController {
             }
             coordinateService.deleteCoordinateByPostId(postId);
             imageService.deleteImageByPostId(postId);
-            postService.deletePost(postId);
+            contactService.deleteContactByPostId(postId);
+            userCareService.deletePostCareByPostId(postId);
             userFollowPostService.deleteFollowByPostId(postId);
             reportService.deleteReportByPostId(postId);
-
+            postService.deletePost(postId);
             return new ResponseEntity<>(result, HttpStatus.NO_CONTENT);
+        } else {
+            return new ResponseEntity<>("You are not owner this post", HttpStatus.BAD_REQUEST);
         }
-        return new ResponseEntity<>("Delete fail", HttpStatus.BAD_REQUEST);
+
     }
 
     //search
@@ -257,7 +308,7 @@ public class PostController {
     public ResponseEntity<?> searchPost(@RequestParam(name = "ward", defaultValue = "") String ward,
                                         @RequestParam(name = "district", defaultValue = "") String district,
                                         @RequestParam(name = "province", defaultValue = "") String province,
-                                        @RequestParam(name = "minPrice", defaultValue = "0") String minPrice,
+                                        @RequestParam(name = "minPrice", required = false) String minPrice,
                                         @RequestParam(name = "maxPrice", required = false) String maxPrice,
                                         @RequestParam(name = "minArea", defaultValue = "0") String minArea,
                                         @RequestParam(name = "maxArea", required = false) String maxArea,
@@ -276,6 +327,7 @@ public class PostController {
             SearchResponse list = postService.searchPosts(ward, district, province, minPrice, maxPrice,
                     minArea, maxArea, listPropertyType, keyword, listDirectionId, numberBedroom,
                     pageNumber, pageSize, sortValue);
+
             return new ResponseEntity<>(list, HttpStatus.OK);
         } catch (Exception e) {
             return new ResponseEntity<>("Đã xảy ra lỗi!", HttpStatus.BAD_REQUEST);
@@ -336,7 +388,7 @@ public class PostController {
     //user follow post
     @PostMapping("/follow/{postId}")
     public ResponseEntity<?> createUserFollowPost(@PathVariable(name = "postId", required = false) String postId,
-                                                  @RequestHeader(name = "Authorization") String token){
+                                                  @RequestHeader(name = "Authorization") String token) {
 
         String[] parts = token.split("\\.");
         JSONObject payload = new JSONObject(decode(parts[1]));
@@ -351,7 +403,7 @@ public class PostController {
     public ResponseEntity<?> getFollowPostByUser(@RequestHeader(name = "Authorization") String token,
                                                  @RequestParam(name = "pageNo", defaultValue = "0") String pageNo,
                                                  @RequestParam(name = "propertyType", required = false) String propertyTypeId,
-                                                 @RequestParam(name = "sortValue", defaultValue = "0") String sortValue){
+                                                 @RequestParam(name = "sortValue", defaultValue = "0") String sortValue) {
         String[] parts = token.split("\\.");
         JSONObject payload = new JSONObject(decode(parts[1]));
         String phone = payload.getString("sub");
@@ -377,7 +429,7 @@ public class PostController {
     }
 
     @GetMapping("/user/follow/short")
-    public ResponseEntity<?> getTitleFollowPostOfUser(@RequestHeader(name = "Authorization") String token){
+    public ResponseEntity<?> getTitleFollowPostOfUser(@RequestHeader(name = "Authorization") String token) {
         String[] parts = token.split("\\.");
         JSONObject payload = new JSONObject(decode(parts[1]));
         String phone = payload.getString("sub");
@@ -388,7 +440,7 @@ public class PostController {
     }
 
     @GetMapping("/history/{postId}")
-    public ResponseEntity<?> getRealEstateHistory(@PathVariable(name = "postId") int postId){
+    public ResponseEntity<?> getRealEstateHistory(@PathVariable(name = "postId") int postId) {
 
         Map<String, List> history = postService.getRealEstateHistory(postId);
         return new ResponseEntity<>(history, HttpStatus.OK);
@@ -396,10 +448,11 @@ public class PostController {
 
     //list all post and derivative_posts
     @GetMapping("/lists")
-    public ResponseEntity<?> getListPostAndDerivativePost(@RequestParam(name = "pageNo", defaultValue = "0") String pageNo){
+    public ResponseEntity<?> getListPostAndDerivativePost(@RequestParam(name = "pageNo", defaultValue = "0") String pageNo,
+                                                          @RequestParam(name = "sortValue", defaultValue = "0") String sortValue) {
         int pageNumber = Integer.parseInt(pageNo);
         int pageSize = 5;
-        List<DerivativeDTO> lists = postService.getAllDerivativePostPaging(pageNumber, pageSize);
+        List<DerivativeDTO> lists = postService.getAllDerivativePostPaging(pageNumber, pageSize, sortValue);
 
         List<DerivativeDTO> listAll = postService.getAllDerivativePost();
 
@@ -425,10 +478,10 @@ public class PostController {
                                                            @RequestParam(name = "propertyType", required = false) String propertyTypeId,
                                                            @RequestParam(name = "sortValue", defaultValue = "0") String sortValue
     ) {
-        try{
+        try {
             int userId = getUserIdFromToken(token);
             User user = userRepository.findById(userId).orElseThrow(() -> new ResourceNotFoundException("User", "id", userId));
-            if(user.getCurrentRole() != 3){
+            if (user.getCurrentRole() != 3) {
                 return new ResponseEntity<>("Người dùng không phải là broker!", HttpStatus.OK);
             }
             int pageNumber = Integer.parseInt(pageNo);
@@ -451,7 +504,7 @@ public class PostController {
             map.put("totalResult", listAll.size());
             map.put("totalPages", totalPage);
             return new ResponseEntity<>(map, HttpStatus.OK);
-        }catch (Exception e){
+        } catch (Exception e) {
             return new ResponseEntity<>("Trang này không tồn tại!", HttpStatus.BAD_REQUEST);
         }
     }
@@ -463,10 +516,10 @@ public class PostController {
                                                            @RequestParam(name = "propertyType", required = false) String propertyTypeId,
                                                            @RequestParam(name = "sortValue", defaultValue = "0") String sortValue
     ) {
-        try{
+        try {
             int userId = getUserIdFromToken(token);
             User user = userRepository.findById(userId).orElseThrow(() -> new ResourceNotFoundException("User", "id", userId));
-            if(user.getCurrentRole() != 3){
+            if (user.getCurrentRole() != 3) {
                 return new ResponseEntity<>("Người dùng không phải là broker!", HttpStatus.OK);
             }
             int pageNumber = Integer.parseInt(pageNo);
@@ -475,7 +528,7 @@ public class PostController {
             SearchResponse lists = postService.getDerivativePostOfBrokerPaging(userId, propertyTypeId, pageNumber, pageSize, sortValue);
 
             return new ResponseEntity<>(lists, HttpStatus.OK);
-        }catch (Exception e){
+        } catch (Exception e) {
             return new ResponseEntity<>("Trang này không tồn tại!", HttpStatus.BAD_REQUEST);
         }
     }
@@ -483,16 +536,23 @@ public class PostController {
     //get list post by user id
     @GetMapping("/user/{userId}")
     public ResponseEntity<?> getListPostByUserId(@PathVariable(name = "userId") String id,
-                                                @RequestParam(name = "propertyType", required = false) String propertyTypeId,
-                                                @RequestParam(name = "pageNo", defaultValue = "0") String pageNo,
+                                                 @RequestParam(name = "propertyType", required = false) String propertyTypeId,
+                                                 @RequestParam(name = "pageNo", defaultValue = "0") String pageNo,
                                                  @RequestParam(name = "sortValue", defaultValue = "0") String sortValue) {
         int userId = Integer.parseInt(id);
         int pageNumber = Integer.parseInt(pageNo);
-        int pageSize = 8;
+        int pageSize = 6;
 
         SearchResponse searchResponse = postService.getPostByUserId(pageNumber, pageSize, userId, propertyTypeId, sortValue);
         User user = userRepository.findById(userId).orElseThrow(() -> new ResourceNotFoundException("User", "id", userId));
         UserDTO userDTO = mapper.map(user, UserDTO.class);
+
+        AvgRate avgRate = rateRepository.getAvgRateByUserIdAndRoleId(user.getId(), user.getCurrentRole());
+        if(avgRate != null){
+            userDTO.setAvgRate(avgRate.getAvgRate());
+        }else{
+            userDTO.setAvgRate(0);
+        }
 
         Map<String, Object> map = new HashMap<>();
         map.put("lists", searchResponse);
@@ -500,23 +560,75 @@ public class PostController {
         return new ResponseEntity<>(map, HttpStatus.OK);
     }
 
-    //get list post for broker choose
+    //get list original post for broker choose
     @GetMapping("/broker/original")
     public ResponseEntity<?> getListPostForBroker(@RequestHeader(name = "Authorization") String token,
-                                                 @RequestParam(name = "pageNo", defaultValue = "0") String pageNo,
-                                                 @RequestParam(name = "propertyType", required = false) String propertyTypeId,
-                                                 @RequestParam(name = "sortValue", defaultValue = "0") String sortValue
+                                                  @RequestParam(name = "ward", defaultValue = "") String ward,
+                                                  @RequestParam(name = "district", defaultValue = "") String district,
+                                                  @RequestParam(name = "province", defaultValue = "") String province,
+                                                  @RequestParam(name = "minPrice", required = false) String minPrice,
+                                                  @RequestParam(name = "maxPrice", required = false) String maxPrice,
+                                                  @RequestParam(name = "minArea", defaultValue = "0") String minArea,
+                                                  @RequestParam(name = "maxArea", required = false) String maxArea,
+                                                  @RequestParam(name = "propertyType", defaultValue = "1,2,3") List<String> listPropertyType,
+                                                  @RequestParam(name = "keyword", defaultValue = "") String keyword,
+                                                  @RequestParam(name = "direction", required = false) List<String> listDirectionId,
+                                                  @RequestParam(name = "numberOfBedroom", defaultValue = "0") String numberOfBedroom,
+                                                  @RequestParam(name = "pageNo", defaultValue = "0") String pageNo,
+                                                  @RequestParam(name = "sortValue", defaultValue = "0") String sortValue
     ) {
         int userId = getUserIdFromToken(token);
         User user = userRepository.findById(userId).orElseThrow(() -> new ResourceNotFoundException("User", "id", userId));
-        if(user.getCurrentRole() == 3){
-            int pageNumber = Integer.parseInt(pageNo);
-            int pageSize = 8;
-            SearchResponse searchResponse = postService.getAllPostForBroker(pageNumber,pageSize, propertyTypeId, sortValue);
-            return new ResponseEntity<>(searchResponse, HttpStatus.OK);
-        }else {
+        if (user.getCurrentRole() == 3) {
+//            int pageNumber = Integer.parseInt(pageNo);
+//            int pageSize = 5;
+//            SearchResponse searchResponse = postService.getAllPostForBroker(pageNumber, pageSize, sortValue);
+//            return new ResponseEntity<>(searchResponse, HttpStatus.OK);
+            try {
+                int numberBedroom = Integer.parseInt(numberOfBedroom);
+                int pageSize = 5;
+                int pageNumber = Integer.parseInt(pageNo);
+
+                SearchResponse list = postService.searchOriginalPosts(ward, district, province, minPrice, maxPrice,
+                        minArea, maxArea, listPropertyType, keyword, listDirectionId, numberBedroom,
+                        pageNumber, pageSize, sortValue, userId);
+
+                return new ResponseEntity<>(list, HttpStatus.OK);
+            } catch (Exception e) {
+                return new ResponseEntity<>("Đã xảy ra lỗi!", HttpStatus.BAD_REQUEST);
+            }
+        } else {
             return new ResponseEntity<>("Người dùng không phải là broker !", HttpStatus.BAD_REQUEST);
         }
-
     }
+
+//    @GetMapping("/broker/original/search")
+//    public ResponseEntity<?> searchOriginalPostForBroker(@RequestParam(name = "ward", defaultValue = "") String ward,
+//                                                         @RequestParam(name = "district", defaultValue = "") String district,
+//                                                         @RequestParam(name = "province", defaultValue = "") String province,
+//                                                         @RequestParam(name = "minPrice", required = false) String minPrice,
+//                                                         @RequestParam(name = "maxPrice", required = false) String maxPrice,
+//                                                         @RequestParam(name = "minArea", defaultValue = "0") String minArea,
+//                                                         @RequestParam(name = "maxArea", required = false) String maxArea,
+//                                                         @RequestParam(name = "propertyType", defaultValue = "1,2,3") List<String> listPropertyType,
+//                                                         @RequestParam(name = "keyword", defaultValue = "") String keyword,
+//                                                         @RequestParam(name = "direction", required = false) List<String> listDirectionId,
+//                                                         @RequestParam(name = "numberOfBedroom", defaultValue = "0") String numberOfBedroom,
+//                                                         @RequestParam(name = "pageNo", defaultValue = "0") String pageNo,
+//                                                         @RequestParam(name = "sortValue", defaultValue = "0") String sortValue){
+//        try {
+//            int numberBedroom = Integer.parseInt(numberOfBedroom);
+//            int pageSize = 5;
+//            int pageNumber = Integer.parseInt(pageNo);
+//
+//            SearchResponse list = postService.searchOriginalPosts(ward, district, province, minPrice, maxPrice,
+//                    minArea, maxArea, listPropertyType, keyword, listDirectionId, numberBedroom,
+//                    pageNumber, pageSize, sortValue);
+//
+//            return new ResponseEntity<>(list, HttpStatus.OK);
+//        } catch (Exception e) {
+//            return new ResponseEntity<>("Đã xảy ra lỗi!", HttpStatus.BAD_REQUEST);
+//        }
+//
+//    }
 }

@@ -1,7 +1,6 @@
 package vn.edu.fpt.rebroland.service;
 
 import vn.edu.fpt.rebroland.payload.ApartmentDTO;
-import vn.edu.fpt.rebroland.payload.ResidentialHouseDTO;
 
 public interface ApartmentService {
     ApartmentDTO createApartment(ApartmentDTO apartmentDTO, int postId);

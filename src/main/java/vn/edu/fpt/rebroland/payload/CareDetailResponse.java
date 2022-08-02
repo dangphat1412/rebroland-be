@@ -4,7 +4,6 @@ import lombok.Data;
 
 import javax.validation.constraints.NotEmpty;
 import javax.validation.constraints.NotNull;
-import java.util.Date;
 
 @Data
 public class CareDetailResponse {
@@ -13,7 +12,6 @@ public class CareDetailResponse {
     private String dateCreate;
 
     private String appointmentTime;
-
 
     private Float alertTime;
 
@@ -25,4 +23,6 @@ public class CareDetailResponse {
 
     @NotNull(message = "Cập nhập thông tin này.")
     private boolean status;
+
+    private UserCareDTO userCare;
 }

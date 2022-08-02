@@ -1,6 +1,7 @@
 package vn.edu.fpt.rebroland.payload;
 
 import lombok.Data;
+
 import javax.validation.constraints.*;
 import java.sql.Date;
 import java.util.Set;
@@ -69,6 +70,9 @@ public class PostDTO {
     private String thumbnail;
 
     private Integer originalPost;
+
+    private boolean allowDerivative;
+
     private UserDTO user;
 
     private PropertyTypeDTO propertyType;

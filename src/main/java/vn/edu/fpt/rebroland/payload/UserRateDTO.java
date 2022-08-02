@@ -1,6 +1,5 @@
 package vn.edu.fpt.rebroland.payload;
 
-import vn.edu.fpt.rebroland.entity.User;
 import lombok.Data;
 
 import java.util.Date;

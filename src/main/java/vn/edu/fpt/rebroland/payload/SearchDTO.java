@@ -3,8 +3,6 @@ package vn.edu.fpt.rebroland.payload;
 import lombok.Data;
 
 import javax.validation.constraints.*;
-import java.util.List;
-import java.util.Set;
 
 @Data
 public class SearchDTO {
@@ -47,6 +45,8 @@ public class SearchDTO {
     private String thumbnail;
 
     private Integer originalPost;
+
+    private boolean allowDerivative;
 
     private StatusDTO status;
 

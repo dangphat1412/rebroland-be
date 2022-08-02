@@ -1,6 +1,9 @@
 package vn.edu.fpt.rebroland.entity;
 
-import lombok.*;
+import lombok.AllArgsConstructor;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
 
 import javax.persistence.*;
 import java.util.Date;
@@ -59,6 +62,8 @@ public class Post {
     private String thumbnail;
 
     private Integer originalPost;
+
+    private boolean allowDerivative;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "property_id", nullable = false)

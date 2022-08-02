@@ -1,12 +1,12 @@
 package vn.edu.fpt.rebroland.service.impl;
 
+import vn.edu.fpt.rebroland.entity.AvgRate;
 import vn.edu.fpt.rebroland.entity.Role;
 import vn.edu.fpt.rebroland.entity.User;
-
 import vn.edu.fpt.rebroland.payload.ChangePasswordDTO;
-import vn.edu.fpt.rebroland.payload.PostDTO;
 import vn.edu.fpt.rebroland.payload.RegisterDTO;
 import vn.edu.fpt.rebroland.payload.UserDTO;
+import vn.edu.fpt.rebroland.repository.AvgRateRepository;
 import vn.edu.fpt.rebroland.repository.RoleRepository;
 import vn.edu.fpt.rebroland.repository.UserRepository;
 import vn.edu.fpt.rebroland.service.UserService;
@@ -19,8 +19,7 @@ import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
-import java.text.ParseException;
-import java.text.SimpleDateFormat;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Date;
 import java.util.List;
@@ -30,9 +29,12 @@ import java.util.stream.Collectors;
 public class UserServiceImpl implements UserService {
     private UserRepository userRepository;
     private ModelMapper mapper;
-    public UserServiceImpl(UserRepository userRepository, ModelMapper mapper) {
+
+    private AvgRateRepository rateRepository;
+    public UserServiceImpl(UserRepository userRepository, ModelMapper mapper, AvgRateRepository rateRepository) {
         this.userRepository = userRepository;
         this.mapper = mapper;
+        this.rateRepository = rateRepository;
     }
     @Autowired
     private PasswordEncoder passwordEncoder;
@@ -62,7 +64,7 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
-    public String updateUser(String phone, UserDTO userDTO) {
+    public int updateUser(String phone, UserDTO userDTO) {
         try{
             User user = userRepository.findByPhone(phone).
                     orElseThrow(() -> new UsernameNotFoundException("User not found with phone: " + phone));
@@ -75,60 +77,101 @@ public class UserServiceImpl implements UserService {
             user.setDistrict(userDTO.getDistrict());
             user.setProvince(userDTO.getProvince());
 
-            Date date = new SimpleDateFormat("yyyy-MM-dd").parse(userDTO.getDob());
+            Date date = userDTO.getDob();
+//            if(date != null){
+//            SimpleDateFormat formater = new SimpleDateFormat("yyyy-MM-dd");
+//            Date date = formater.parse(dob);
+//            final Date date = new Date();
+//                final String ISO_FORMAT = "yyyy-MM-dd'T'HH:mm:ss.SSS zzz";
+//                final SimpleDateFormat sdf = new SimpleDateFormat(ISO_FORMAT);
+//                final TimeZone utc = TimeZone.getTimeZone("UTC");
+//                sdf.setTimeZone(utc);
+//                date = sdf.parse(dob);
+//            System.out.println(sdf.format(date));
+//            }
+
 
             user.setDob(date);
             user.setDescription(userDTO.getDescription());
             user.setEmail(userDTO.getEmail());
+            user.setFacebookLink(userDTO.getFacebookLink());
+            user.setZaloLink(userDTO.getZaloLink());
 
             userRepository.save(user);
-            return "Chỉnh sửa thông tin cá nhân thành công!";
+            return 1;
         }catch (Exception e) {
-            return "Chỉnh sửa thông tin cá nhân thất bại!";
+            return 0;
         }
     }
 
     @Override
-    public List<UserDTO> getAllBrokerPaging(int pageNo, int pageSize) {
+    public List<UserDTO> getAllBrokerPaging(int pageNo, int pageSize, int userId) {
         Pageable pageable = PageRequest.of(pageNo, pageSize);
-        Page<User> listBroker = userRepository.getAllBrokerPaging(pageable);
+        Page<User> listBroker = userRepository.getAllBrokerPaging(userId, pageable);
         List<UserDTO> list = listBroker.stream().map(user -> mapToDTO(user)).collect(Collectors.toList());
 
         return list;
     }
 
     @Override
-    public List<UserDTO> getAllBroker() {
-        List<User> listBroker = userRepository.getAllBroker();
+    public List<UserDTO> getAllBroker(String fullName, String ward, String district, String province, List<String> propertyType) {
+        String check = null;
+        List<Integer> listType = new ArrayList<>();
+        if(propertyType != null){
+            for (String s : propertyType) {
+                listType.add(Integer.parseInt(s));
+            }
+            check = "";
+        }
+
+        List<User> listBroker = userRepository.searchBroker(fullName, ward, district, province, check, listType);
         List<UserDTO> list = listBroker.stream().map(user -> mapToDTO(user)).collect(Collectors.toList());
 
         return list;
     }
 
     @Override
-    public List<UserDTO> searchBroker(String fullName, String ward, String district, String province, String address, int pageNo, int pageSize, String option) {
+    public List<UserDTO> searchBroker(String fullName, String ward, String district, String province, List<String> propertyType, int pageNo, int pageSize, String option) {
         int sortOption = Integer.parseInt(option);
         Pageable pageable = PageRequest.of(pageNo, pageSize);
+
+        String check = null;
+        List<Integer> listType = new ArrayList<>();
+        if(propertyType != null){
+            for (String s : propertyType) {
+                listType.add(Integer.parseInt(s));
+            }
+            check = "";
+        }
+
+
         Page<User> userPage = null;
         //star rate desc
         if(sortOption == 0){
-            userPage = userRepository.searchBrokerByStarRateDesc(fullName, ward, district, province, address, pageable);
+            userPage = userRepository.searchBrokerByStarRateDesc(fullName, ward, district, province, check, listType, pageable);
         }
-        //star rate asc
-        if(sortOption == 1){
-            userPage = userRepository.searchBrokerByStarRateAsc(fullName, ward, district, province, address, pageable);
-        }
-        //name A-Z
-        if(sortOption == 2){
-            userPage = userRepository.searchBrokerByNameAsc(fullName, ward, district, province, address, pageable);
-        }
-        //name Z-A
-        if(sortOption == 3){
-            userPage = userRepository.searchBrokerByNameDesc(fullName, ward, district, province, address, pageable);
-        }
+        //giao dich thanh cong desc
+//        if(sortOption == 1){
+//            userPage = userRepository.searchBrokerByStarRateAsc(fullName, ward, district, province, address, pageable);
+//        }
+
         List<User> listUser = userPage.getContent();
-        List<UserDTO> listUserDto = listUser.stream().map(user -> mapToDTO(user)).collect(Collectors.toList());
-        return listUserDto;
+
+        List<UserDTO> list = new ArrayList<>();
+        UserDTO userDTO = null;
+        AvgRate avgRate = null;
+        for (User user : listUser) {
+            userDTO = mapToDTO(user);
+            avgRate = rateRepository.getAvgRateByUserIdAndRoleId(user.getId(), 3);
+            if(avgRate != null){
+                userDTO.setAvgRate(avgRate.getAvgRate());
+            }else{
+                userDTO.setAvgRate(0);
+            }
+
+            list.add(userDTO);
+        }
+        return list;
 
     }
 

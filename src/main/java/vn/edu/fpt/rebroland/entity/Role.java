@@ -3,8 +3,9 @@ package vn.edu.fpt.rebroland.entity;
 import lombok.Getter;
 import lombok.Setter;
 
-import javax.persistence.*;
-import java.util.Set;
+import javax.persistence.Entity;
+import javax.persistence.Id;
+import javax.persistence.Table;
 
 @Entity
 @Getter

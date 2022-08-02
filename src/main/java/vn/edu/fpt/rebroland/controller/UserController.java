@@ -2,13 +2,11 @@ package vn.edu.fpt.rebroland.controller;
 
 import vn.edu.fpt.rebroland.entity.Role;
 import vn.edu.fpt.rebroland.entity.User;
-import vn.edu.fpt.rebroland.exception.ResourceNotFoundException;
 import vn.edu.fpt.rebroland.payload.*;
 import vn.edu.fpt.rebroland.repository.RoleRepository;
 import vn.edu.fpt.rebroland.repository.UserRepository;
 import vn.edu.fpt.rebroland.security.JwtTokenProvider;
 import vn.edu.fpt.rebroland.service.*;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.twilio.Twilio;
 import com.twilio.rest.api.v2010.account.Message;
 import com.twilio.type.PhoneNumber;
@@ -24,10 +22,7 @@ import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.web.bind.annotation.*;
-import org.springframework.web.multipart.MultipartFile;
 
-import javax.persistence.Entity;
-import javax.persistence.criteria.CriteriaBuilder;
 import javax.validation.Valid;
 import java.util.*;
 
@@ -47,6 +42,7 @@ public class UserController {
     private UserFollowPostService followPostService;
 
     private RoleRepository roleRepository;
+
 
     public UserController(UserService userService, ImageService imageService, ModelMapper mapper, PostService postService, UserFollowPostService followPostService,
                           RoleRepository roleRepository) {
@@ -269,26 +265,33 @@ public class UserController {
 
     //list broker
     @GetMapping("/broker")
-    public ResponseEntity<?> getAllBroker(@RequestParam(name = "pageNo", defaultValue = "0") String pageNo){
+    public ResponseEntity<?> getAllBroker(@RequestParam(name = "keyword", required = false) String fullName,
+                                          @RequestParam(name = "ward", required = false) String ward,
+                                          @RequestParam(name = "district", required = false) String district,
+                                          @RequestParam(name = "province", required = false) String province,
+                                          @RequestParam(name = "propertyType", required = false) List<String> listPropertyType,
+                                          @RequestParam(name = "pageNo", defaultValue = "0") String pageNo,
+                                          @RequestParam(name = "sortValue", defaultValue = "0") String sortValue){
         int pageNumber = Integer.parseInt(pageNo);
         int pageSize = 8;
         try{
-            List<UserDTO> listBroker = userService.getAllBrokerPaging(pageNumber, pageSize);
+//            List<UserDTO> listBroker = userService.getAllBrokerPaging(pageNumber, pageSize, user.getId());
+            List<UserDTO> listBroker = userService.searchBroker(fullName, ward, district, province, listPropertyType, pageNumber, pageSize, sortValue);
             if(listBroker == null){
                 return new ResponseEntity<>("Đã xảy ra lỗi !", HttpStatus.BAD_REQUEST);
             }
-            List<UserDTO> listAllBroker = userService.getAllBroker();
+            List<UserDTO> listAllBroker = userService.getAllBroker(fullName, ward, district, province, listPropertyType);
             int totalResult = listAllBroker.size();
 
             int totalPage = 0;
-            if(listBroker.size() % pageSize == 0){
-                totalPage = listBroker.size() / pageSize;
+            if(listAllBroker.size() % pageSize == 0){
+                totalPage = listAllBroker.size() / pageSize;
             }else{
-                totalPage = (listBroker.size() / pageSize) + 1;
+                totalPage = (listAllBroker.size() / pageSize) + 1;
             }
-            if(totalPage < pageNumber + 1){
-                return new ResponseEntity<>("Không tìm thấy kết quả phù hợp!", HttpStatus.BAD_REQUEST);
-            }
+//            if(totalPage < pageNumber + 1){
+//                return new ResponseEntity<>("Không tìm thấy kết quả phù hợp!", HttpStatus.OK);
+//            }
             Map<String, Object> map = new HashMap<>();
             map.put("list", listBroker);
             map.put("pageNo", pageNumber+1);
@@ -302,23 +305,30 @@ public class UserController {
 
     }
 
-    @GetMapping("/user-detail/{userId}")
-    public ResponseEntity<?> getDetailUser(@PathVariable(name = "userId") String userId,
-                                           @RequestParam(name = "propertyType", required = false) String type,
-                                           @RequestParam(name = "pageNo", defaultValue = "0") String pageNo){
-        int id = Integer.parseInt(userId);
-        User user = userRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("User", "id", id));
-        int pageNumber = Integer.parseInt(pageNo);
-        int pageSize = 8;
-        SearchResponse listPost = postService.getPostByUserId(pageNumber, pageSize, id, type);
-
-        UserDTO userDTO = mapper.map(user, UserDTO.class);
-        Map<String, Object> map = new HashMap<>();
-        map.put("user", userDTO);
-        map.put("listPost", listPost);
-        return new ResponseEntity<>(map, HttpStatus.OK);
-    }
+//    @GetMapping("/user-detail/{userId}")
+//    public ResponseEntity<?> getDetailUser(@PathVariable(name = "userId") String userId,
+//                                           @RequestParam(name = "propertyType", required = false) String type,
+//                                           @RequestParam(name = "pageNo", defaultValue = "0") String pageNo){
+//        int id = Integer.parseInt(userId);
+//        User user = userRepository.findById(id)
+//                .orElseThrow(() -> new ResourceNotFoundException("User", "id", id));
+//        int pageNumber = Integer.parseInt(pageNo);
+//        int pageSize = 8;
+//        SearchResponse listPost = postService.getPostByUserId(pageNumber, pageSize, id, type);
+//
+//        UserDTO userDTO = mapper.map(user, UserDTO.class);
+//
+//        AvgRate avgRate = rateRepository.getAvgRateByUserIdAndRoleId(user.getId(), user.getCurrentRole());
+//        if(avgRate != null){
+//            userDTO.setAvgRate(avgRate.getAvgRate());
+//        }else{
+//            userDTO.setAvgRate(0);
+//        }
+//        Map<String, Object> map = new HashMap<>();
+//        map.put("user", userDTO);
+//        map.put("listPost", listPost);
+//        return new ResponseEntity<>(map, HttpStatus.OK);
+//    }
 
     @PutMapping()
     public ResponseEntity<String> updateUser(@RequestHeader(name = "Authorization") String token,
@@ -326,25 +336,29 @@ public class UserController {
         String[] parts = token.split("\\.");
         JSONObject payload = new JSONObject(decode(parts[1]));
         String phone = payload.getString("sub");
-        String updateStatus = userService.updateUser(phone, userDTO);
-        return new ResponseEntity<>(updateStatus, HttpStatus.OK);
+        int updateStatus = userService.updateUser(phone, userDTO);
+        if(updateStatus == 1){
+            return new ResponseEntity<>("Chỉnh sửa thông tin cá nhân thành công!", HttpStatus.OK);
+        }else{
+            return new ResponseEntity<>("Chỉnh sửa thông tin cá nhân thất bại!", HttpStatus.BAD_REQUEST);
+        }
     }
 
     //search broker
-    @GetMapping("/search")
-    public ResponseEntity<?> searchBroker(@RequestParam(name = "name", required = false) String fullName,
-                                          @RequestParam(name = "ward", required = false) String ward,
-                                          @RequestParam(name = "district", required = false) String district,
-                                          @RequestParam(name = "province", required = false) String province,
-                                          @RequestParam(name = "address", required = false) String address,
-                                          @RequestParam(name = "pageNo", defaultValue = "0") String pageNo,
-                                          @RequestParam(name = "sortValue", defaultValue = "0") String sortValue){
-        int pageNumber = Integer.parseInt(pageNo);
-        int pageSize = 5;
-        List<UserDTO> listUserDto = userService.searchBroker(fullName, ward, district, province, address, pageNumber, pageSize, sortValue);
-
-        return new ResponseEntity<>(listUserDto, HttpStatus.OK);
-    }
+//    @GetMapping("/search")
+//    public ResponseEntity<?> searchBroker(@RequestParam(name = "name", required = false) String fullName,
+//                                          @RequestParam(name = "ward", required = false) String ward,
+//                                          @RequestParam(name = "district", required = false) String district,
+//                                          @RequestParam(name = "province", required = false) String province,
+//                                          @RequestParam(name = "address", required = false) String address,
+//                                          @RequestParam(name = "pageNo", defaultValue = "0") String pageNo,
+//                                          @RequestParam(name = "sortValue", defaultValue = "0") String sortValue){
+//        int pageNumber = Integer.parseInt(pageNo);
+//        int pageSize = 5;
+//        List<UserDTO> listUserDto = userService.searchBroker(fullName, ward, district, province, address, pageNumber, pageSize, sortValue);
+//
+//        return new ResponseEntity<>(listUserDto, HttpStatus.OK);
+//    }
 
     //change password
     @PutMapping("/change-password")

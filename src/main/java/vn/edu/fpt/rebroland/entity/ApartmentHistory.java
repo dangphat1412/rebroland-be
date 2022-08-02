@@ -5,7 +5,6 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import javax.persistence.*;
-import java.util.Date;
 
 @Data
 @AllArgsConstructor
@@ -23,5 +22,6 @@ public class ApartmentHistory {
     private String phone;
     private String buildingName;
     private String roomNumber;
+    private int plotNumber;
 
 }

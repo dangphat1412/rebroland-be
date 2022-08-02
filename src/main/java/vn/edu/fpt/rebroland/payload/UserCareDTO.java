@@ -4,7 +4,6 @@ import lombok.Data;
 
 import javax.validation.constraints.*;
 import java.sql.Date;
-import java.util.Set;
 
 @Data
 public class UserCareDTO {
