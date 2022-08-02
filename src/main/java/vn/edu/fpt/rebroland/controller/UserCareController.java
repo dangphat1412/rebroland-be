@@ -6,6 +6,9 @@ import vn.edu.fpt.rebroland.payload.*;
 import vn.edu.fpt.rebroland.repository.UserRepository;
 import vn.edu.fpt.rebroland.service.UserCareDetailService;
 import vn.edu.fpt.rebroland.service.UserCareService;
+import com.twilio.Twilio;
+import com.twilio.rest.api.v2010.account.Message;
+import com.twilio.type.PhoneNumber;
 import org.cloudinary.json.JSONObject;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -228,6 +231,14 @@ public class UserCareController {
         } else {
             return new ResponseEntity<>("You need to change customer role!", HttpStatus.BAD_REQUEST);
         }
+    }
+
+    public void sendSMS(String phone, String token) {
+        Twilio.init(System.getenv("TWILIO_ACCOUNT_SID"),
+                System.getenv("TWILIO_AUTH_TOKEN"));
+
+        Message.creator(new PhoneNumber(phone.replaceFirst("0","+84")),
+                new PhoneNumber("+19844647230"), token).create();
     }
 
 }

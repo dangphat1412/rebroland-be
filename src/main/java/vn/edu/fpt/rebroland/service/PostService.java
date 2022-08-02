@@ -14,6 +14,8 @@ public interface PostService {
 
     SearchResponse getPostByUserId(int pageNo, int pageSize, int userId, String propertyId, String sortValue);
 
+    SearchResponse getAllPostByUserId(int pageNo, int pageSize, int userId, String propertyId, String sortValue);
+
     SearchResponse getPostByUserId(int pageNo, int pageSize, int userId, String propertyId);
 
     SearchResponse getAllPostForBroker(int pageNo, int pageSize, String option);

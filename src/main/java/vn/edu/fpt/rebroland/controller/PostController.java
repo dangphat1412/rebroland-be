@@ -116,7 +116,7 @@ public class PostController {
         java.sql.Date date = new java.sql.Date(millis);
         User user = userRepository.findById(userId).orElseThrow(() -> new ResourceNotFoundException("User", "id", userId));
         Post post = postRepository.findPostByPostId(postId);
-        if (post.isAllowDerivative()) {
+        if(post.isAllowDerivative() && post.getOriginalPost() == null){
             if (user.getCurrentRole() == 3) {
                 if (user.getId() != post.getUser().getId()) {
                     PostDTO postDTO = postService.setDataToPostDTO(generalPostDTO, userId, date);
@@ -146,7 +146,7 @@ public class PostController {
             } else {
                 return new ResponseEntity<>("You need change to be broker", HttpStatus.BAD_REQUEST);
             }
-        } else {
+        }else{
             return new ResponseEntity<>("Bài viết này không cho phép tạo bài phái sinh! ", HttpStatus.CREATED);
         }
 
@@ -164,6 +164,9 @@ public class PostController {
         Post post = postRepository.findPostByPostId(postId);
         if(post == null){
             return new ResponseEntity<>("Bài viết không tồn tại!", HttpStatus.BAD_REQUEST);
+        }
+        if(post.getOriginalPost() != null){
+            return new ResponseEntity<>("Bài viết là bài phái sinh!", HttpStatus.BAD_REQUEST);
         }
         if(userId == post.getUser().getId()){
             if(post.isAllowDerivative()){
@@ -197,10 +200,10 @@ public class PostController {
 //            startDate = "20" + generalPostDTO.getBarcode().substring(7, 9);
 //        }
         if (user.getCurrentRole() == 2) {
-            if (generalPostDTO.getBarcode().length() == 14) {
+            if(generalPostDTO.getBarcode().length() == 14){
                 return new ResponseEntity<>("Độ dài từ 13 hoặc 15 ký tự.", HttpStatus.BAD_REQUEST);
 
-            } else {
+            }else{
                 PostDTO postDTO = postService.setDataToPostDTO(generalPostDTO, userId, date);
                 PostDTO newPostDTO = postService.createPost(postDTO, userId, generalPostDTO.getDirectionId(), generalPostDTO.getPropertyTypeId(),
                         generalPostDTO.getUnitPriceId(), 2, generalPostDTO.getLongevityId());
@@ -543,7 +546,7 @@ public class PostController {
         int pageNumber = Integer.parseInt(pageNo);
         int pageSize = 6;
 
-        SearchResponse searchResponse = postService.getPostByUserId(pageNumber, pageSize, userId, propertyTypeId, sortValue);
+        SearchResponse searchResponse = postService.getAllPostByUserId(pageNumber, pageSize, userId, propertyTypeId, sortValue);
         User user = userRepository.findById(userId).orElseThrow(() -> new ResourceNotFoundException("User", "id", userId));
         UserDTO userDTO = mapper.map(user, UserDTO.class);
 
@@ -600,6 +603,7 @@ public class PostController {
         } else {
             return new ResponseEntity<>("Người dùng không phải là broker !", HttpStatus.BAD_REQUEST);
         }
+
     }
 
 //    @GetMapping("/broker/original/search")

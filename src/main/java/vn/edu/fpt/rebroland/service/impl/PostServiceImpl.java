@@ -187,6 +187,96 @@ public class PostServiceImpl implements PostService {
     }
 
     @Override
+    public SearchResponse getAllPostByUserId(int pageNo, int pageSize, int userId, String propertyId, String option) {
+        String check = null;
+        int typeId = 0;
+        if (propertyId != null) {
+            check = "";
+            typeId = Integer.parseInt(propertyId);
+        }
+
+        int sortOption = Integer.parseInt(option);
+        String sortOpt = "";
+        String sortDir = "";
+        Sort sort = null;
+        Pageable pageable = null;
+        Page<Post> listPosts = null;
+        List<Post> list = null;
+        List<PostDTO> listDto = null;
+        switch (sortOption){
+            case 0:
+                sortOpt = "start_date";
+                sortDir = "desc";
+                sort = sortDir.equalsIgnoreCase(Sort.Direction.ASC.name())?
+                        Sort.by(sortOpt).ascending(): Sort.by(sortOpt).descending();
+                pageable = PageRequest.of(pageNo, pageSize, sort);
+                listPosts = postRepository.getAllPostByUserId(userId, typeId, check, pageable);
+                list = listPosts.getContent();
+                listDto = list.stream().map(post -> mapToDTO(post)).collect(Collectors.toList());
+                break;
+            case 1:
+                pageable = PageRequest.of(pageNo, pageSize);
+                listPosts = postRepository.getAllPostByUserIdOrderByPriceAsc(userId, typeId, check, pageable);
+                list = listPosts.getContent();
+                listDto = list.stream().map(post -> mapToDTO(post)).collect(Collectors.toList());
+
+                break;
+            case 2:
+                pageable = PageRequest.of(pageNo, pageSize);
+                listPosts = postRepository.getAllPostByUserIdOrderByPriceDesc(userId, typeId, check, pageable);
+                list = listPosts.getContent();
+                listDto = list.stream().map(post -> mapToDTO(post)).collect(Collectors.toList());
+                break;
+            case 3:
+                //giá trên m2 từ thấp đến cao
+                pageable = PageRequest.of(pageNo, pageSize);
+                listPosts = postRepository.getAllPostByUserIdOrderByPricePerSquareAsc(userId, typeId, check, pageable);
+                list = listPosts.getContent();
+                listDto = list.stream().map(post -> mapToDTO(post)).collect(Collectors.toList());
+                break;
+            case 4:
+                pageable = PageRequest.of(pageNo, pageSize);
+                listPosts = postRepository.getAllPostByUserIdOrderByPricePerSquareDesc(userId, typeId, check, pageable);
+                list = listPosts.getContent();
+                listDto = list.stream().map(post -> mapToDTO(post)).collect(Collectors.toList());
+                break;
+            case 5:
+                sortOpt = "area";
+                sortDir = "asc";
+                sort = sortDir.equalsIgnoreCase(Sort.Direction.ASC.name())?
+                        Sort.by(sortOpt).ascending(): Sort.by(sortOpt).descending();
+                pageable = PageRequest.of(pageNo, pageSize, sort);
+                listPosts = postRepository.getAllPostByUserId(userId, typeId, check, pageable);
+                list = listPosts.getContent();
+                listDto = list.stream().map(post -> mapToDTO(post)).collect(Collectors.toList());
+                break;
+            case 6:
+                sortOpt = "area";
+                sortDir = "desc";
+                sort = sortDir.equalsIgnoreCase(Sort.Direction.ASC.name())?
+                        Sort.by(sortOpt).ascending(): Sort.by(sortOpt).descending();
+                pageable = PageRequest.of(pageNo, pageSize, sort);
+                listPosts = postRepository.getAllPostByUserId(userId, typeId, check, pageable);
+                list = listPosts.getContent();
+                listDto = list.stream().map(post -> mapToDTO(post)).collect(Collectors.toList());
+                break;
+        }
+
+        List<SearchDTO> listSearchDto = new ArrayList<>();
+        for (PostDTO postDto: listDto) {
+            SearchDTO dto = new SearchDTO();
+            setDataToSearchDTO(dto, postDto);
+            listSearchDto.add(dto);
+        }
+        SearchResponse searchResponse = new SearchResponse();
+        searchResponse.setPosts(listSearchDto);
+        searchResponse.setPageNo(pageNo+1);
+        searchResponse.setTotalPages(listPosts.getTotalPages());
+        searchResponse.setTotalResult(listPosts.getTotalElements());
+        return searchResponse;
+    }
+
+    @Override
     public SearchResponse getPostByUserId(int pageNo, int pageSize, int userId, String propertyId) {
         Pageable pageable = PageRequest.of(pageNo, pageSize);
         String check = null;

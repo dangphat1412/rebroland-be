@@ -1,5 +1,6 @@
 package vn.edu.fpt.rebroland.controller;
 
+import vn.edu.fpt.rebroland.payload.TextMessageDTO;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -8,7 +9,6 @@ import org.springframework.messaging.handler.annotation.Payload;
 import org.springframework.messaging.handler.annotation.SendTo;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.web.bind.annotation.*;
-import vn.edu.fpt.rebroland.payload.TextMessageDTO;
 
 @RestController
 @CrossOrigin(origins = "https://rebroland-frontend.vercel.app")
