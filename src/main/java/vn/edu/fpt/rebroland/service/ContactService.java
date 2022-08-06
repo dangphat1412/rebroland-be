@@ -4,7 +4,7 @@ import vn.edu.fpt.rebroland.payload.ContactDTO;
 import vn.edu.fpt.rebroland.payload.ContactResponse;
 
 public interface ContactService {
-    ContactDTO createContact(ContactDTO contactDTO, int userId, int postId);
+    ContactDTO createContact(ContactDTO contactDTO, int userId, int postId, int userRequestId);
 
     void deleteContact(int contactId);
 

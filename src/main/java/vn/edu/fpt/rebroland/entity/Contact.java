@@ -18,21 +18,14 @@ public class Contact {
     @Column(name = "contact_id", nullable = false)
     private int contactId;
 
-    private int userRole;
-
-    @Column(length = 50,nullable = false)
-    private String fullName;
-    @Column(length = 10,nullable = false)
-    private String phone;
-
     private Date startDate;
-    @Column(length = 50)
-    private String email;
 
     @Column(length = 200,nullable = false)
     private String content;
 
     private boolean unread;
+
+    private int userRequestId;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "post_id")

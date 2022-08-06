@@ -54,7 +54,7 @@ public class UserFollowPostServiceImpl implements UserFollowPostService {
 
         Post post = postRepository.findPostByPostId(postId);
 
-        if(post == null){
+        if(post == null || post.getStatus().getId() == 2){
             return HttpStatus.BAD_REQUEST;
         }
 

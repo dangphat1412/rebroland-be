@@ -12,7 +12,6 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 
-import javax.persistence.EntityManager;
 import java.sql.Date;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
@@ -23,10 +22,7 @@ import java.util.stream.Collectors;
 
 @Service
 public class PostServiceImpl implements PostService {
-
-    private EntityManager entityManager;
     private PostRepository postRepository;
-
     private UserRepository userRepository;
     private DirectionRepository directionRepository;
     private PropertyTypeRepository propertyTypeRepository;
@@ -46,8 +42,8 @@ public class PostServiceImpl implements PostService {
                            StatusRepository statusRepository, LongevityRepository longevityRepository, ModelMapper mapper,
                            ResidentialHouseRepository houseRepository, ResidentialHouseHistoryRepository houseHistoryRepository,
                            ApartmentRepository apartmentRepository, ApartmentHistoryRepository apartmentHistoryRepository,
-                           ResidentialLandRepository landRepository, ResidentialLandHistoryRepository landHistoryRepository,
-                           EntityManager entityManager) {
+                           ResidentialLandRepository landRepository, ResidentialLandHistoryRepository landHistoryRepository
+                           ) {
 
         this.postRepository = postRepository;
         this.userRepository = userRepository;
@@ -63,7 +59,6 @@ public class PostServiceImpl implements PostService {
         this.apartmentHistoryRepository = apartmentHistoryRepository;
         this.landRepository = landRepository;
         this.landHistoryRepository = landHistoryRepository;
-        this.entityManager = entityManager;
     }
 
     @Override
@@ -387,6 +382,26 @@ public class PostServiceImpl implements PostService {
     }
 
     @Override
+    public SearchResponse getAllPostByUserId(int pageNo, int pageSize, int userId) {
+        Pageable pageable = PageRequest.of(pageNo, pageSize);
+        Page<Post> pagePost = postRepository.getAllPostByUserIdPaging(userId, pageable);
+
+        List<PostDTO> listDto = pagePost.getContent().stream().map(post -> mapToDTO(post)).collect(Collectors.toList());;
+        List<SearchDTO> listSearchDto = new ArrayList<>();
+        for (PostDTO postDto: listDto) {
+            SearchDTO dto = new SearchDTO();
+            setDataToSearchDTO(dto, postDto);
+            listSearchDto.add(dto);
+        }
+        SearchResponse searchResponse = new SearchResponse();
+        searchResponse.setPosts(listSearchDto);
+        searchResponse.setPageNo(pageNo+1);
+        searchResponse.setTotalPages(pagePost.getTotalPages());
+        searchResponse.setTotalResult(pagePost.getTotalElements());
+        return searchResponse;
+    }
+
+    @Override
     public List<BrokerInfoOfPostDTO> getDerivativePostOfOriginalPost(int originalPostId) {
         List<Post> listPost = postRepository.getDerivativePostOfOriginalPost(originalPostId);
         return listPost.stream().map(post -> mapper.map(post, BrokerInfoOfPostDTO.class)).collect(Collectors.toList());
@@ -699,9 +714,9 @@ public class PostServiceImpl implements PostService {
         post.setDescription(postDTO.getDescription());
         post.setArea(postDTO.getArea());
         post.setCertification(postDTO.isCertification());
-        long millis = System.currentTimeMillis();
-        Date date = new Date(millis);
-        post.setStartDate(date);
+//        long millis = System.currentTimeMillis();
+//        java.sql.Date date = new java.sql.Date(millis);
+//        post.setStartDate(date);
         // unit name "thoa thuan" price null
         if (post.getUnitPrice().getId() == 3 || postDTO.getPrice() < 0) {
             post.setPrice(null);
@@ -732,15 +747,9 @@ public class PostServiceImpl implements PostService {
 
     }
 
-
-
     @Override
     public SearchResponse getAllPost(int pageNo, int pageSize) {
-        String sortByStartDate = "startDate";
-        String sortDir = "desc";
-        Sort sortStartDate = sortDir.equalsIgnoreCase(Sort.Direction.ASC.name())?
-                Sort.by(sortByStartDate).ascending(): Sort.by(sortByStartDate).descending();
-        Pageable pageable = PageRequest.of(pageNo, pageSize, sortStartDate);
+        Pageable pageable = PageRequest.of(pageNo, pageSize);
         Page<Post> posts = postRepository.findAll(pageable);
         List<Post> listPosts = posts.getContent();
         List<PostDTO> list = listPosts.stream().map(post -> mapToDTO(post)).collect(Collectors.toList());
@@ -755,6 +764,30 @@ public class PostServiceImpl implements PostService {
         searchResponse.setPosts(listDto);
         searchResponse.setPageNo(pageNo+1);
         searchResponse.setTotalPages(posts.getTotalPages());
+        searchResponse.setTotalResult(posts.getTotalElements());
+        return searchResponse;
+    }
+
+
+    @Override
+    public SearchResponse getAllPost(int pageNo, int pageSize, String keyword, String sortValue) {
+        int sortOption = Integer.parseInt(sortValue);
+        Pageable pageable = PageRequest.of(pageNo, pageSize);
+        Page<Post> posts = postRepository.findAll(pageable, keyword, sortOption);
+        List<Post> listPosts = posts.getContent();
+        List<PostDTO> list = listPosts.stream().map(post -> mapToDTO(post)).collect(Collectors.toList());
+
+        List<SearchDTO> listDto = new ArrayList<>();
+        for (PostDTO postDto: list) {
+            SearchDTO dto = new SearchDTO();
+            setDataToSearchDTO(dto, postDto);
+            listDto.add(dto);
+        }
+        SearchResponse searchResponse = new SearchResponse();
+        searchResponse.setPosts(listDto);
+        searchResponse.setPageNo(pageNo+1);
+        searchResponse.setTotalPages(posts.getTotalPages());
+        searchResponse.setTotalResult(posts.getTotalElements());
         return searchResponse;
     }
 
@@ -1242,6 +1275,29 @@ public class PostServiceImpl implements PostService {
 
     }
 
+    @Override
+    public boolean changeStatusOfPost(int postId) {
+        Post post = postRepository.findPostByPostId(postId);
+
+        if(post != null){
+            Status status = new Status();
+            //khong phai bai da hoan thanh giao dich
+            if(post.getStatus().getId() != 3){
+                if(post.getStatus().getId() == 1){
+                    status.setId(2);
+                }else{
+                    status.setId(1);
+                }
+                post.setStatus(status);
+                postRepository.save(post);
+                return true;
+            }else{
+                return false;
+            }
+        }else {
+            return false;
+        }
+    }
 
 
 }

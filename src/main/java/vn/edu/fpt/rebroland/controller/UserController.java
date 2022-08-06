@@ -29,7 +29,7 @@ import java.util.*;
 
 @RestController
 @RequestMapping("/api/users")
-@CrossOrigin(origins = "https://rebroland-frontend.vercel.app")
+@CrossOrigin(origins = "https://rebroland-frontend.vercel.app/")
 public class UserController {
     private UserService userService;
 
@@ -72,19 +72,22 @@ public class UserController {
         try {
             User user = userRepository.findByPhone(loginDTO.getPhone()).
                     orElseThrow(() -> new UsernameNotFoundException("Không tìm được người dùng có số điện thoại là: " + loginDTO.getPhone()));
-
+//            Role role = roleRepository.findByName("ADMIN").get();
             if(user.isBlock() == false){
                 Authentication authentication = authenticationManager.authenticate(new UsernamePasswordAuthenticationToken(
                         loginDTO.getPhone(), loginDTO.getPassword()
                 ));
-
                 SecurityContextHolder.getContext().setAuthentication(authentication);
-
-
                 String token = tokenProvider.generateToken(authentication);
+//                boolean isAdmin = true;
+//                if(user.getRoles().contains(role)){
+//                    return new ResponseEntity<>(new JWTAuthResponse(token, isAdmin) , HttpStatus.OK);
+//                }else{
+//                    return new ResponseEntity<>(new JWTAuthResponse(token), HttpStatus.OK);
+//                }
                 return new ResponseEntity<>(new JWTAuthResponse(token), HttpStatus.OK);
             }else{
-                return new ResponseEntity<>("Số điện thoại đã bị chặn !", HttpStatus.OK);
+                return new ResponseEntity<>("Số điện thoại đã bị chặn !", HttpStatus.BAD_REQUEST);
             }
         }catch (AuthenticationException e){
             return new ResponseEntity<>("Số điện thoại hoặc mật khẩu không đúng!", HttpStatus.BAD_REQUEST);
@@ -372,7 +375,7 @@ public class UserController {
         if(userService.changePassword(user, changePasswordDTO)){
             return new ResponseEntity<>("Đổi mật khẩu thành công!", HttpStatus.CREATED);
         }else{
-            return new ResponseEntity<>("Đổi mật khẩu thất bại!", HttpStatus.BAD_REQUEST);
+            return new ResponseEntity<>("Mật khẩu cũ không đúng!", HttpStatus.BAD_REQUEST);
         }
 
     }

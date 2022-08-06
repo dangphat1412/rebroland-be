@@ -52,7 +52,11 @@ public class SearchDTO {
 
     private UnitPriceDTO unitPrice;
 
-
     private UserDTO user;
 
+    private int numberOfUserReport;
+
+    private int reportStatus;
+
+    private int reportId;
 }

@@ -16,25 +16,6 @@ import java.util.Set;
 @NoArgsConstructor
 @Entity
 @Table(name = "posts")
-//@SqlResultSetMapping(
-//        name="SearchPostResult",
-//        entities={
-//                @EntityResult(
-//                        entityClass = Post.class,
-//                        fields={
-//                                //các trường cần search
-//                                @FieldResult(name="id",column="post_id"),
-//                                @FieldResult(name="title", column="title"),
-//                                @FieldResult(name="description",column="description"),
-//                                @FieldResult(name="startDate", column="start_date"),
-//                                @FieldResult(name="area",column="area"),
-//                                @FieldResult(name="price", column="price"),
-//                                @FieldResult(name="ward",column="ward"),
-//                                @FieldResult(name="district", column="district"),
-//                                @FieldResult(name="province",column="province"),
-//                                @FieldResult(name="address", column="address")
-//                        })})
-//tạo 1 constructor có các trường cần search
 public class Post {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)

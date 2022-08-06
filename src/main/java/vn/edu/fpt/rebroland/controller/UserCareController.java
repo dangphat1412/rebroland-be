@@ -22,7 +22,7 @@ import java.util.*;
 
 @RestController
 @RequestMapping("/api/user-care")
-@CrossOrigin(origins = "https://rebroland-frontend.vercel.app")
+@CrossOrigin(origins = "https://rebroland-frontend.vercel.app/")
 public class UserCareController {
     private UserCareService userCareService;
 
@@ -81,8 +81,6 @@ public class UserCareController {
             User user = userRepository.findById(userId).orElseThrow(() -> new ResourceNotFoundException("Broker", "id", userId));
             String appointmentDate = null;
             SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
-
-
             if (user.getCurrentRole() == 3) {
                 if (userCareDetailDTO.getDateAppointment() != null && userCareDetailDTO.getTimeAppointment() != null && userCareDetailDTO.getAlertTime() != null) {
                     appointmentDate = userCareDetailDTO.getDateAppointment() + " " + userCareDetailDTO.getTimeAppointment() + ":00";
@@ -92,6 +90,7 @@ public class UserCareController {
                         return new ResponseEntity<>("you need change your appointmentTime !", HttpStatus.BAD_REQUEST);
                     } else {
                         UserCareDetailDTO userCareDetailDTO1 = userCareDetailService.createUserCareDetail(careId, userCareDetailDTO, date1);
+                        sendRemindMessage(user.getPhone(), userCareDetailDTO.getDateAppointment(), userCareDetailDTO.getTimeAppointment(), userCareDetailDTO.getAlertTime());
                         return new ResponseEntity<>(userCareDetailDTO1, HttpStatus.CREATED);
                     }
                 }
@@ -102,14 +101,42 @@ public class UserCareController {
 
             } else {
                 return new ResponseEntity<>("you need change to broker !", HttpStatus.BAD_REQUEST);
-
             }
         } catch (Exception e) {
             e.printStackTrace();
         }
         return new ResponseEntity<>("Create fail !", HttpStatus.BAD_REQUEST);
-
     }
+
+    public void sendRemindMessage(String phone, String dateAppointment, String timeAppointment, int alertTime){
+        try{
+            SimpleDateFormat formater = new SimpleDateFormat("yyyy-MM-dd HH:mm");
+            String s = dateAppointment + " " + timeAppointment;
+            Date appointmentDate = formater.parse(s);
+            Calendar cal = Calendar.getInstance();
+            cal.setTime(appointmentDate);
+            cal.add(Calendar.SECOND, - alertTime);
+            Date dateAlert = cal.getTime();
+
+            String message = "Hôm nay bạn có hẹn vào lúc " + appointmentDate;
+
+            setTimer(dateAlert, phone, message);
+        }catch (Exception e){
+            e.printStackTrace();
+        }
+    }
+
+    public void setTimer(Date dateAlert, String phone, String message){
+        TimerTask timerTask = new TimerTask() {
+            @Override
+            public void run() {
+                sendSMS(phone,message);
+            }
+        };
+        Timer timer = new Timer();
+        timer.schedule(timerTask, dateAlert);
+    }
+
 
     @GetMapping
     public ResponseEntity<?> getUserCareByUserId(@RequestParam(name = "pageNo", defaultValue = "0") String pageNo,

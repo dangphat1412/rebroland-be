@@ -54,5 +54,10 @@ public class UserDTO {
     @Pattern(regexp = "^(?:(?:http|https):\\/\\/)?(?:www.)?zalo.me\\/(84|0[3|5|7|8|9])+([0-9]{8})$", message = "Link zalo không hợp lệ!")
     private String zaloLink;
 
+    @JsonFormat(pattern="yyyy-MM-dd")
+    private Date startDate;
+
     private float avgRate;
+
+    private boolean isBroker;
 }

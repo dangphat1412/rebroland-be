@@ -38,7 +38,7 @@ public class ContactServiceImpl implements ContactService {
     }
 
     @Override
-    public ContactDTO createContact(ContactDTO contactDTO, int userId, int postId) {
+    public ContactDTO createContact(ContactDTO contactDTO, int userId, int postId, int userRequestId) {
         Contact contact = mapToEntity(contactDTO);
         User user = userRepository.findById(userId).orElseThrow(() -> new ResourceNotFoundException("User", "ID", userId));
         if (postId == 0) {
@@ -52,11 +52,12 @@ public class ContactServiceImpl implements ContactService {
         contact.setStartDate(date);
         contact.setUser(user);
         contact.setUnread(true);
-        if (user.getRoles().size() == 2) {
-            contact.setUserRole(3);
-        } else {
-            contact.setUserRole(2);
-        }
+        contact.setUserRequestId(userRequestId);
+//        if (user.getRoles().size() == 2) {
+//            contact.setUserRole(3);
+//        } else {
+//            contact.setUserRole(2);
+//        }
 
         Contact newContact = contactRepository.save(contact);
         return mapToDTO(newContact);

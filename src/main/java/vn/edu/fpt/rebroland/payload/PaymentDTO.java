@@ -15,6 +15,6 @@ public class PaymentDTO {
     private String description;
     private Date date;
     private String type;
-    private int userId;
+    private UserDTO user;
 //    private String bankCode;
 }

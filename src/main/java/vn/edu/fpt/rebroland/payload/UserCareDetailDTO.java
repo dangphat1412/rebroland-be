@@ -19,7 +19,7 @@ public class UserCareDetailDTO {
     private Date appointmentTime;
 
 
-    private Float alertTime;
+    private Integer alertTime;
 
     @NotEmpty(message = "Cập nhập thông tin này.")
     private String description;

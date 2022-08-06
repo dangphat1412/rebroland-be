@@ -22,11 +22,9 @@ public class UserCareDetail {
     @Column(nullable = false)
     private Date dateCreate;
 
-    @Column(nullable = false)
     private Date appointmentTime;
 
-    @Column(nullable = false)
-    private Float alertTime;
+    private Integer alertTime;
 
     @Column(length = 200)
     private String description;

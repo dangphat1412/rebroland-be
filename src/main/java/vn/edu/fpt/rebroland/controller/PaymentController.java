@@ -1,10 +1,15 @@
 package vn.edu.fpt.rebroland.controller;
 
 import vn.edu.fpt.rebroland.config.PaymentConfig;
+import vn.edu.fpt.rebroland.entity.User;
 import vn.edu.fpt.rebroland.payload.PaymentDTO;
+import vn.edu.fpt.rebroland.repository.UserRepository;
 import vn.edu.fpt.rebroland.service.PaymentService;
+import org.cloudinary.json.JSONObject;
+import org.modelmapper.ModelMapper;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.web.bind.annotation.*;
 
 import java.io.UnsupportedEncodingException;
@@ -14,14 +19,18 @@ import java.text.SimpleDateFormat;
 import java.util.*;
 
 @RestController
-@CrossOrigin(origins = "https://rebroland-frontend.vercel.app")
+@CrossOrigin(origins = "https://rebroland-frontend.vercel.app/")
 @RequestMapping("/api/payment")
 public class PaymentController {
 
     private PaymentService paymentService;
+    private UserRepository userRepository;
+    private ModelMapper mapper;
 
-    public PaymentController(PaymentService paymentService) {
+    public PaymentController(PaymentService paymentService, UserRepository userRepository, ModelMapper mapper) {
         this.paymentService = paymentService;
+        this.userRepository = userRepository;
+        this.mapper = mapper;
     }
 
     @PostMapping("/create-payment")
@@ -42,7 +51,6 @@ public class PaymentController {
         vnp_Params.put("vnp_CurrCode", PaymentConfig.CURRCODE);
         vnp_Params.put("vnp_TxnRef", PaymentConfig.getRandomNumber(8));
         vnp_Params.put("vnp_OrderInfo", paymentDTO.getDescription());
-//        vnp_Params.put("vnp_OrderType", "other");
         vnp_Params.put("vnp_Locale", PaymentConfig.LOCALEDEFAULT);
         vnp_Params.put("vnp_ReturnUrl", PaymentConfig.RETURNURL);
         vnp_Params.put("vnp_IpAddr", PaymentConfig.IPDEFAULT);
@@ -100,19 +108,34 @@ public class PaymentController {
                                                @RequestParam(value = "vnp_TxnRef", required = false) String txnRef,
                                                @RequestParam(value = "vnp_SecureHashType", required = false) String secureHashType,
                                                @RequestParam(value = "vnp_SecureHash", required = false) String secureHash
+//                                               @RequestHeader(name = "Authorization") String token
                                                ){
         PaymentDTO newPayment = new PaymentDTO();
         int price = Integer.parseInt(amount) / 100;
         newPayment.setAmount(price);
         newPayment.setDescription(orderInfo);
         if(price == 55000){
-            newPayment.setType("Đăng bài");
+            newPayment.setType("Post");
         }else{
-            newPayment.setType("Đăng ký broker");
+            newPayment.setType("Broker");
         }
         //fix user id
-        newPayment.setUserId(1);
+//        User user = getUserFromToken(token);
+//        newPayment.setUser(mapper.map(user, UserDTO.class));
+
         PaymentDTO paymentDTO = paymentService.createPayment(newPayment);
         return new ResponseEntity<>(paymentDTO, HttpStatus.OK);
+    }
+
+    private static String decode(String encodedString) {
+        return new String(Base64.getUrlDecoder().decode(encodedString));
+    }
+    private User getUserFromToken(String token) {
+        String[] parts = token.split("\\.");
+        JSONObject payload = new JSONObject(decode(parts[1]));
+        String phone = payload.getString("sub");
+        User user = userRepository.findByPhone(phone).
+                orElseThrow(() -> new UsernameNotFoundException("User not found with phone: " + phone));
+        return user;
     }
 }

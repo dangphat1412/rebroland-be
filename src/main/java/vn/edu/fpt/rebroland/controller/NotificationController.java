@@ -12,7 +12,7 @@ import org.springframework.web.bind.annotation.*;
 import java.util.List;
 
 @RestController
-@CrossOrigin(origins = "https://rebroland-frontend.vercel.app")
+@CrossOrigin(origins = "https://rebroland-frontend.vercel.app/")
 @RequestMapping("/api/notification")
 public class NotificationController {
 

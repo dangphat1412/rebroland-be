@@ -12,7 +12,7 @@ import org.springframework.web.bind.annotation.*;
 import javax.validation.Valid;
 
 @RestController
-@CrossOrigin(origins = "https://rebroland-frontend.vercel.app")
+@CrossOrigin(origins = "https://rebroland-frontend.vercel.app/")
 @RequestMapping("/api/report")
 public class ReportController {
 
@@ -27,64 +27,32 @@ public class ReportController {
 
     @PostMapping("/post/{postId}")
     public ResponseEntity<?> createReportPost(@RequestHeader(name = "Authorization") String token,
-                                              @Valid @RequestBody ReportDTO reportPostDTO,
-                                              @PathVariable(name = "postId") String id) {
+                                            @Valid @RequestBody ReportDTO reportPostDTO,
+                                              @PathVariable(name = "postId") String id){
         User user = reportService.getUserByToken(token);
-        reportPostDTO.setUserId(user.getId());
-        reportPostDTO.setRoleId(user.getCurrentRole());
 
         int postId = Integer.parseInt(id);
         reportPostDTO.setPostId(postId);
+        reportPostDTO.setUserReportId(user.getId());
 
-        ReportDTO dto = reportService.createReport(reportPostDTO);
-        if (dto == null) {
-            return new ResponseEntity<>("Báo cáo thất bại!", HttpStatus.BAD_REQUEST);
-        }
-        return new ResponseEntity<>(dto, HttpStatus.CREATED);
+        HttpStatus status = reportService.createReport(reportPostDTO);
+        return new ResponseEntity<>(status);
     }
 
     @PostMapping("/user/{userId}")
     public ResponseEntity<?> createReportUser(@RequestHeader(name = "Authorization") String token,
                                               @Valid @RequestBody ReportDTO reportDTO,
-                                              @PathVariable(name = "userId") String id) {
+                                              @PathVariable(name = "userId") String id){
         User user = reportService.getUserByToken(token);
-        reportDTO.setUserId(user.getId());
-        reportDTO.setRoleId(user.getCurrentRole());
 
         int userReportedId = Integer.parseInt(id);
 //        User userReported = reportService.getUserById(userReportedId);
         reportDTO.setUserReportedId(userReportedId);
+        reportDTO.setUserReportId(user.getId());
 
-        ReportDTO dto = reportService.createReport(reportDTO);
-        if (dto == null) {
-            return new ResponseEntity<>("Báo cáo thất bại!", HttpStatus.BAD_REQUEST);
-        }
-        return new ResponseEntity<>(dto, HttpStatus.CREATED);
+        HttpStatus status = reportService.createReport(reportDTO);
+        return new ResponseEntity<>(status);
     }
-
-//    @PostMapping("/broker/{userId}")
-//    public ResponseEntity<?> createReportBroker(@RequestHeader(name = "Authorization") String token,
-//                                              @Valid @RequestBody ReportDTO reportDTO,
-//                                              @PathVariable(name = "userId") String id){
-//        User user = reportService.getUserByToken(token);
-//        reportDTO.setUserId(user.getId());
-//        reportDTO.setRoleId(user.getCurrentRole());
-//
-//        int userReportedId = Integer.parseInt(id);
-//        User userReported = reportService.getUserById(userReportedId);
-//        if(userReported.getRoles().size() != 2){
-//            return new ResponseEntity<>("Người bị báo cáo không phải là broker!", HttpStatus.BAD_REQUEST);
-//        }
-//        reportDTO.setUserReportedId(userReportedId);
-//
-//        reportDTO.setRoleReportedId(3);
-//
-//        ReportDTO dto = reportService.createReport(reportDTO);
-//        if(dto == null){
-//            return new ResponseEntity<>("Báo cáo thất bại!", HttpStatus.BAD_REQUEST);
-//        }
-//        return new ResponseEntity<>(dto, HttpStatus.CREATED);
-//    }
 
     @PostMapping("/rating/{userId}")
     public ResponseEntity<?> rateUser(@RequestHeader(name = "Authorization") String token,
@@ -149,6 +117,7 @@ public class ReportController {
             return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
         }
     }
+
 
 
 }

@@ -7,6 +7,9 @@ import vn.edu.fpt.rebroland.service.PaymentService;
 import org.modelmapper.ModelMapper;
 import org.springframework.stereotype.Service;
 
+import java.util.List;
+import java.util.stream.Collectors;
+
 @Service
 public class PaymentServiceImpl implements PaymentService {
     private PaymentRepository paymentRepository;
@@ -27,6 +30,12 @@ public class PaymentServiceImpl implements PaymentService {
         Payment payment = mapToEntity(paymentDTO);
         Payment newPayment = paymentRepository.save(payment);
         return mapToDTO(newPayment);
+    }
+
+    @Override
+    public List<PaymentDTO> getAllPayments() {
+        List<Payment> listPayment = paymentRepository.findAll();
+        return listPayment.stream().map(payment -> mapToDTO(payment)).collect(Collectors.toList());
     }
 
     private PaymentDTO mapToDTO(Payment payment) {

@@ -23,5 +23,7 @@ public class Status {
     @OneToMany(mappedBy = "status", cascade = CascadeType.ALL, orphanRemoval = true)
     private Set<Post> posts = new HashSet<>();
 
-
+    public Status(int id) {
+        this.id = id;
+    }
 }

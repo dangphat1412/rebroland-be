@@ -5,7 +5,8 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import javax.persistence.*;
-import java.util.Date;
+import java.util.HashSet;
+import java.util.Set;
 
 @Data
 @Entity
@@ -19,18 +20,16 @@ public class Report {
     private int reportId;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "user_id", nullable = false)
+    @JoinColumn(name = "user_id", nullable = true)
     private User user;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "post_id", nullable = true)
     private Post post;
-    private Integer userReportedId;
-    private String content;
 
-    private Date reportDate;
-    private boolean status;
-    private int roleId;
-//    private Integer roleReportedId;
+    private int status;
+
+    @OneToMany(mappedBy = "report", cascade = CascadeType.ALL, orphanRemoval = true)
+    private Set<ReportDetail> details = new HashSet<>();
 
 }

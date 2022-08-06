@@ -20,6 +20,8 @@ public interface PostService {
 
     SearchResponse getAllPostForBroker(int pageNo, int pageSize, String option);
 
+    SearchResponse getAllPostByUserId(int pageNo, int pageSize, int userId);
+
     List<BrokerInfoOfPostDTO> getDerivativePostOfOriginalPost(int originalPostId);
 
     SearchResponse searchPosts(String ward, String district, String province, String minPrice, String maxPrice,
@@ -40,8 +42,8 @@ public interface PostService {
                        int unitId, int statusId, Integer longevityId);
 
     void deletePost(int postId);
-
     SearchResponse getAllPost(int pageNo, int pageSize);
+    SearchResponse getAllPost(int pageNo, int pageSize, String keyword, String sortValue);
 
     Map<String, List> getRealEstateHistory(int postId);
 
@@ -72,4 +74,5 @@ public interface PostService {
 
     void setDataToRealEstateDTO(RealEstatePostDTO realEstatePostDTO, PostDTO postDTO, int postId);
 
+    boolean changeStatusOfPost(int postId);
 }

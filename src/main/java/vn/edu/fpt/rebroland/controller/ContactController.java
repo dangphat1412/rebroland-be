@@ -8,6 +8,9 @@ import vn.edu.fpt.rebroland.repository.UserRepository;
 import vn.edu.fpt.rebroland.service.ContactService;
 import vn.edu.fpt.rebroland.service.NotificationService;
 import vn.edu.fpt.rebroland.service.UserCareService;
+import com.twilio.Twilio;
+import com.twilio.rest.api.v2010.account.Message;
+import com.twilio.type.PhoneNumber;
 import org.cloudinary.json.JSONObject;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -24,7 +27,7 @@ import java.util.List;
 import java.util.Map;
 
 @RestController
-@CrossOrigin(origins = "https://rebroland-frontend.vercel.app")
+@CrossOrigin(origins = "https://rebroland-frontend.vercel.app/")
 @RequestMapping("/api/contact")
 public class ContactController {
     private ContactService contactService;
@@ -69,18 +72,25 @@ public class ContactController {
     @Transactional
     public ResponseEntity<String> createContact(@PathVariable int userId,
                                                 @PathVariable int postId,
-                                                @Valid @RequestBody ContactDTO contactDTO) {
+                                                @Valid @RequestBody ContactDTO contactDTO,
+                                                @RequestHeader(name = "Authorization") String token) {
 
-        ContactDTO newContact = contactService.createContact(contactDTO, userId, postId);
+        User userRequest = getUserFromToken(token);
+        if(userRequest.getId() == userId){
+            return new ResponseEntity<>("Không thể gửi liên lạc!", HttpStatus.BAD_REQUEST);
+        }
+        ContactDTO newContact = contactService.createContact(contactDTO, userId, postId, userRequest.getId());
         TextMessageDTO messageDTO = new TextMessageDTO();
-        String message = "Tin nhắn từ SĐT " + contactDTO.getPhone() + ": " + contactDTO.getContent();
+        String message = "Tin nhắn từ SĐT " + userRequest.getPhone() + ": " + contactDTO.getContent();
         messageDTO.setMessage(message);
         template.convertAndSend("/topic/message/" + userId, messageDTO);
+
         //save notification table
         NotificationDTO notificationDTO = new NotificationDTO();
         notificationDTO.setUserId(userId);
         notificationDTO.setContent(contactDTO.getContent());
-        notificationDTO.setPhone(contactDTO.getPhone());
+        notificationDTO.setPhone(userRequest.getPhone());
+        notificationDTO.setType("Contact");
         notificationService.createContactNotification(notificationDTO);
 
         //update unread notification user
@@ -91,14 +101,20 @@ public class ContactController {
         user.setUnreadNotification(numberUnread);
         userRepository.save(user);
 
+        //send message to user or broker
+        sendSMS(user.getPhone(), message);
         return new ResponseEntity<>("Create Contact Successfully !!!", HttpStatus.CREATED);
 
     }
 
-//    @SendTo("/topic/message")
-//    public ContactDTO broadcastMessage(@Payload ContactDTO textMessageDTO) {
-//        return textMessageDTO;
-//    }
+
+    public void sendSMS(String phone, String token) {
+        Twilio.init(System.getenv("TWILIO_ACCOUNT_SID"),
+                System.getenv("TWILIO_AUTH_TOKEN"));
+
+        Message.creator(new PhoneNumber(phone.replaceFirst("0","+84")),
+                new PhoneNumber("+19844647230"), token).create();
+    }
 
     @DeleteMapping("/{contactId}")
     @Transactional
@@ -126,5 +142,14 @@ public class ContactController {
         User user = userRepository.findByPhone(phone).
                 orElseThrow(() -> new UsernameNotFoundException("User not found with phone: " + phone));
         return user.getId();
+    }
+
+    private User getUserFromToken(String token) {
+        String[] parts = token.split("\\.");
+        JSONObject payload = new JSONObject(decode(parts[1]));
+        String phone = payload.getString("sub");
+        User user = userRepository.findByPhone(phone).
+                orElseThrow(() -> new UsernameNotFoundException("User not found with phone: " + phone));
+        return user;
     }
 }

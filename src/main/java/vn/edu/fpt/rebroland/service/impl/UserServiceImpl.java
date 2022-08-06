@@ -19,10 +19,7 @@ import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Date;
-import java.util.List;
+import java.util.*;
 import java.util.stream.Collectors;
 
 @Service
@@ -51,6 +48,11 @@ public class UserServiceImpl implements UserService {
         Role roles = roleRepository.findByName("USER").get();
         user.setRoles(Collections.singleton(roles));
         user.setCurrentRole(2);
+
+        long millis = System.currentTimeMillis();
+        java.sql.Date date = new java.sql.Date(millis);
+        user.setStartDate(date);
+
         User newUser = userRepository.save(user);
         return mapToDTO(newUser);
     }
@@ -181,6 +183,84 @@ public class UserServiceImpl implements UserService {
             user.setPassword(passwordEncoder.encode(changePasswordDTO.getNewPassword()));
             userRepository.save(user);
             return true;
+        }else {
+            return false;
+        }
+
+    }
+
+    @Override
+    public List<UserDTO> getAllUserForAdminPaging(int userId, int pageNo, int pageSize, String keyword, String sortValue) {
+        Pageable pageable = PageRequest.of(pageNo, pageSize);
+        int sortOption = Integer.parseInt(sortValue);
+        Page<User> page = null;
+        switch (sortOption){
+            case 0:
+                page = userRepository.getAllUserForAdminPaging(userId, keyword, pageable);
+                break;
+            case 1:
+                page = userRepository.getAllActiveUserForAdminPaging(userId, keyword, pageable);
+                break;
+            case 2:
+                page = userRepository.getAllBlockUserForAdminPaging(userId, keyword, pageable);
+                break;
+        }
+
+        List<User> listUser = page.getContent();
+        List<UserDTO> list = new ArrayList<>();
+        UserDTO userDTO = null;
+
+        Role role = roleRepository.findByName("BROKER").get();
+        for (User user : listUser) {
+            userDTO = mapToDTO(user);
+            Set<Role> setRole = user.getRoles();
+            if(setRole.contains(role)){
+                userDTO.setBroker(true);
+            }
+
+
+            list.add(userDTO);
+        }
+        return list;
+    }
+
+    @Override
+    public List<UserDTO> getAllUserForAdmin(int userId, String keyword, String sortValue) {
+        int sortOption = Integer.parseInt(sortValue);
+        List<User> listUser = null;
+        switch (sortOption){
+            case 0:
+                listUser = userRepository.getAllUserForAdmin(userId, keyword);
+                break;
+            case 1:
+                listUser = userRepository.getAllActiveUserForAdmin(userId, keyword);
+                break;
+            case 2:
+                listUser = userRepository.getAllBlockUserForAdmin(userId, keyword);
+                break;
+        }
+
+        return listUser.stream().map(user -> mapToDTO(user)).collect(Collectors.toList());
+    }
+
+    @Override
+    public boolean changeStatusOfUser(int userId) {
+        User user = userRepository.findById(userId).orElseThrow(
+                () -> new UsernameNotFoundException("User not found with id: " + userId));
+        Role role = roleRepository.findByName("ADMIN").get();
+        if(user.getRoles().contains(role)){
+            return false;
+        }
+        if(user != null){
+            if(user.isBlock()){
+                user.setBlock(false);
+                userRepository.save(user);
+                return true;
+            }else{
+                user.setBlock(true);
+                userRepository.save(user);
+                return true;
+            }
         }else {
             return false;
         }

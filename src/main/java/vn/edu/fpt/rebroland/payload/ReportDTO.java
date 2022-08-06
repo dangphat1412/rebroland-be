@@ -3,22 +3,28 @@ package vn.edu.fpt.rebroland.payload;
 import lombok.Data;
 
 import javax.validation.constraints.NotEmpty;
-import java.util.Date;
+import java.util.List;
 
 @Data
 public class ReportDTO {
     private int reportId;
 
-    private int userId;
     private Integer postId;
-    private int roleId;
 
     private Integer userReportedId;
+
+    private int status;
+
+    private int userReportId;
 
     @NotEmpty(message = "Nội dung không được để trống!")
     private String content;
 
-    private Date reportDate;
+    private List<String> images;
 
-    private boolean status;
+    private PostDTO post;
+
+    private UserDTO user;
+
+    private int numberOfUserReport;
 }

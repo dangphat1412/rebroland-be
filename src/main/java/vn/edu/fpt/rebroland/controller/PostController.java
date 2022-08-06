@@ -26,7 +26,7 @@ import java.util.List;
 import java.util.Map;
 
 @RestController
-@CrossOrigin(origins = "https://rebroland-frontend.vercel.app")
+@CrossOrigin(origins = "https://rebroland-frontend.vercel.app/")
 @RequestMapping("/api/posts")
 public class PostController {
 
@@ -122,7 +122,7 @@ public class PostController {
                     PostDTO postDTO = postService.setDataToPostDTO(generalPostDTO, userId, date);
                     postDTO.setOriginalPost(postId);
                     PostDTO newPostDTO = postService.createPost(postDTO, userId, generalPostDTO.getDirectionId(), generalPostDTO.getPropertyTypeId(),
-                            generalPostDTO.getUnitPriceId(), 2, generalPostDTO.getLongevityId());
+                            generalPostDTO.getUnitPriceId(), 1, generalPostDTO.getLongevityId());
                     imageService.createImage(generalPostDTO.getImages(), newPostDTO.getPostId());
                     coordinateService.createCoordinate(generalPostDTO.getCoordinates(), newPostDTO.getPostId());
                     switch (generalPostDTO.getPropertyTypeId()) {
@@ -206,7 +206,7 @@ public class PostController {
             }else{
                 PostDTO postDTO = postService.setDataToPostDTO(generalPostDTO, userId, date);
                 PostDTO newPostDTO = postService.createPost(postDTO, userId, generalPostDTO.getDirectionId(), generalPostDTO.getPropertyTypeId(),
-                        generalPostDTO.getUnitPriceId(), 2, generalPostDTO.getLongevityId());
+                        generalPostDTO.getUnitPriceId(), 1, generalPostDTO.getLongevityId());
                 imageService.createImage(generalPostDTO.getImages(), newPostDTO.getPostId());
                 coordinateService.createCoordinate(generalPostDTO.getCoordinates(), newPostDTO.getPostId());
                 switch (generalPostDTO.getPropertyTypeId()) {
@@ -359,7 +359,7 @@ public class PostController {
 //        }
         if (userId == postDTO.getUser().getId()) {
             PostDTO newPostDTO = postService.updatePost(postDTO, postId, userId, generalPostDTO.getDirectionId(),
-                    generalPostDTO.getPropertyTypeId(), generalPostDTO.getUnitPriceId(), 1, generalPostDTO.getLongevityId());
+                    generalPostDTO.getPropertyTypeId(), generalPostDTO.getUnitPriceId(), generalPostDTO.getStatusId(), generalPostDTO.getLongevityId());
             switch (propertyId) {
                 case 1:
                     ResidentialHouseDTO oldResidentialHouseDTO = residentialHouseService.getResidentialHouseByPostId(postId);

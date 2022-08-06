@@ -28,7 +28,7 @@ public class NotificationServiceImpl implements NotificationService {
 
     @Override
     public NotificationDTO createContactNotification(NotificationDTO notificationDTO) {
-        notificationDTO.setType("Contact");
+//        notificationDTO.setType("Contact");
 
         long millis = System.currentTimeMillis();
         java.sql.Date date = new java.sql.Date(millis);

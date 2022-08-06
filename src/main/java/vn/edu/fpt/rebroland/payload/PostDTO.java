@@ -84,5 +84,4 @@ public class PostDTO {
     private Set<ImageDTO> images;
 
     private Set<CoordinateDTO> coordinates;
-
 }
