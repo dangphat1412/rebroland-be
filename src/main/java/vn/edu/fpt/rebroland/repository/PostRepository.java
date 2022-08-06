@@ -433,4 +433,14 @@ public interface PostRepository extends JpaRepository<Post, Integer> {
             " AND ((p.title LIKE CONCAT('%',:keyword,'%')) OR (p.description LIKE CONCAT('%',:keyword,'%'))) ", nativeQuery = true)
     Page<Post> getListReportedPost(Pageable pageable, String keyword);
 
+    @Query(value = " SELECT COUNT(property_id) FROM posts " +
+            " WHERE property_id = :propertyId " +
+            " AND status_id = 1 ", nativeQuery = true)
+    int getNumberOfPropertyType(int propertyId);
+
+    @Query(value = " SELECT COUNT(property_id) FROM posts " +
+            " WHERE property_id = :propertyId " +
+            " AND status_id = 1 " +
+            " AND original_post IS NULL ", nativeQuery = true)
+    int getNumberOfPropertyTypeForBroker(int propertyId);
 }
