@@ -19,7 +19,7 @@ import java.text.SimpleDateFormat;
 import java.util.*;
 
 @RestController
-@CrossOrigin(origins = "https://rebroland-frontend.vercel.app/")
+@CrossOrigin(origins = "https://rebroland-frontend.vercel.app")
 @RequestMapping("/api/payment")
 public class PaymentController {
 
@@ -36,7 +36,7 @@ public class PaymentController {
     @PostMapping("/create-payment")
     public ResponseEntity<?> createPayment(@RequestBody PaymentDTO paymentDTO) throws UnsupportedEncodingException {
         int amount = 0;
-        if(paymentDTO.getType().equals("Đăng bài")){
+        if(paymentDTO.getTypeId() == 1){
             amount = 55000 * 100;
         }else{
             amount = 100000 * 100;
@@ -108,20 +108,19 @@ public class PaymentController {
                                                @RequestParam(value = "vnp_TxnRef", required = false) String txnRef,
                                                @RequestParam(value = "vnp_SecureHashType", required = false) String secureHashType,
                                                @RequestParam(value = "vnp_SecureHash", required = false) String secureHash
-//                                               @RequestHeader(name = "Authorization") String token
                                                ){
         PaymentDTO newPayment = new PaymentDTO();
         int price = Integer.parseInt(amount) / 100;
         newPayment.setAmount(price);
         newPayment.setDescription(orderInfo);
         if(price == 55000){
-            newPayment.setType("Post");
+            newPayment.setTypeId(1);
         }else{
-            newPayment.setType("Broker");
+            newPayment.setTypeId(2);
         }
         //fix user id
 //        User user = getUserFromToken(token);
-//        newPayment.setUser(mapper.map(user, UserDTO.class));
+//        newPayment.setUser(new UserDTO(1));
 
         PaymentDTO paymentDTO = paymentService.createPayment(newPayment);
         return new ResponseEntity<>(paymentDTO, HttpStatus.OK);

@@ -9,5 +9,5 @@ public class CareResponse {
     private List<UserCareDTO> cares;
     private int pageNo;
     private int totalPages;
-    private int totalResult;
+    private Long totalResult;
 }

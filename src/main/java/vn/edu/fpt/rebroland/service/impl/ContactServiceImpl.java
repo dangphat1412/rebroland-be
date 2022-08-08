@@ -13,9 +13,10 @@ import org.modelmapper.ModelMapper;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
-import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 
+import java.sql.Date;
+import java.text.SimpleDateFormat;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -48,7 +49,7 @@ public class ContactServiceImpl implements ContactService {
             contact.setPost(post);
         }
         long millis = System.currentTimeMillis();
-        java.sql.Date date = new java.sql.Date(millis);
+        Date date = new Date(millis);
         contact.setStartDate(date);
         contact.setUser(user);
         contact.setUnread(true);
@@ -79,32 +80,52 @@ public class ContactServiceImpl implements ContactService {
     }
 
     @Override
-    public ContactResponse getContactByUserId(int userId, int pageNo, int pageSize) {
-        String sortByStartDate = "start_date";
-        String sortDir = "desc";
-        Sort sortStartDate = sortDir.equalsIgnoreCase(Sort.Direction.ASC.name()) ?
-                Sort.by(sortByStartDate).ascending() : Sort.by(sortByStartDate).descending();
-        Pageable pageable = PageRequest.of(pageNo, pageSize, sortStartDate);
-        Page<Contact> contacts = contactRepository.getContactByUserId(pageable, userId);
+    public ContactResponse getContactByUserId(int userId, String keyword, int pageNo, int pageSize) {
+//        String sortByStartDate = "start_date";
+//        String sortDir = "desc";
+//        Sort sortStartDate = sortDir.equalsIgnoreCase(Sort.Direction.ASC.name()) ?
+//                Sort.by(sortByStartDate).ascending() : Sort.by(sortByStartDate).descending();
+        Pageable pageable = PageRequest.of(pageNo, pageSize);
+        Page<Contact> contacts = contactRepository.getContactByUserId(pageable, userId, keyword);
         List<Contact> contactList = contacts.getContent();
         List<ContactDTO> contactDTOList = contactList.stream().map(contact -> mapToDTO(contact)).collect(Collectors.toList());
-        int i = 0;
-        for (Contact contact : contactList) {
-            if (contact.getPost() == null) {
-                contactDTOList.get(i).setShortPost(null);
-            } else {
-                ShortPostDTO shortPostDTO = new ShortPostDTO();
-                setDataToSearchDTO(shortPostDTO, contact.getPost());
-                contactDTOList.get(i).setShortPost(shortPostDTO);
+//        int i = 0;
+//        for (Contact contact : contactList) {
+//            if (contact.getPost() == null) {
+//                contactDTOList.get(i).setPost(null);
+//            } else {
+////                ShortPostDTO shortPostDTO = new ShortPostDTO();
+////                setDataToSearchDTO(shortPostDTO, contact.getPost());
+////                contactDTOList.get(i).setShortPost(shortPostDTO);
+//
+//                SearchDTO searchDTO = new SearchDTO();
+//                setDataToSearchDTO(searchDTO, contact.getPost());
+//                contactDTOList.get(i).setPost(searchDTO);
+//            }
+//            i++;
+//        }
+        SearchDTO searchDTO = new SearchDTO();
+        for (ContactDTO contactDTO: contactDTOList) {
+            int userRequest = contactDTO.getUserRequest().getId();
+            User user = userRepository.findById(userRequest)
+                    .orElseThrow(() -> new ResourceNotFoundException("User", "id", userRequest));
+            contactDTO.setUserRequest(modelMapper.map(user, UserDTO.class));
+            contactDTO.setUser(null);
+            if(contactDTO.getPost() == null){
+                contactDTO.setShortPost(null);
+            }else{
+                setDataToSearchDTO(searchDTO, contactDTO.getPost());
+                contactDTO.setShortPost(searchDTO);
+                contactDTO.setPost(null);
             }
-            i++;
+
         }
-        List<Contact> contacts1 = contactRepository.getContactsByUserId(userId);
+//        List<Contact> contacts1 = contactRepository.getContactsByUserId(userId);
 
 
 
         ContactResponse contactResponse = new ContactResponse();
-        contactResponse.setTotalResult(contacts1.size());
+        contactResponse.setTotalResult(contacts.getTotalElements());
         contactResponse.setContacts(contactDTOList);
         contactResponse.setPageNo(pageNo + 1);
         contactResponse.setTotalPages(contacts.getTotalPages());
@@ -128,30 +149,60 @@ public class ContactServiceImpl implements ContactService {
         return modelMapper.map(contactDTO, Contact.class);
     }
 
-    public void setDataToSearchDTO(ShortPostDTO searchDTO, Post postDTO) {
+//    public void setDataToSearchDTO(ShortPostDTO searchDTO, Post postDTO) {
+//
+//        searchDTO.setPostId(postDTO.getPostId());
+////        searchDTO.setArea(postDTO.getArea());
+//        searchDTO.setTitle(postDTO.getTitle());
+////        searchDTO.setDescription(postDTO.getDescription());
+////        searchDTO.setAddress(postDTO.getAddress());
+//
+////        java.util.Date date = postDTO.getStartDate();
+////        SimpleDateFormat simpleDateFormat = new SimpleDateFormat("dd-MM-yyyy HH:mm:ss");
+//        searchDTO.setStartDate(postDTO.getStartDate());
+//
+////        if (postDTO.getPrice() != null) {
+////            searchDTO.setPrice(postDTO.getPrice());
+////        } else {
+////            searchDTO.setPrice(0);
+////        }
+//
+////        searchDTO.setDistrict(postDTO.getDistrict());
+////        searchDTO.setWard(postDTO.getWard());
+////        searchDTO.setProvince(postDTO.getProvince());
+////        searchDTO.setAddress(postDTO.getAddress());
+//        searchDTO.setThumbnail(postDTO.getThumbnail());
+//        searchDTO.setOriginalPost(postDTO.getOriginalPost());
+//
+//    }
+
+    public void setDataToSearchDTO(SearchDTO searchDTO, PostDTO postDTO) {
 
         searchDTO.setPostId(postDTO.getPostId());
-//        searchDTO.setArea(postDTO.getArea());
+        searchDTO.setArea(postDTO.getArea());
         searchDTO.setTitle(postDTO.getTitle());
-//        searchDTO.setDescription(postDTO.getDescription());
-//        searchDTO.setAddress(postDTO.getAddress());
+        searchDTO.setDescription(postDTO.getDescription());
+        searchDTO.setAddress(postDTO.getAddress());
 
-//        java.util.Date date = postDTO.getStartDate();
-//        SimpleDateFormat simpleDateFormat = new SimpleDateFormat("dd-MM-yyyy HH:mm:ss");
-        searchDTO.setStartDate(postDTO.getStartDate());
+        Date date = postDTO.getStartDate();
+        SimpleDateFormat simpleDateFormat = new SimpleDateFormat("dd-MM-yyyy HH:mm:ss");
+        searchDTO.setStartDate(simpleDateFormat.format(date));
 
-//        if (postDTO.getPrice() != null) {
-//            searchDTO.setPrice(postDTO.getPrice());
-//        } else {
-//            searchDTO.setPrice(0);
-//        }
+        if(postDTO.getPrice() !=  null){
+            searchDTO.setPrice(postDTO.getPrice());
+        }else{
+            searchDTO.setPrice(0);
+        }
 
-//        searchDTO.setDistrict(postDTO.getDistrict());
-//        searchDTO.setWard(postDTO.getWard());
-//        searchDTO.setProvince(postDTO.getProvince());
-//        searchDTO.setAddress(postDTO.getAddress());
+        searchDTO.setDistrict(postDTO.getDistrict());
+        searchDTO.setWard(postDTO.getWard());
+        searchDTO.setProvince(postDTO.getProvince());
+        searchDTO.setAddress(postDTO.getAddress());
+        searchDTO.setStatus(postDTO.getStatus());
+        searchDTO.setUnitPrice(postDTO.getUnitPrice());
         searchDTO.setThumbnail(postDTO.getThumbnail());
         searchDTO.setOriginalPost(postDTO.getOriginalPost());
-
+        searchDTO.setAllowDerivative(postDTO.isAllowDerivative());
+//        searchDTO.setUser(postDTO.getUser());
     }
 }

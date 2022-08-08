@@ -21,7 +21,7 @@ import java.util.List;
 import java.util.Map;
 
 @RestController
-@CrossOrigin(origins = "https://rebroland-frontend.vercel.app/")
+@CrossOrigin(origins = "https://rebroland-frontend.vercel.app")
 @RequestMapping("/api/admin")
 public class AdminController {
 
@@ -173,7 +173,7 @@ public class AdminController {
     }
 
     @GetMapping("/list-reports/posts")
-    public ResponseEntity<?> manageReportPost(@RequestHeader(name = "Authorization") String token,
+    public ResponseEntity<?> getReportedPosts(@RequestHeader(name = "Authorization") String token,
                                           @RequestParam(name = "pageNo", defaultValue = "0") String pageNo,
                                           @RequestParam(name = "sortValue", defaultValue = "0") String sortValue,
                                           @RequestParam(name = "keyword", defaultValue = "") String keyword){
@@ -190,7 +190,7 @@ public class AdminController {
     }
 
     @GetMapping("/list-reports/posts/{reportId}")
-    public ResponseEntity<?> displayDetailReportPost(@RequestHeader(name = "Authorization") String token,
+    public ResponseEntity<?> getPostReporters(@RequestHeader(name = "Authorization") String token,
                                               @PathVariable(name = "reportId") int reportId,
                                               @RequestParam(name = "pageNo", defaultValue = "0") String pageNo){
         User user = getUserFromToken(token);
@@ -206,7 +206,7 @@ public class AdminController {
     }
 
     @GetMapping("/list-reports/users")
-    public ResponseEntity<?> manageReportUser(@RequestHeader(name = "Authorization") String token,
+    public ResponseEntity<?> getReportedUsers(@RequestHeader(name = "Authorization") String token,
                                               @RequestParam(name = "pageNo", defaultValue = "0") String pageNo,
                                               @RequestParam(name = "sortValue", defaultValue = "0") String sortValue,
                                               @RequestParam(name = "keyword", defaultValue = "") String keyword){
@@ -223,7 +223,7 @@ public class AdminController {
     }
 
     @GetMapping("/list-reports/users/{reportId}")
-    public ResponseEntity<?> displayDetailReportUser(@RequestHeader(name = "Authorization") String token,
+    public ResponseEntity<?> getUserReporters(@RequestHeader(name = "Authorization") String token,
                                               @RequestParam(name = "pageNo", defaultValue = "0") String pageNo,
                                               @PathVariable(name = "reportId") int reportId){
         User user = getUserFromToken(token);
@@ -239,7 +239,7 @@ public class AdminController {
     }
 
     @GetMapping("/list-reports/posts/accept/{reportId}")
-    public ResponseEntity<?> acceptReportPost(@PathVariable(name = "reportId") int reportId,
+    public ResponseEntity<?> acceptPostReport(@PathVariable(name = "reportId") int reportId,
                                               @RequestHeader(name = "Authorization") String token){
 
         User user = getUserFromToken(token);
@@ -260,7 +260,7 @@ public class AdminController {
     }
 
     @GetMapping("/list-reports/posts/reject/{reportId}")
-    public ResponseEntity<?> rejectReportPost(@PathVariable(name = "reportId") int reportId,
+    public ResponseEntity<?> rejectPostReport(@PathVariable(name = "reportId") int reportId,
                                               @RequestHeader(name = "Authorization") String token){
         User user = getUserFromToken(token);
         Role role = roleRepository.findByName("ADMIN").get();
@@ -277,7 +277,7 @@ public class AdminController {
     }
 
     @GetMapping("/list-reports/users/accept/{reportId}")
-    public ResponseEntity<?> acceptReportUser(@PathVariable(name = "reportId") int reportId,
+    public ResponseEntity<?> acceptUserReport(@PathVariable(name = "reportId") int reportId,
                                               @RequestHeader(name = "Authorization") String token){
 
         User user = getUserFromToken(token);
@@ -296,7 +296,7 @@ public class AdminController {
     }
 
     @GetMapping("/list-reports/users/reject/{reportId}")
-    public ResponseEntity<?> rejectReportUser(@PathVariable(name = "reportId") int reportId,
+    public ResponseEntity<?> rejectUserReport(@PathVariable(name = "reportId") int reportId,
                                               @RequestHeader(name = "Authorization") String token){
         User user = getUserFromToken(token);
         Role role = roleRepository.findByName("ADMIN").get();
@@ -315,12 +315,28 @@ public class AdminController {
     @GetMapping("/list-payments")
     public ResponseEntity<?> getAllPayments(@RequestHeader(name = "Authorization") String token,
                                             @RequestParam(name = "sortValue", defaultValue = "0") String sortValue,
-                                            @RequestParam(name = "keyword", defaultValue = "") String keyword){
+                                            @RequestParam(name = "keyword", defaultValue = "") String keyword,
+                                            @RequestParam(name = "pageNo", defaultValue = "0") String pageNo){
         User user = getUserFromToken(token);
         Role role = roleRepository.findByName("ADMIN").get();
+        int pageNumber = Integer.parseInt(pageNo);
+        int pageSize = 10;
         if(user.getRoles().contains(role)){
-            List<PaymentDTO> listPayment = paymentService.getAllPayments();
+            PaymentResponse listPayment = paymentService.getAllPayments(pageNumber, pageSize, keyword, sortValue);
             return new ResponseEntity<>(listPayment, HttpStatus.OK);
+        }else{
+            return new ResponseEntity<>("Người dùng không phải admin!", HttpStatus.BAD_REQUEST);
+        }
+    }
+
+    @GetMapping("/list-payments/total")
+    public ResponseEntity<?> getTotalRevenue(@RequestHeader(name = "Authorization") String token){
+        User user = getUserFromToken(token);
+        Role role = roleRepository.findByName("ADMIN").get();
+
+        if(user.getRoles().contains(role)){
+            Map<String, Long> map = paymentService.getTotalMoney();
+            return new ResponseEntity<>(map, HttpStatus.OK);
         }else{
             return new ResponseEntity<>("Người dùng không phải admin!", HttpStatus.BAD_REQUEST);
         }

@@ -7,7 +7,7 @@ import org.springframework.data.jpa.repository.Query;
 import java.util.List;
 
 public interface ResidentialLandHistoryRepository extends JpaRepository<ResidentialLandHistory, Integer> {
-    @Query(value = "SELECT * FROM residential_land_history WHERE barcode = :barcode" +
+    @Query(value = "SELECT * FROM residential_land_history WHERE barcode LIKE CONCAT(:barcode,'%') " +
             " AND plot_number =:plotNumber " +
             " ORDER BY start_date ASC ",nativeQuery = true)
     List<ResidentialLandHistory> getLandHistoryByBarcodeAndPlotNumber(String barcode, String plotNumber);

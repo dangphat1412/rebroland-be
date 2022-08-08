@@ -20,14 +20,10 @@ public class UserCare {
     @Column(name = "care_id", nullable = false)
     private int careId;
 
-    @Column(length = 50,nullable = false)
-    private String fullName;
-    @Column(length = 10,nullable = false)
-    private String phone;
+    @Column(name = "user_cared_id")
+    private Integer userCaredId;
 
     private Date startDate;
-    @Column(length = 50)
-    private String email;
 
     @Column(length = 200)
     private String summarize;

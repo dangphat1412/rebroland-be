@@ -60,4 +60,5 @@ public class UserDTO {
     private float avgRate;
 
     private boolean isBroker;
+
 }

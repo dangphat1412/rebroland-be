@@ -5,10 +5,9 @@ import lombok.Data;
 import java.util.List;
 
 @Data
-public class ContactResponse {
-    private List<ContactDTO> contacts;
+public class PaymentResponse {
+    private List<PaymentDTO> payments;
     private int pageNo;
     private int totalPages;
     private Long totalResult;
-
 }

@@ -4,10 +4,7 @@ import vn.edu.fpt.rebroland.entity.Post;
 import vn.edu.fpt.rebroland.entity.User;
 import vn.edu.fpt.rebroland.entity.UserCare;
 import vn.edu.fpt.rebroland.exception.ResourceNotFoundException;
-import vn.edu.fpt.rebroland.payload.CareDTO;
-import vn.edu.fpt.rebroland.payload.CareResponse;
-import vn.edu.fpt.rebroland.payload.ShortPostDTO;
-import vn.edu.fpt.rebroland.payload.UserCareDTO;
+import vn.edu.fpt.rebroland.payload.*;
 import vn.edu.fpt.rebroland.repository.PostRepository;
 import vn.edu.fpt.rebroland.repository.UserCareRepository;
 import vn.edu.fpt.rebroland.repository.UserRepository;
@@ -17,8 +14,10 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
 
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -61,31 +60,37 @@ public class UserCareServiceImpl implements UserCareService {
         Integer postId = userCareDTO.getPostId();
         try {
             if (postId != null) {
-                UserCare oldUserCare = userCareRepository.findUserCareByPhoneAndPostId(userCareDTO.getPhone(), userCareDTO.getPostId());
-                UserCare oldPhoneUserCare = userCareRepository.findUserCareByPhone(userCareDTO.getPhone());
+                UserCare oldUserCare = userCareRepository.findUserCareByUserCaredIdAndPostId(userCareDTO.getUserCaredId(), userCareDTO.getPostId());
                 if (oldUserCare == null) {
-                    if (oldPhoneUserCare != null) {
+                    UserCare oldUserCared = userCareRepository.findUserCareByUserCaredId(userCareDTO.getUserCaredId());
+                    if (oldUserCared != null) {
                         // add more post in post care
                         Post post = postRepository.findById(postId).orElseThrow(() -> new ResourceNotFoundException("Post", "id", postId));
-                        oldPhoneUserCare.getPosts().add(post);
-                        userCare = oldPhoneUserCare;
+                        oldUserCared.getPosts().add(post);
+                        userCare = oldUserCared;
 
                     } else { // insert new user-care not duplicate
                         Post post = postRepository.findById(postId).orElseThrow(() -> new ResourceNotFoundException("Post", "id", postId));
                         userCare.setStartDate(date);
                         userCare.setPosts(Collections.singleton(post));
                     }
-                }
-                // duplicate phone and post id
-                if (oldUserCare != null && !oldUserCare.isStatus()) {
+                } else {  // duplicate phone and post id
                     setDataUserCare(userCare, oldUserCare);
                     userCare.setPosts(oldUserCare.getPosts());
+                }
+            } else {
+                UserCare oldUserCared = userCareRepository.findUserCareByUserCaredId(userCareDTO.getUserCaredId());
+                if (oldUserCared != null) {
+                    userCare = oldUserCared;
+                } else {
+                    userCare.setStartDate(date);
                 }
 
             }
         } catch (Exception e) {
 
         }
+//        userCare.setUserCaredId(userCareDTO.getUserCaredId());
         userCare.setStatus(false);
         UserCare newUserCare = userCareRepository.save(userCare);
         return mapToDTO(newUserCare);
@@ -94,9 +99,6 @@ public class UserCareServiceImpl implements UserCareService {
     @Override
     public UserCareDTO updateUserCare(UserCareDTO userCareDTO, int careId) {
         UserCare userCare = userCareRepository.findById(careId).orElseThrow(() -> new ResourceNotFoundException("UserCare", "id", careId));
-        userCare.setFullName(userCareDTO.getFullName());
-        userCare.setFullName(userCareDTO.getFullName());
-        userCare.setEmail(userCareDTO.getEmail());
         userCare.setSummarize(userCareDTO.getSummarize());
         UserCare newUserCare = userCareRepository.save(userCare);
         return mapToDTO(newUserCare);
@@ -120,19 +122,28 @@ public class UserCareServiceImpl implements UserCareService {
     }
 
     @Override
-    public CareResponse getUserCareByUserId(int userId, int pageNo, int pageSize) {
+    public CareResponse getUserCareByUserId(int userId, String keyword, int pageNo, int pageSize) {
         String sortByStartDate = "start_date";
         String sortDir = "desc";
         Sort sortStartDate = sortDir.equalsIgnoreCase(Sort.Direction.ASC.name()) ?
                 Sort.by(sortByStartDate).ascending() : Sort.by(sortByStartDate).descending();
         Pageable pageable = PageRequest.of(pageNo, pageSize, sortStartDate);
-        Page<UserCare> userCares = userCareRepository.getUserCareByUserId(pageable, userId);
-        List<UserCare> userCareList = userCareRepository.getListUserCareByUserId(userId);
-        List<UserCareDTO> userCareDTOList = userCares.getContent().stream().
-                map(contact -> mapToDTO(contact)).collect(Collectors.toList());
+        Page<UserCare> userCares = userCareRepository.getUserCareByUserId(pageable, userId, keyword);
+//        List<UserCare> userCareList = userCareRepository.getListUserCareByUserId(userId);
+//        List<UserCareDTO> userCareDTOList = userCares.getContent().stream().
+//                map(contact -> mapToDTO(contact)).collect(Collectors.toList());
+        List<UserCareDTO> userCareDTOList = new ArrayList<>();
+        for(UserCare userCare: userCares){
+            UserCareDTO userCareDTO = mapToDTO(userCare);
+            int userCaredId = userCareDTO.getUserCaredId();
+            User userCared =  userRepository.findById(userCaredId).orElseThrow(
+                    () -> new UsernameNotFoundException("User not found with id: " + userCaredId));
+            userCareDTO.setUserCared(modelMapper.map(userCared, UserDTO.class));
+            userCareDTOList.add(userCareDTO);
+        }
 
         CareResponse careResponse = new CareResponse();
-        careResponse.setTotalResult(userCareList.size());
+        careResponse.setTotalResult(userCares.getTotalElements());
         careResponse.setCares(userCareDTOList);
         careResponse.setPageNo(pageNo + 1);
         careResponse.setTotalPages(userCares.getTotalPages());
@@ -149,7 +160,12 @@ public class UserCareServiceImpl implements UserCareService {
     @Override
     public UserCareDTO getUserCareByCareId(int careId) {
         UserCare userCare = userCareRepository.findById(careId).orElseThrow(() -> new ResourceNotFoundException("UserCare", "id", careId));
-        return mapToDTO(userCare);
+        UserCareDTO userCareDTO = mapToDTO(userCare);
+
+        User userCared = userRepository.findById(userCare.getUserCaredId()).orElseThrow(() -> new ResourceNotFoundException("User", "id", userCare.getUserCaredId()));
+        userCareDTO.setUserCared(modelMapper.map(userCared, UserDTO.class));
+        return userCareDTO;
+
     }
 
     @Override
@@ -165,17 +181,15 @@ public class UserCareServiceImpl implements UserCareService {
     public void deletePostCareByPostId(int postId) {
         try {
             userCareRepository.deletePostCareByPostId(postId);
-        }catch (Exception e){
+        } catch (Exception e) {
 
         }
     }
 
     public void setDataUserCare(UserCare userCare, UserCare oldUserCare) {
         userCare.setCareId(oldUserCare.getCareId());
-        userCare.setPhone(oldUserCare.getPhone());
+        userCare.setUserCaredId(oldUserCare.getUserCaredId());
         userCare.setStartDate(oldUserCare.getStartDate());
-        userCare.setFullName(oldUserCare.getFullName());
-        userCare.setEmail(oldUserCare.getEmail());
         userCare.setSummarize(oldUserCare.getSummarize());
     }
 }

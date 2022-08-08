@@ -18,7 +18,7 @@ public interface UserCareService {
     UserCareDTO finishTransactionUserCare(int careId);
 
 
-    CareResponse getUserCareByUserId(int userId, int pageNo, int pageSize);
+    CareResponse getUserCareByUserId(int userId, String keyword, int pageNo, int pageSize);
 
     List<CareDTO> getByUserId(int userId);
 

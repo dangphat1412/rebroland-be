@@ -29,7 +29,7 @@ import java.util.*;
 
 @RestController
 @RequestMapping("/api/users")
-@CrossOrigin(origins = "https://rebroland-frontend.vercel.app/")
+@CrossOrigin(origins = "https://rebroland-frontend.vercel.app")
 public class UserController {
     private UserService userService;
 
@@ -272,11 +272,11 @@ public class UserController {
                                           @RequestParam(name = "ward", required = false) String ward,
                                           @RequestParam(name = "district", required = false) String district,
                                           @RequestParam(name = "province", required = false) String province,
-                                          @RequestParam(name = "propertyType", required = false) List<String> listPropertyType,
+                                          @RequestParam(name = "propertyTypes", required = false) List<String> listPropertyType,
                                           @RequestParam(name = "pageNo", defaultValue = "0") String pageNo,
                                           @RequestParam(name = "sortValue", defaultValue = "0") String sortValue){
         int pageNumber = Integer.parseInt(pageNo);
-        int pageSize = 8;
+        int pageSize = 2;
         try{
 //            List<UserDTO> listBroker = userService.getAllBrokerPaging(pageNumber, pageSize, user.getId());
             List<UserDTO> listBroker = userService.searchBroker(fullName, ward, district, province, listPropertyType, pageNumber, pageSize, sortValue);

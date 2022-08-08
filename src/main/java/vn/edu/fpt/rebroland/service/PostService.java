@@ -75,4 +75,8 @@ public interface PostService {
     void setDataToRealEstateDTO(RealEstatePostDTO realEstatePostDTO, PostDTO postDTO, int postId);
 
     boolean changeStatusOfPost(int postId);
+
+    Map<String, Integer> getNumberOfPropertyType();
+
+    Map<String, Integer> getNumberOfPropertyTypeForBroker();
 }

@@ -1,9 +1,12 @@
 package vn.edu.fpt.rebroland.controller;
 
 import vn.edu.fpt.rebroland.entity.User;
+import vn.edu.fpt.rebroland.entity.UserCare;
 import vn.edu.fpt.rebroland.exception.ResourceNotFoundException;
 import vn.edu.fpt.rebroland.payload.*;
+import vn.edu.fpt.rebroland.repository.UserCareRepository;
 import vn.edu.fpt.rebroland.repository.UserRepository;
+import vn.edu.fpt.rebroland.service.ContactService;
 import vn.edu.fpt.rebroland.service.UserCareDetailService;
 import vn.edu.fpt.rebroland.service.UserCareService;
 import com.twilio.Twilio;
@@ -22,20 +25,27 @@ import java.util.*;
 
 @RestController
 @RequestMapping("/api/user-care")
-@CrossOrigin(origins = "https://rebroland-frontend.vercel.app/")
+@CrossOrigin(origins = "https://rebroland-frontend.vercel.app")
 public class UserCareController {
     private UserCareService userCareService;
 
     private UserRepository userRepository;
 
+    private UserCareRepository userCareRepository;
 
     private UserCareDetailService userCareDetailService;
 
+    private ContactService contactService;
 
-    public UserCareController(UserCareService userCareService, UserRepository userRepository, UserCareDetailService userCareDetailService) {
+
+    public UserCareController(UserCareService userCareService, UserRepository userRepository,
+                              UserCareRepository userCareRepository, UserCareDetailService userCareDetailService,
+                              ContactService contactService) {
         this.userCareService = userCareService;
         this.userRepository = userRepository;
+        this.userCareRepository = userCareRepository;
         this.userCareDetailService = userCareDetailService;
+        this.contactService = contactService;
     }
 
     private static String decode(String encodedString) {
@@ -53,28 +63,45 @@ public class UserCareController {
     }
 
 
-    @PostMapping(consumes = "*/*")
+    @PostMapping("/add-customer/{contactId}")
     @Transactional
     public ResponseEntity<?> createUserCareForBroker(@Valid @RequestBody UserCareDTO userCareDTO,
-                                                          @RequestHeader(name = "Authorization") String token) {
-        int userId = getUserIdFromToken(token);
-        User user = userRepository.findById(userId).orElseThrow(() -> new ResourceNotFoundException("Broker", "id", userId));
-        if (user.getRoles().size() == 2) {
-            UserCareDTO newUserCareDTO = userCareService.createUserCare(userCareDTO, user);
+                                                     @PathVariable int contactId,
+                                                     @RequestHeader(name = "Authorization") String token) {
+        try {
+            int userId = getUserIdFromToken(token);
+            User broker = userRepository.findById(userId).orElseThrow(() -> new ResourceNotFoundException("Broker", "id", userId));
+            contactService.deleteContact(contactId);
+            if (userCareDTO.getPostId() != null) {
+                UserCare userCare = userCareRepository.findUserCareByUserCaredIdAndPostId(userCareDTO.getUserCaredId(), userCareDTO.getPostId());
+                if (userCare == null) {
+                    if (broker.getRoles().size() == 2) {
+                        UserCareDTO newUserCareDTO = userCareService.createUserCare(userCareDTO, broker);
+                        return new ResponseEntity<>(newUserCareDTO, HttpStatus.CREATED);
+                    } else {
+                        return new ResponseEntity<>("User is not broker", HttpStatus.BAD_REQUEST);
+                    }
+                } else {
+                    return new ResponseEntity<>("Duplicate UserCaredId and Post", HttpStatus.OK);
 
-            return new ResponseEntity<>(newUserCareDTO, HttpStatus.CREATED);
-        } else {
-            return new ResponseEntity<>("User is not broker", HttpStatus.BAD_REQUEST);
+                }
+            } else {
+                UserCareDTO newUserCareDTO = userCareService.createUserCare(userCareDTO, broker);
+                return new ResponseEntity<>(newUserCareDTO, HttpStatus.CREATED);
+            }
+        } catch (Exception e) {
+
         }
 
+        return new ResponseEntity<>("Insert user care fail", HttpStatus.BAD_REQUEST);
 
     }
 
     @PostMapping("/{careId}")
     @Transactional
     public ResponseEntity<?> createUserCareDetail(@PathVariable int careId,
-                                                       @Valid @RequestBody UserCareDetailDTO userCareDetailDTO,
-                                                       @RequestHeader(name = "Authorization") String token) {
+                                                  @Valid @RequestBody UserCareDetailDTO userCareDetailDTO,
+                                                  @RequestHeader(name = "Authorization") String token) {
 
         try {
             int userId = getUserIdFromToken(token);
@@ -94,7 +121,7 @@ public class UserCareController {
                         return new ResponseEntity<>(userCareDetailDTO1, HttpStatus.CREATED);
                     }
                 }
-                if (userCareDetailDTO.getDateAppointment() == null && userCareDetailDTO.getTimeAppointment() == null && userCareDetailDTO.getAlertTime() == null){
+                if (userCareDetailDTO.getDateAppointment() == null && userCareDetailDTO.getTimeAppointment() == null && userCareDetailDTO.getAlertTime() == null) {
                     UserCareDetailDTO userCareDetailDTO1 = userCareDetailService.createUserCareDetail(careId, userCareDetailDTO, null);
                     return new ResponseEntity<>(userCareDetailDTO1, HttpStatus.CREATED);
                 }
@@ -108,29 +135,29 @@ public class UserCareController {
         return new ResponseEntity<>("Create fail !", HttpStatus.BAD_REQUEST);
     }
 
-    public void sendRemindMessage(String phone, String dateAppointment, String timeAppointment, int alertTime){
-        try{
+    public void sendRemindMessage(String phone, String dateAppointment, String timeAppointment, int alertTime) {
+        try {
             SimpleDateFormat formater = new SimpleDateFormat("yyyy-MM-dd HH:mm");
             String s = dateAppointment + " " + timeAppointment;
             Date appointmentDate = formater.parse(s);
             Calendar cal = Calendar.getInstance();
             cal.setTime(appointmentDate);
-            cal.add(Calendar.SECOND, - alertTime);
+            cal.add(Calendar.SECOND, -alertTime);
             Date dateAlert = cal.getTime();
 
             String message = "Hôm nay bạn có hẹn vào lúc " + appointmentDate;
 
             setTimer(dateAlert, phone, message);
-        }catch (Exception e){
+        } catch (Exception e) {
             e.printStackTrace();
         }
     }
 
-    public void setTimer(Date dateAlert, String phone, String message){
+    public void setTimer(Date dateAlert, String phone, String message) {
         TimerTask timerTask = new TimerTask() {
             @Override
             public void run() {
-                sendSMS(phone,message);
+                sendSMS(phone, message);
             }
         };
         Timer timer = new Timer();
@@ -140,7 +167,8 @@ public class UserCareController {
 
     @GetMapping
     public ResponseEntity<?> getUserCareByUserId(@RequestParam(name = "pageNo", defaultValue = "0") String pageNo,
-                                                 @RequestHeader(name = "Authorization") String token) {
+                                                 @RequestHeader(name = "Authorization") String token,
+                                                 @RequestParam(name = "keyword", defaultValue = "") String keyword) {
 
         int userId = getUserIdFromToken(token);
         int pageSize = 10;
@@ -149,10 +177,10 @@ public class UserCareController {
 
         if (user.getCurrentRole() == 3) {
 
-            CareResponse careResponse = userCareService.getUserCareByUserId(userId, pageNumber, pageSize);
+            CareResponse careResponse = userCareService.getUserCareByUserId(userId, keyword, pageNumber, pageSize);
             return new ResponseEntity<>(careResponse, HttpStatus.OK);
         } else {
-            return new ResponseEntity<>("you need change to broker !", HttpStatus.BAD_REQUEST);
+            return new ResponseEntity<>("Người dùng không phải broker! !", HttpStatus.BAD_REQUEST);
         }
 
     }
@@ -177,7 +205,7 @@ public class UserCareController {
 
     @GetMapping("/details/{careId}")
     public ResponseEntity<?> getListUserCareDetails(@PathVariable int careId,
-                                               @RequestHeader(name = "Authorization") String token){
+                                                    @RequestHeader(name = "Authorization") String token) {
         int userId = getUserIdFromToken(token);
         User user = userRepository.findById(userId).orElseThrow(() -> new ResourceNotFoundException("User", "id", userId));
         if (user.getCurrentRole() == 3) {
@@ -190,7 +218,7 @@ public class UserCareController {
             map.put("user", userCareDTO);
             map.put("posts", listPostCare);
             return new ResponseEntity<>(map, HttpStatus.OK);
-        }else {
+        } else {
             return new ResponseEntity<>("you need change to broker !", HttpStatus.BAD_REQUEST);
         }
     }
@@ -200,8 +228,8 @@ public class UserCareController {
     @PutMapping("/{careId}")
     @Transactional
     public ResponseEntity<?> updateUserCare(@PathVariable int careId,
-                                                 @Valid @RequestBody UserCareDTO userCareDTO,
-                                                 @RequestHeader(name = "Authorization") String token) {
+                                            @Valid @RequestBody UserCareDTO userCareDTO,
+                                            @RequestHeader(name = "Authorization") String token) {
         int userId = getUserIdFromToken(token);
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new ResourceNotFoundException("User", "id", userId));
@@ -216,7 +244,7 @@ public class UserCareController {
     @PutMapping("/details/{detailId}")
     @Transactional
     public ResponseEntity<?> updateUserCare(@PathVariable int detailId,
-                                                 @RequestHeader(name = "Authorization") String token) {
+                                            @RequestHeader(name = "Authorization") String token) {
         int userId = getUserIdFromToken(token);
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new ResourceNotFoundException("User", "id", userId));
@@ -227,7 +255,6 @@ public class UserCareController {
             return new ResponseEntity<>("You need to change broker role!", HttpStatus.OK);
         }
     }
-
 
 
     @PutMapping("/finish/{careId}")
@@ -264,7 +291,7 @@ public class UserCareController {
         Twilio.init(System.getenv("TWILIO_ACCOUNT_SID"),
                 System.getenv("TWILIO_AUTH_TOKEN"));
 
-        Message.creator(new PhoneNumber(phone.replaceFirst("0","+84")),
+        Message.creator(new PhoneNumber(phone.replaceFirst("0", "+84")),
                 new PhoneNumber("+19844647230"), token).create();
     }
 

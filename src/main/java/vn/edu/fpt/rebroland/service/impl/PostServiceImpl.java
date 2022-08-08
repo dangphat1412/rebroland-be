@@ -37,13 +37,15 @@ public class PostServiceImpl implements PostService {
     private ResidentialLandRepository landRepository;
     private ResidentialLandHistoryRepository landHistoryRepository;
 
+    private AvgRateRepository rateRepository;
+
     public PostServiceImpl(PostRepository postRepository, UserRepository userRepository, DirectionRepository directionRepository,
                            PropertyTypeRepository propertyTypeRepository, UnitPriceRepository unitPriceRepository,
                            StatusRepository statusRepository, LongevityRepository longevityRepository, ModelMapper mapper,
                            ResidentialHouseRepository houseRepository, ResidentialHouseHistoryRepository houseHistoryRepository,
                            ApartmentRepository apartmentRepository, ApartmentHistoryRepository apartmentHistoryRepository,
-                           ResidentialLandRepository landRepository, ResidentialLandHistoryRepository landHistoryRepository
-                           ) {
+                           ResidentialLandRepository landRepository, ResidentialLandHistoryRepository landHistoryRepository,
+                           AvgRateRepository rateRepository) {
 
         this.postRepository = postRepository;
         this.userRepository = userRepository;
@@ -59,6 +61,7 @@ public class PostServiceImpl implements PostService {
         this.apartmentHistoryRepository = apartmentHistoryRepository;
         this.landRepository = landRepository;
         this.landHistoryRepository = landHistoryRepository;
+        this.rateRepository = rateRepository;
     }
 
     @Override
@@ -404,8 +407,18 @@ public class PostServiceImpl implements PostService {
     @Override
     public List<BrokerInfoOfPostDTO> getDerivativePostOfOriginalPost(int originalPostId) {
         List<Post> listPost = postRepository.getDerivativePostOfOriginalPost(originalPostId);
-        return listPost.stream().map(post -> mapper.map(post, BrokerInfoOfPostDTO.class)).collect(Collectors.toList());
-
+        List<BrokerInfoOfPostDTO> listPostDto = new ArrayList<>();
+        AvgRate avgRate = null;
+        for (Post post: listPost) {
+            BrokerInfoOfPostDTO dto = mapper.map(post, BrokerInfoOfPostDTO.class);
+            UserDTO userDTO = dto.getUser();
+            avgRate = rateRepository.getAvgRateByUserIdAndRoleId(userDTO.getId(), 3);
+            userDTO.setAvgRate(avgRate.getAvgRate());
+            dto.setUser(userDTO);
+            listPostDto.add(dto);
+        }
+//        return listPost.stream().map(post -> mapper.map(post, BrokerInfoOfPostDTO.class)).collect(Collectors.toList());
+        return listPostDto;
     }
 
 
@@ -1297,6 +1310,30 @@ public class PostServiceImpl implements PostService {
         }else {
             return false;
         }
+    }
+
+    @Override
+    public Map<String, Integer> getNumberOfPropertyType() {
+        int numberOfHouse = postRepository.getNumberOfPropertyType(1);
+        int numberOfApartment = postRepository.getNumberOfPropertyType(2);
+        int numberOfLand = postRepository.getNumberOfPropertyType(3);
+        Map<String, Integer> map = new HashMap<>();
+        map.put("house", numberOfHouse);
+        map.put("apartment", numberOfApartment);
+        map.put("land", numberOfLand);
+        return map;
+    }
+
+    @Override
+    public Map<String, Integer> getNumberOfPropertyTypeForBroker() {
+        int numberOfHouse = postRepository.getNumberOfPropertyTypeForBroker(1);
+        int numberOfApartment = postRepository.getNumberOfPropertyTypeForBroker(2);
+        int numberOfLand = postRepository.getNumberOfPropertyTypeForBroker(3);
+        Map<String, Integer> map = new HashMap<>();
+        map.put("house", numberOfHouse);
+        map.put("apartment", numberOfApartment);
+        map.put("land", numberOfLand);
+        return map;
     }
 
 

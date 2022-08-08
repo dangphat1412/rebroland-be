@@ -136,15 +136,19 @@ public class ReportServiceImpl implements ReportService {
 
 
     public void createEvidence(List<String> links, int detailId) {
-        ReportDetail reportDetail = detailRepository.findById(detailId).orElseThrow(() -> new ResourceNotFoundException("Report Detail", "ID", detailId));
-        for (String link : links) {
-            Evidence evidence = new Evidence();
-            try {
-                evidence.setImage(link);
-                evidence.setReportDetail(reportDetail);
-                evidenceRepository.save(evidence);
-            } catch (Exception ex) {
-                ex.printStackTrace();
+        if(links == null){
+            return;
+        }else{
+            ReportDetail reportDetail = detailRepository.findById(detailId).orElseThrow(() -> new ResourceNotFoundException("Report Detail", "ID", detailId));
+            for (String link : links) {
+                Evidence evidence = new Evidence();
+                try {
+                    evidence.setImage(link);
+                    evidence.setReportDetail(reportDetail);
+                    evidenceRepository.save(evidence);
+                } catch (Exception ex) {
+                    ex.printStackTrace();
+                }
             }
         }
     }
@@ -193,7 +197,7 @@ public class ReportServiceImpl implements ReportService {
         }
 
         List<Report> listReport = pageReport.getContent();
-        List<ReportDTO> listDto = listReport.stream().map(report -> mapper.map(report, ReportDTO.class)).collect(Collectors.toList());
+        List<ReportDTO> listDto = listReport.stream().map(report -> mapToDTO(report)).collect(Collectors.toList());
 
         SearchResponse searchResponse = new SearchResponse();
         List<SearchDTO> listSearchDto = new ArrayList<>();
@@ -283,17 +287,17 @@ public class ReportServiceImpl implements ReportService {
             postRepository.save(post);
 
             TextMessageDTO messageDTO = new TextMessageDTO();
-            messageDTO.setMessage("Bài viết của bạn đã bị chặn vì bị tố cáo !");
+            messageDTO.setMessage("Bài viết của bạn: '" + post.getTitle() + "' đã bị chặn vì có người tố cáo !");
             template.convertAndSend("/topic/message/" + post.getUser().getId(), messageDTO);
-            saveNotificationAndUpdateUser("Bài viết của bạn đã bị chặn !", post.getUser());
+            saveNotificationAndUpdateUser("Bài viết của bạn: '" + post.getTitle() + "' đã bị chặn vì có người tố cáo !", post.getUser());
 
             List<Integer> listUserReportId = detailRepository.getDetailReportByReportId(reportedPost.getReportId());
             for (int userReportId: listUserReportId) {
-                messageDTO.setMessage("Cảm ơn bạn vì đã tố cáo !");
+                messageDTO.setMessage("Tố cáo của bạn được chấp nhận. Cảm ơn bạn vì đã tố cáo !");
                 template.convertAndSend("/topic/message/" + userReportId, messageDTO);
                 User user = userRepository.findById(userReportId)
                         .orElseThrow(() -> new ResourceNotFoundException("User", "id", userReportId));
-                saveNotificationAndUpdateUser("Cảm ơn bạn vì đã tố cáo !", user);
+                saveNotificationAndUpdateUser("Tố cáo của bạn được chấp nhận. Cảm ơn bạn vì đã tố cáo !", user);
             }
 
             return true;
@@ -322,6 +326,16 @@ public class ReportServiceImpl implements ReportService {
         if(reportedPost != null && reportedPost.getStatus() == 1){
             reportedPost.setStatus(3);
             reportRepository.save(reportedPost);
+
+            TextMessageDTO messageDTO = new TextMessageDTO();
+            List<Integer> listUserReportId = detailRepository.getDetailReportByReportId(reportedPost.getReportId());
+            for (int userReportId: listUserReportId) {
+                messageDTO.setMessage("Chúng tôi đã hủy báo cáo của bạn. Nếu có thắc mắc xin liên hệ SĐT: 0834117442");
+                template.convertAndSend("/topic/message/" + userReportId, messageDTO);
+                User user = userRepository.findById(userReportId)
+                        .orElseThrow(() -> new ResourceNotFoundException("User", "id", userReportId));
+                saveNotificationAndUpdateUser("Chúng tôi đã hủy báo cáo của bạn. Nếu có thắc mắc xin liên hệ SĐT: 0834117442", user);
+            }
             return true;
         }else{
             return false;
@@ -341,11 +355,11 @@ public class ReportServiceImpl implements ReportService {
             TextMessageDTO messageDTO = new TextMessageDTO();
             List<Integer> listUserReportId = detailRepository.getDetailReportByReportId(report.getReportId());
             for (int userReportId: listUserReportId) {
-                messageDTO.setMessage("Cảm ơn bạn vì đã tố cáo !");
+                messageDTO.setMessage("Tố cáo của bạn được chấp nhận. Cảm ơn bạn vì đã tố cáo !");
                 template.convertAndSend("/topic/message/" + userReportId, messageDTO);
                 User userReport = userRepository.findById(userReportId)
                         .orElseThrow(() -> new ResourceNotFoundException("User", "id", userReportId));
-                saveNotificationAndUpdateUser("Cảm ơn bạn vì đã tố cáo !", userReport);
+                saveNotificationAndUpdateUser("Tố cáo của bạn được chấp nhận. Cảm ơn bạn vì đã tố cáo !", userReport);
             }
             return true;
         }else{
@@ -359,6 +373,16 @@ public class ReportServiceImpl implements ReportService {
         if(reportedPost != null && reportedPost.getStatus() == 1){
             reportedPost.setStatus(3);
             reportRepository.save(reportedPost);
+
+            TextMessageDTO messageDTO = new TextMessageDTO();
+            List<Integer> listUserReportId = detailRepository.getDetailReportByReportId(reportedPost.getReportId());
+            for (int userReportId: listUserReportId) {
+                messageDTO.setMessage("Chúng tôi đã hủy báo cáo của bạn. Nếu có thắc mắc xin liên hệ SĐT: 0834117442");
+                template.convertAndSend("/topic/message/" + userReportId, messageDTO);
+                User user = userRepository.findById(userReportId)
+                        .orElseThrow(() -> new ResourceNotFoundException("User", "id", userReportId));
+                saveNotificationAndUpdateUser("Chúng tôi đã hủy báo cáo của bạn. Nếu có thắc mắc xin liên hệ SĐT: 0834117442", user);
+            }
             return true;
         }else{
             return false;

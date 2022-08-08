@@ -20,15 +20,17 @@ public interface UserCareRepository extends JpaRepository<UserCare, Integer> {
     void deletePostCareById(int careId);
 
     @Query(value = "select * from user_cares u join post_cares p on u.care_id = p.care_id " +
-            "where phone = :phone and " +
-            "post_id = :postId", nativeQuery = true)
-    UserCare findUserCareByPhoneAndPostId(String phone, int postId);
+            "where u.user_cared_id = :userCaredId and " +
+            "p.post_id = :postId", nativeQuery = true)
+    UserCare findUserCareByUserCaredIdAndPostId(Integer userCaredId, int postId);
 
-    @Query(value = "select * from user_cares where phone =:phone", nativeQuery = true)
-    UserCare findUserCareByPhone(String phone);
+    @Query(value = "select * from user_cares where user_cared_id = :userCaredId", nativeQuery = true)
+    UserCare findUserCareByUserCaredId(Integer userCaredId);
 
-    @Query(value = "select * from `user_cares` where user_id =:userId", nativeQuery = true)
-    Page<UserCare> getUserCareByUserId(Pageable pageable, int userId);
+    @Query(value = "select * from `user_cares` where user_id =:userId" +
+            " AND user_cared_id IN (SELECT u.id FROM `users` u " +
+            "                       WHERE (u.phone LIKE CONCAT('%',:keyword,'%')) OR (u.full_name LIKE CONCAT('%',:keyword,'%'))) ", nativeQuery = true)
+    Page<UserCare> getUserCareByUserId(Pageable pageable, int userId, String keyword);
 
     @Query(value = "select * from `user_cares` where user_id =:userId", nativeQuery = true)
     List<UserCare> getListUserCareByUserId(int userId);

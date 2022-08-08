@@ -22,12 +22,9 @@ import org.springframework.web.bind.annotation.*;
 
 import javax.validation.Valid;
 import java.util.Base64;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
 
 @RestController
-@CrossOrigin(origins = "https://rebroland-frontend.vercel.app/")
+@CrossOrigin(origins = "https://rebroland-frontend.vercel.app")
 @RequestMapping("/api/contact")
 public class ContactController {
     private ContactService contactService;
@@ -52,17 +49,18 @@ public class ContactController {
 
     @GetMapping
     public ResponseEntity<?> getContactsByUserId(@RequestParam(name = "pageNo", defaultValue = "0") String pageNo,
+                                                 @RequestParam(name = "keyword", defaultValue = "") String keyword,
                                                  @RequestHeader(name = "Authorization") String token) {
 
         int userId = getUserIdFromToken(token);
         int pageSize = 5;
         int pageNumber = Integer.parseInt(pageNo);
-        ContactResponse contactList = contactService.getContactByUserId(userId, pageNumber, pageSize);
-        List<CareDTO> userCareDTOList = userCareService.getByUserId(userId);
-        Map<String, Object> map = new HashMap<>();
-        map.put("contactList", contactList);
-        map.put("caringList",userCareDTOList);
-        return new ResponseEntity<>(map, HttpStatus.OK);
+        ContactResponse contactList = contactService.getContactByUserId(userId, keyword, pageNumber, pageSize);
+//        List<CareDTO> userCareDTOList = userCareService.getByUserId(userId);
+//        Map<String, Object> map = new HashMap<>();
+//        map.put("contactList", contactList);
+//        map.put("caringList",userCareDTOList);
+        return new ResponseEntity<>(contactList, HttpStatus.OK);
     }
 
     @Autowired

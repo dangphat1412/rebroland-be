@@ -12,9 +12,8 @@ import java.util.Date;
 public class PaymentDTO {
     private int id;
     private int amount;
-    private String description;
     private Date date;
-    private String type;
+    private String description;
+    private int typeId;
     private UserDTO user;
-//    private String bankCode;
 }

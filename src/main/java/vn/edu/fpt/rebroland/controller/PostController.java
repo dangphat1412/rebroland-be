@@ -26,7 +26,7 @@ import java.util.List;
 import java.util.Map;
 
 @RestController
-@CrossOrigin(origins = "https://rebroland-frontend.vercel.app/")
+@CrossOrigin(origins = "https://rebroland-frontend.vercel.app")
 @RequestMapping("/api/posts")
 public class PostController {
 
@@ -315,7 +315,7 @@ public class PostController {
                                         @RequestParam(name = "maxPrice", required = false) String maxPrice,
                                         @RequestParam(name = "minArea", defaultValue = "0") String minArea,
                                         @RequestParam(name = "maxArea", required = false) String maxArea,
-                                        @RequestParam(name = "propertyType", defaultValue = "1,2,3") List<String> listPropertyType,
+                                        @RequestParam(name = "propertyTypes", defaultValue = "1,2,3") List<String> listPropertyType,
                                         @RequestParam(name = "keyword", defaultValue = "") String keyword,
                                         @RequestParam(name = "direction", required = false) List<String> listDirectionId,
                                         @RequestParam(name = "numberOfBedroom", defaultValue = "0") String numberOfBedroom,
@@ -606,33 +606,15 @@ public class PostController {
 
     }
 
-//    @GetMapping("/broker/original/search")
-//    public ResponseEntity<?> searchOriginalPostForBroker(@RequestParam(name = "ward", defaultValue = "") String ward,
-//                                                         @RequestParam(name = "district", defaultValue = "") String district,
-//                                                         @RequestParam(name = "province", defaultValue = "") String province,
-//                                                         @RequestParam(name = "minPrice", required = false) String minPrice,
-//                                                         @RequestParam(name = "maxPrice", required = false) String maxPrice,
-//                                                         @RequestParam(name = "minArea", defaultValue = "0") String minArea,
-//                                                         @RequestParam(name = "maxArea", required = false) String maxArea,
-//                                                         @RequestParam(name = "propertyType", defaultValue = "1,2,3") List<String> listPropertyType,
-//                                                         @RequestParam(name = "keyword", defaultValue = "") String keyword,
-//                                                         @RequestParam(name = "direction", required = false) List<String> listDirectionId,
-//                                                         @RequestParam(name = "numberOfBedroom", defaultValue = "0") String numberOfBedroom,
-//                                                         @RequestParam(name = "pageNo", defaultValue = "0") String pageNo,
-//                                                         @RequestParam(name = "sortValue", defaultValue = "0") String sortValue){
-//        try {
-//            int numberBedroom = Integer.parseInt(numberOfBedroom);
-//            int pageSize = 5;
-//            int pageNumber = Integer.parseInt(pageNo);
-//
-//            SearchResponse list = postService.searchOriginalPosts(ward, district, province, minPrice, maxPrice,
-//                    minArea, maxArea, listPropertyType, keyword, listDirectionId, numberBedroom,
-//                    pageNumber, pageSize, sortValue);
-//
-//            return new ResponseEntity<>(list, HttpStatus.OK);
-//        } catch (Exception e) {
-//            return new ResponseEntity<>("Đã xảy ra lỗi!", HttpStatus.BAD_REQUEST);
-//        }
-//
-//    }
+    @GetMapping("/categories")
+    public ResponseEntity<?> getNumberOfPropertyType(){
+        Map<String, Integer> map = postService.getNumberOfPropertyType();
+        return new ResponseEntity<>(map, HttpStatus.OK);
+    }
+
+    @GetMapping("/broker/categories")
+    public ResponseEntity<?> getNumberOfPropertyTypeForBroker(){
+        Map<String, Integer> map = postService.getNumberOfPropertyTypeForBroker();
+        return new ResponseEntity<>(map, HttpStatus.OK);
+    }
 }
