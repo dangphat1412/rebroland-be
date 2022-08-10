@@ -30,6 +30,9 @@ public class PostDTO {
 
     private Date startDate;
 
+    private java.util.Date transactionStartDate;
+    private java.util.Date transactionEndDate;
+
     @NotNull(message = "Cập nhập thông tin này.")
     @Min(value = 0)
     @Max(value = 1000000000000L)

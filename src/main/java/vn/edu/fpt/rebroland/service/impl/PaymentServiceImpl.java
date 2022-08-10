@@ -1,6 +1,6 @@
 package vn.edu.fpt.rebroland.service.impl;
 
-import vn.edu.fpt.rebroland.entity.Payment;
+import vn.edu.fpt.rebroland.entity.Transactions;
 import vn.edu.fpt.rebroland.payload.*;
 import vn.edu.fpt.rebroland.repository.PaymentRepository;
 import vn.edu.fpt.rebroland.service.PaymentService;
@@ -27,21 +27,21 @@ public class PaymentServiceImpl implements PaymentService {
     }
 
     @Override
-    public PaymentDTO createPayment(PaymentDTO paymentDTO) {
+    public TransactionDTO createTransaction(TransactionDTO transactionDTO) {
         long millis = System.currentTimeMillis();
         java.sql.Date date = new java.sql.Date(millis);
-        paymentDTO.setDate(date);
+        transactionDTO.setStartDate(date);
 
-        Payment payment = mapToEntity(paymentDTO);
-        Payment newPayment = paymentRepository.save(payment);
-        return mapToDTO(newPayment);
+        Transactions transactions = mapToEntity(transactionDTO);
+        Transactions newTransactions = paymentRepository.save(transactions);
+        return mapToDTO(newTransactions);
     }
 
     @Override
     public PaymentResponse getAllPayments(int pageNumber, int pageSize, String keyword, String sortValue) {
         Pageable pageable = PageRequest.of(pageNumber, pageSize);
         int sortOption = Integer.parseInt(sortValue);
-        Page<Payment> pagePayment = null;
+        Page<Transactions> pagePayment = null;
         switch (sortOption){
             case 0:
                 pagePayment = paymentRepository.findAll(pageable, keyword);
@@ -53,8 +53,8 @@ public class PaymentServiceImpl implements PaymentService {
                 pagePayment = paymentRepository.findAllBrokerPayment(pageable, keyword);
                 break;
         }
-        List<Payment> listPayment = pagePayment.getContent();
-        List<PaymentDTO> listDto = listPayment.stream().map(payment -> mapToDTO(payment)).collect(Collectors.toList());
+        List<Transactions> listTransactions = pagePayment.getContent();
+        List<TransactionDTO> listDto = listTransactions.stream().map(transactions -> mapToDTO(transactions)).collect(Collectors.toList());
         PaymentResponse paymentResponse = new PaymentResponse();
 
         paymentResponse.setPayments(listDto);
@@ -76,11 +76,11 @@ public class PaymentServiceImpl implements PaymentService {
         return map;
     }
 
-    private PaymentDTO mapToDTO(Payment payment) {
-        return mapper.map(payment, PaymentDTO.class);
+    private TransactionDTO mapToDTO(Transactions transactions) {
+        return mapper.map(transactions, TransactionDTO.class);
     }
 
-    private Payment mapToEntity(PaymentDTO paymentDTO) {
-        return mapper.map(paymentDTO, Payment.class);
+    private Transactions mapToEntity(TransactionDTO transactionDTO) {
+        return mapper.map(transactionDTO, Transactions.class);
     }
 }

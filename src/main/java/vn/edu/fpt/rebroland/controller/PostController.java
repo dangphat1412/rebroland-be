@@ -52,13 +52,15 @@ public class PostController {
 
     private UserCareService userCareService;
 
+    private PriceService priceService;
+
     public PostController(PostService postService, CoordinateService coordinateService, ImageService imageService,
                           ApartmentService apartmentService, ResidentialLandService residentialLandService,
                           ResidentialHouseService residentialHouseService, ApartmentHistoryService apartmentHistoryService,
                           ResidentialHouseHistoryService residentialHouseHistoryService, ResidentialLandHistoryService residentialLandHistoryService,
                           PostRepository postRepository, UserRepository userRepository, ModelMapper mapper,
                           UserFollowPostService userFollowPostService, ReportService reportService, ContactService contactService,
-                          UserCareService userCareService, AvgRateRepository rateRepository) {
+                          UserCareService userCareService, AvgRateRepository rateRepository, PriceService priceService) {
         this.postService = postService;
         this.coordinateService = coordinateService;
         this.imageService = imageService;
@@ -76,6 +78,7 @@ public class PostController {
         this.contactService = contactService;
         this.userCareService = userCareService;
         this.rateRepository = rateRepository;
+        this.priceService = priceService;
     }
 
     //view detail real estate post from post id
@@ -116,10 +119,11 @@ public class PostController {
         java.sql.Date date = new java.sql.Date(millis);
         User user = userRepository.findById(userId).orElseThrow(() -> new ResourceNotFoundException("User", "id", userId));
         Post post = postRepository.findPostByPostId(postId);
-        if(post.isAllowDerivative() && post.getOriginalPost() == null){
+
+        if (post.isAllowDerivative() && post.getOriginalPost() == null) {
             if (user.getCurrentRole() == 3) {
                 if (user.getId() != post.getUser().getId()) {
-                    PostDTO postDTO = postService.setDataToPostDTO(generalPostDTO, userId, date);
+                    PostDTO postDTO = postService.setDataToPostDTO(generalPostDTO, userId, date, false);
                     postDTO.setOriginalPost(postId);
                     PostDTO newPostDTO = postService.createPost(postDTO, userId, generalPostDTO.getDirectionId(), generalPostDTO.getPropertyTypeId(),
                             generalPostDTO.getUnitPriceId(), 1, generalPostDTO.getLongevityId());
@@ -146,7 +150,7 @@ public class PostController {
             } else {
                 return new ResponseEntity<>("You need change to be broker", HttpStatus.BAD_REQUEST);
             }
-        }else{
+        } else {
             return new ResponseEntity<>("Bài viết này không cho phép tạo bài phái sinh! ", HttpStatus.CREATED);
         }
 
@@ -157,28 +161,28 @@ public class PostController {
     //switch mode of post
     @PutMapping("/allow-derivative/switch/{postId}")
     public ResponseEntity<?> switchPostMode(@RequestHeader(name = "Authorization") String token,
-                                            @PathVariable(name = "postId") String id){
+                                            @PathVariable(name = "postId") String id) {
         int postId = Integer.parseInt(id);
         int userId = getUserIdFromToken(token);
 
         Post post = postRepository.findPostByPostId(postId);
-        if(post == null){
+        if (post == null) {
             return new ResponseEntity<>("Bài viết không tồn tại!", HttpStatus.BAD_REQUEST);
         }
-        if(post.getOriginalPost() != null){
+        if (post.getOriginalPost() != null) {
             return new ResponseEntity<>("Bài viết là bài phái sinh!", HttpStatus.BAD_REQUEST);
         }
-        if(userId == post.getUser().getId()){
-            if(post.isAllowDerivative()){
+        if (userId == post.getUser().getId()) {
+            if (post.isAllowDerivative()) {
                 post.setAllowDerivative(false);
                 postRepository.save(post);
                 return new ResponseEntity<>("Bài viết không cho phép đăng bài phái sinh", HttpStatus.OK);
-            }else{
+            } else {
                 post.setAllowDerivative(true);
                 postRepository.save(post);
                 return new ResponseEntity<>("Bài viết cho phép đăng bài phái sinh", HttpStatus.OK);
             }
-        }else{
+        } else {
             return new ResponseEntity<>("Người dùng không thể thay đổi chế độ bài viết!", HttpStatus.BAD_REQUEST);
         }
     }
@@ -199,12 +203,17 @@ public class PostController {
 //        } else {
 //            startDate = "20" + generalPostDTO.getBarcode().substring(7, 9);
 //        }
-        if (user.getCurrentRole() == 2) {
-            if(generalPostDTO.getBarcode().length() == 14){
-                return new ResponseEntity<>("Độ dài từ 13 hoặc 15 ký tự.", HttpStatus.BAD_REQUEST);
 
-            }else{
-                PostDTO postDTO = postService.setDataToPostDTO(generalPostDTO, userId, date);
+        PriceDTO priceDTO = priceService.getPriceByTypeIdAndStatus(1);
+        long totalPayment = generalPostDTO.getNumberOfPostedDay() * (priceDTO.getPrice()*(100-priceDTO.getDiscount())/100);
+        if (user.getAccountBalance() < totalPayment) {
+            return new ResponseEntity<>("Số tiền trong tài khoản không đủ để trả", HttpStatus.BAD_REQUEST);
+        } else {
+            if (user.getCurrentRole() == 2) {
+                long newBalanceAccount = user.getAccountBalance() - totalPayment;
+                user.setAccountBalance(newBalanceAccount);
+                userRepository.save(user);
+                PostDTO postDTO = postService.setDataToPostDTO(generalPostDTO, userId, date, true);
                 PostDTO newPostDTO = postService.createPost(postDTO, userId, generalPostDTO.getDirectionId(), generalPostDTO.getPropertyTypeId(),
                         generalPostDTO.getUnitPriceId(), 1, generalPostDTO.getLongevityId());
                 imageService.createImage(generalPostDTO.getImages(), newPostDTO.getPostId());
@@ -223,10 +232,12 @@ public class PostController {
                         residentialLandService.createResidentialLand(newResidentialLand, newPostDTO.getPostId());
                         return new ResponseEntity<>("Land success", HttpStatus.CREATED);
                 }
+
+            } else {
+                return new ResponseEntity<>("You need change to customer", HttpStatus.BAD_REQUEST);
             }
-        } else {
-            return new ResponseEntity<>("You need change to customer", HttpStatus.BAD_REQUEST);
         }
+
         return new ResponseEntity<>("fail", HttpStatus.BAD_REQUEST);
     }
 
@@ -235,12 +246,30 @@ public class PostController {
     public SearchResponse getPostByUserToken(@RequestHeader(name = "Authorization") String token,
                                              @RequestParam(name = "pageNo", defaultValue = "0") String pageNo,
                                              @RequestParam(name = "propertyType", required = false) String propertyTypeId,
-                                             @RequestParam(name = "sortValue", defaultValue = "0") String sortValue) {
+                                             @RequestParam(name = "sortValue", defaultValue = "0") String sortValue,
+                                             @RequestParam(name = "status", defaultValue = "0") String status) {
         int userId = getUserIdFromToken(token);
 
         int pageNumber = Integer.parseInt(pageNo);
         int pageSize = 5;
-        return postService.getPostByUserId(pageNumber, pageSize, userId, propertyTypeId, sortValue);
+        return postService.getPostByUserId(pageNumber, pageSize, userId, propertyTypeId, sortValue, status);
+    }
+
+    @GetMapping("/price-per-day")
+    public ResponseEntity<?> getPricePerDay(@RequestHeader(name = "Authorization") String token){
+        PriceDTO priceDTO = priceService.getPriceByTypeIdAndStatus(1);
+        return new ResponseEntity<>(priceDTO, HttpStatus.OK);
+    }
+
+    @GetMapping("/expired-post/{userId}")
+    public ResponseEntity<?> getExpiredPostByUserId(@PathVariable(name = "userId") int userId,
+                                                    @RequestHeader(name = "Authorization") String token,
+                                                    @RequestParam(name = "pageNo", defaultValue = "0") String pageNo){
+        int pageNumber = Integer.parseInt(pageNo);
+        int pageSize = 2;
+        SearchResponse searchResponse = postService.getExpiredPostByUserId(userId, pageNumber, pageSize);
+
+        return new ResponseEntity<>(searchResponse, HttpStatus.OK);
     }
 
     //get all post for broker
@@ -349,7 +378,7 @@ public class PostController {
         PostDTO postDTO = postService.getPostByPostId(postId);
         int propertyId = postDTO.getPropertyType().getId();
         Long date = postDTO.getStartDate().getTime();
-        postDTO = postService.setDataToPostDTO(generalPostDTO, userId, dateNow);
+        postDTO = postService.setDataToUpdatePost(generalPostDTO, userId, dateNow);
         SimpleDateFormat simpleDateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
 //        String startDate = "";
 //        if (generalPostDTO.getBarcode().length() == 13) {
@@ -551,9 +580,9 @@ public class PostController {
         UserDTO userDTO = mapper.map(user, UserDTO.class);
 
         AvgRate avgRate = rateRepository.getAvgRateByUserIdAndRoleId(user.getId(), user.getCurrentRole());
-        if(avgRate != null){
+        if (avgRate != null) {
             userDTO.setAvgRate(avgRate.getAvgRate());
-        }else{
+        } else {
             userDTO.setAvgRate(0);
         }
 
@@ -607,13 +636,13 @@ public class PostController {
     }
 
     @GetMapping("/categories")
-    public ResponseEntity<?> getNumberOfPropertyType(){
+    public ResponseEntity<?> getNumberOfPropertyType() {
         Map<String, Integer> map = postService.getNumberOfPropertyType();
         return new ResponseEntity<>(map, HttpStatus.OK);
     }
 
     @GetMapping("/broker/categories")
-    public ResponseEntity<?> getNumberOfPropertyTypeForBroker(){
+    public ResponseEntity<?> getNumberOfPropertyTypeForBroker() {
         Map<String, Integer> map = postService.getNumberOfPropertyTypeForBroker();
         return new ResponseEntity<>(map, HttpStatus.OK);
     }

@@ -4,6 +4,8 @@ import com.fasterxml.jackson.annotation.JsonFormat;
 import lombok.Data;
 
 import javax.validation.constraints.Email;
+import javax.validation.constraints.Max;
+import javax.validation.constraints.Min;
 import javax.validation.constraints.Pattern;
 import java.util.Date;
 
@@ -60,5 +62,9 @@ public class UserDTO {
     private float avgRate;
 
     private boolean isBroker;
+
+    @Max(message = "Số tiền vượt quá hạn mức của hệ thống !" ,value = 100000000)
+    @Min(message = "Số tiền không được là số âm !" ,value = 0)
+    private long accountBalance;
 
 }

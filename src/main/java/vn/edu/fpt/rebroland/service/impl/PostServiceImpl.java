@@ -14,10 +14,7 @@ import org.springframework.stereotype.Service;
 
 import java.sql.Date;
 import java.text.SimpleDateFormat;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.stream.Collectors;
 
 @Service
@@ -95,7 +92,7 @@ public class PostServiceImpl implements PostService {
     }
 
     @Override
-    public SearchResponse getPostByUserId(int pageNo, int pageSize, int userId, String propertyId, String option) {
+    public SearchResponse getPostByUserId(int pageNo, int pageSize, int userId, String propertyId, String option, String status) {
         String check = null;
         int typeId = 0;
         if (propertyId != null) {
@@ -103,7 +100,9 @@ public class PostServiceImpl implements PostService {
             typeId = Integer.parseInt(propertyId);
         }
 
+
         int sortOption = Integer.parseInt(option);
+        int statusId = Integer.parseInt(status);
         String sortOpt = "";
         String sortDir = "";
         Sort sort = null;
@@ -111,74 +110,74 @@ public class PostServiceImpl implements PostService {
         Page<Post> listPosts = null;
         List<Post> list = null;
         List<PostDTO> listDto = null;
-        switch (sortOption){
+        switch (sortOption) {
             case 0:
                 sortOpt = "start_date";
                 sortDir = "desc";
-                sort = sortDir.equalsIgnoreCase(Sort.Direction.ASC.name())?
-                        Sort.by(sortOpt).ascending(): Sort.by(sortOpt).descending();
+                sort = sortDir.equalsIgnoreCase(Sort.Direction.ASC.name()) ?
+                        Sort.by(sortOpt).ascending() : Sort.by(sortOpt).descending();
                 pageable = PageRequest.of(pageNo, pageSize, sort);
-                listPosts = postRepository.getDerivativePostByUserId(userId, typeId, check, pageable);
+                listPosts = postRepository.getPostByUserId(userId, typeId, check, statusId, pageable);
                 list = listPosts.getContent();
                 listDto = list.stream().map(post -> mapToDTO(post)).collect(Collectors.toList());
                 break;
             case 1:
                 pageable = PageRequest.of(pageNo, pageSize);
-                listPosts = postRepository.getDerivativePostByUserIdOrderByPriceAsc(userId, typeId, check, pageable);
+                listPosts = postRepository.getPostByUserIdOrderByPriceAsc(userId, typeId, check, statusId, pageable);
                 list = listPosts.getContent();
                 listDto = list.stream().map(post -> mapToDTO(post)).collect(Collectors.toList());
 
                 break;
             case 2:
                 pageable = PageRequest.of(pageNo, pageSize);
-                listPosts = postRepository.getDerivativePostByUserIdOrderByPriceDesc(userId, typeId, check, pageable);
+                listPosts = postRepository.getPostByUserIdOrderByPriceDesc(userId, typeId, check, statusId, pageable);
                 list = listPosts.getContent();
                 listDto = list.stream().map(post -> mapToDTO(post)).collect(Collectors.toList());
                 break;
             case 3:
                 //giá trên m2 từ thấp đến cao
                 pageable = PageRequest.of(pageNo, pageSize);
-                listPosts = postRepository.getDerivativePostByUserIdOrderByPricePerSquareAsc(userId, typeId, check, pageable);
+                listPosts = postRepository.getPostByUserIdOrderByPricePerSquareAsc(userId, typeId, check, statusId, pageable);
                 list = listPosts.getContent();
                 listDto = list.stream().map(post -> mapToDTO(post)).collect(Collectors.toList());
                 break;
             case 4:
                 pageable = PageRequest.of(pageNo, pageSize);
-                listPosts = postRepository.getDerivativePostByUserIdOrderByPricePerSquareDesc(userId, typeId, check, pageable);
+                listPosts = postRepository.getPostByUserIdOrderByPricePerSquareDesc(userId, typeId, check, statusId, pageable);
                 list = listPosts.getContent();
                 listDto = list.stream().map(post -> mapToDTO(post)).collect(Collectors.toList());
                 break;
             case 5:
                 sortOpt = "area";
                 sortDir = "asc";
-                sort = sortDir.equalsIgnoreCase(Sort.Direction.ASC.name())?
-                        Sort.by(sortOpt).ascending(): Sort.by(sortOpt).descending();
+                sort = sortDir.equalsIgnoreCase(Sort.Direction.ASC.name()) ?
+                        Sort.by(sortOpt).ascending() : Sort.by(sortOpt).descending();
                 pageable = PageRequest.of(pageNo, pageSize, sort);
-                listPosts = postRepository.getDerivativePostByUserId(userId, typeId, check, pageable);
+                listPosts = postRepository.getPostByUserId(userId, typeId, check, statusId, pageable);
                 list = listPosts.getContent();
                 listDto = list.stream().map(post -> mapToDTO(post)).collect(Collectors.toList());
                 break;
             case 6:
                 sortOpt = "area";
                 sortDir = "desc";
-                sort = sortDir.equalsIgnoreCase(Sort.Direction.ASC.name())?
-                        Sort.by(sortOpt).ascending(): Sort.by(sortOpt).descending();
+                sort = sortDir.equalsIgnoreCase(Sort.Direction.ASC.name()) ?
+                        Sort.by(sortOpt).ascending() : Sort.by(sortOpt).descending();
                 pageable = PageRequest.of(pageNo, pageSize, sort);
-                listPosts = postRepository.getDerivativePostByUserId(userId, typeId, check, pageable);
+                listPosts = postRepository.getPostByUserId(userId, typeId, check, statusId, pageable);
                 list = listPosts.getContent();
                 listDto = list.stream().map(post -> mapToDTO(post)).collect(Collectors.toList());
                 break;
         }
 
         List<SearchDTO> listSearchDto = new ArrayList<>();
-        for (PostDTO postDto: listDto) {
+        for (PostDTO postDto : listDto) {
             SearchDTO dto = new SearchDTO();
             setDataToSearchDTO(dto, postDto);
             listSearchDto.add(dto);
         }
         SearchResponse searchResponse = new SearchResponse();
         searchResponse.setPosts(listSearchDto);
-        searchResponse.setPageNo(pageNo+1);
+        searchResponse.setPageNo(pageNo + 1);
         searchResponse.setTotalPages(listPosts.getTotalPages());
         searchResponse.setTotalResult(listPosts.getTotalElements());
         return searchResponse;
@@ -201,12 +200,12 @@ public class PostServiceImpl implements PostService {
         Page<Post> listPosts = null;
         List<Post> list = null;
         List<PostDTO> listDto = null;
-        switch (sortOption){
+        switch (sortOption) {
             case 0:
                 sortOpt = "start_date";
                 sortDir = "desc";
-                sort = sortDir.equalsIgnoreCase(Sort.Direction.ASC.name())?
-                        Sort.by(sortOpt).ascending(): Sort.by(sortOpt).descending();
+                sort = sortDir.equalsIgnoreCase(Sort.Direction.ASC.name()) ?
+                        Sort.by(sortOpt).ascending() : Sort.by(sortOpt).descending();
                 pageable = PageRequest.of(pageNo, pageSize, sort);
                 listPosts = postRepository.getAllPostByUserId(userId, typeId, check, pageable);
                 list = listPosts.getContent();
@@ -241,8 +240,8 @@ public class PostServiceImpl implements PostService {
             case 5:
                 sortOpt = "area";
                 sortDir = "asc";
-                sort = sortDir.equalsIgnoreCase(Sort.Direction.ASC.name())?
-                        Sort.by(sortOpt).ascending(): Sort.by(sortOpt).descending();
+                sort = sortDir.equalsIgnoreCase(Sort.Direction.ASC.name()) ?
+                        Sort.by(sortOpt).ascending() : Sort.by(sortOpt).descending();
                 pageable = PageRequest.of(pageNo, pageSize, sort);
                 listPosts = postRepository.getAllPostByUserId(userId, typeId, check, pageable);
                 list = listPosts.getContent();
@@ -251,8 +250,8 @@ public class PostServiceImpl implements PostService {
             case 6:
                 sortOpt = "area";
                 sortDir = "desc";
-                sort = sortDir.equalsIgnoreCase(Sort.Direction.ASC.name())?
-                        Sort.by(sortOpt).ascending(): Sort.by(sortOpt).descending();
+                sort = sortDir.equalsIgnoreCase(Sort.Direction.ASC.name()) ?
+                        Sort.by(sortOpt).ascending() : Sort.by(sortOpt).descending();
                 pageable = PageRequest.of(pageNo, pageSize, sort);
                 listPosts = postRepository.getAllPostByUserId(userId, typeId, check, pageable);
                 list = listPosts.getContent();
@@ -261,14 +260,14 @@ public class PostServiceImpl implements PostService {
         }
 
         List<SearchDTO> listSearchDto = new ArrayList<>();
-        for (PostDTO postDto: listDto) {
+        for (PostDTO postDto : listDto) {
             SearchDTO dto = new SearchDTO();
             setDataToSearchDTO(dto, postDto);
             listSearchDto.add(dto);
         }
         SearchResponse searchResponse = new SearchResponse();
         searchResponse.setPosts(listSearchDto);
-        searchResponse.setPageNo(pageNo+1);
+        searchResponse.setPageNo(pageNo + 1);
         searchResponse.setTotalPages(listPosts.getTotalPages());
         searchResponse.setTotalResult(listPosts.getTotalElements());
         return searchResponse;
@@ -288,14 +287,14 @@ public class PostServiceImpl implements PostService {
         List<PostDTO> list = listPosts.stream().map(post -> mapToDTO(post)).collect(Collectors.toList());
 
         List<SearchDTO> listDto = new ArrayList<>();
-        for (PostDTO postDto: list) {
+        for (PostDTO postDto : list) {
             SearchDTO dto = new SearchDTO();
             setDataToSearchDTO(dto, postDto);
             listDto.add(dto);
         }
         SearchResponse searchResponse = new SearchResponse();
         searchResponse.setPosts(listDto);
-        searchResponse.setPageNo(pageNo+1);
+        searchResponse.setPageNo(pageNo + 1);
         searchResponse.setTotalPages(posts.getTotalPages());
         searchResponse.setTotalResult(posts.getTotalElements());
         return searchResponse;
@@ -311,12 +310,12 @@ public class PostServiceImpl implements PostService {
         Page<Post> listPosts = null;
         List<Post> list = null;
         List<PostDTO> listDto = null;
-        switch (sortOption){
+        switch (sortOption) {
             case 0:
                 sortOpt = "start_date";
                 sortDir = "desc";
-                sort = sortDir.equalsIgnoreCase(Sort.Direction.ASC.name())?
-                        Sort.by(sortOpt).ascending(): Sort.by(sortOpt).descending();
+                sort = sortDir.equalsIgnoreCase(Sort.Direction.ASC.name()) ?
+                        Sort.by(sortOpt).ascending() : Sort.by(sortOpt).descending();
                 pageable = PageRequest.of(pageNo, pageSize, sort);
                 listPosts = postRepository.findAllPostForBroker(pageable);
                 list = listPosts.getContent();
@@ -351,8 +350,8 @@ public class PostServiceImpl implements PostService {
             case 5:
                 sortOpt = "area";
                 sortDir = "asc";
-                sort = sortDir.equalsIgnoreCase(Sort.Direction.ASC.name())?
-                        Sort.by(sortOpt).ascending(): Sort.by(sortOpt).descending();
+                sort = sortDir.equalsIgnoreCase(Sort.Direction.ASC.name()) ?
+                        Sort.by(sortOpt).ascending() : Sort.by(sortOpt).descending();
                 pageable = PageRequest.of(pageNo, pageSize, sort);
                 listPosts = postRepository.findAllPostForBroker(pageable);
                 list = listPosts.getContent();
@@ -361,8 +360,8 @@ public class PostServiceImpl implements PostService {
             case 6:
                 sortOpt = "area";
                 sortDir = "desc";
-                sort = sortDir.equalsIgnoreCase(Sort.Direction.ASC.name())?
-                        Sort.by(sortOpt).ascending(): Sort.by(sortOpt).descending();
+                sort = sortDir.equalsIgnoreCase(Sort.Direction.ASC.name()) ?
+                        Sort.by(sortOpt).ascending() : Sort.by(sortOpt).descending();
                 pageable = PageRequest.of(pageNo, pageSize, sort);
                 listPosts = postRepository.findAllPostForBroker(pageable);
                 list = listPosts.getContent();
@@ -371,14 +370,14 @@ public class PostServiceImpl implements PostService {
         }
 
         List<SearchDTO> listSearchDto = new ArrayList<>();
-        for (PostDTO postDto: listDto) {
+        for (PostDTO postDto : listDto) {
             SearchDTO dto = new SearchDTO();
             setDataToSearchDTO(dto, postDto);
             listSearchDto.add(dto);
         }
         SearchResponse searchResponse = new SearchResponse();
         searchResponse.setPosts(listSearchDto);
-        searchResponse.setPageNo(pageNo+1);
+        searchResponse.setPageNo(pageNo + 1);
         searchResponse.setTotalPages(listPosts.getTotalPages());
         searchResponse.setTotalResult(listPosts.getTotalElements());
         return searchResponse;
@@ -389,16 +388,17 @@ public class PostServiceImpl implements PostService {
         Pageable pageable = PageRequest.of(pageNo, pageSize);
         Page<Post> pagePost = postRepository.getAllPostByUserIdPaging(userId, pageable);
 
-        List<PostDTO> listDto = pagePost.getContent().stream().map(post -> mapToDTO(post)).collect(Collectors.toList());;
+        List<PostDTO> listDto = pagePost.getContent().stream().map(post -> mapToDTO(post)).collect(Collectors.toList());
+        ;
         List<SearchDTO> listSearchDto = new ArrayList<>();
-        for (PostDTO postDto: listDto) {
+        for (PostDTO postDto : listDto) {
             SearchDTO dto = new SearchDTO();
             setDataToSearchDTO(dto, postDto);
             listSearchDto.add(dto);
         }
         SearchResponse searchResponse = new SearchResponse();
         searchResponse.setPosts(listSearchDto);
-        searchResponse.setPageNo(pageNo+1);
+        searchResponse.setPageNo(pageNo + 1);
         searchResponse.setTotalPages(pagePost.getTotalPages());
         searchResponse.setTotalResult(pagePost.getTotalElements());
         return searchResponse;
@@ -409,7 +409,7 @@ public class PostServiceImpl implements PostService {
         List<Post> listPost = postRepository.getDerivativePostOfOriginalPost(originalPostId);
         List<BrokerInfoOfPostDTO> listPostDto = new ArrayList<>();
         AvgRate avgRate = null;
-        for (Post post: listPost) {
+        for (Post post : listPost) {
             BrokerInfoOfPostDTO dto = mapper.map(post, BrokerInfoOfPostDTO.class);
             UserDTO userDTO = dto.getUser();
             avgRate = rateRepository.getAvgRateByUserIdAndRoleId(userDTO.getId(), 3);
@@ -424,24 +424,24 @@ public class PostServiceImpl implements PostService {
 
     @Override
     public SearchResponse searchPosts(String ward, String district, String province, String minPrice, String maxPrice,
-                                     String minArea, String maxArea, List<String> propertyType, String keyword,
-                                     List<String> direction, int bedroom, int pageNo, int pageSize, String option) {
+                                      String minArea, String maxArea, List<String> propertyType, String keyword,
+                                      List<String> direction, int bedroom, int pageNo, int pageSize, String option) {
         Long minP = null;
-        if(minPrice != null){
+        if (minPrice != null) {
             minP = Long.parseLong(minPrice);
         }
 
         Long maxP = 0L;
-        if(maxPrice == null){
+        if (maxPrice == null) {
             maxP = Long.MAX_VALUE;
-        }else{
+        } else {
             maxP = Long.parseLong(maxPrice);
         }
 
         Float maxA = 0f;
-        if(maxArea == null){
+        if (maxArea == null) {
             maxA = Float.MAX_VALUE;
-        }else{
+        } else {
             maxA = Float.parseFloat(maxArea);
         }
 
@@ -469,15 +469,15 @@ public class PostServiceImpl implements PostService {
         Page<Post> listPosts = null;
         List<Post> list = null;
         List<PostDTO> listDto = null;
-        switch (sortOption){
+        switch (sortOption) {
             case 0:
                 sortOpt = "start_date";
                 sortDir = "desc";
-                sort = sortDir.equalsIgnoreCase(Sort.Direction.ASC.name())?
-                        Sort.by(sortOpt).ascending(): Sort.by(sortOpt).descending();
+                sort = sortDir.equalsIgnoreCase(Sort.Direction.ASC.name()) ?
+                        Sort.by(sortOpt).ascending() : Sort.by(sortOpt).descending();
                 pageable = PageRequest.of(pageNo, pageSize, sort);
                 listPosts = postRepository.searchPosts(ward, district, province, minP, maxP,
-                            minA, maxA, listType, keyword, check, listId, bedroom, 0, 0, pageable);
+                        minA, maxA, listType, keyword, check, listId, bedroom, 0, 0, pageable);
                 list = listPosts.getContent();
                 listDto = list.stream().map(post -> mapToDTO(post)).collect(Collectors.toList());
                 break;
@@ -514,8 +514,8 @@ public class PostServiceImpl implements PostService {
             case 5:
                 sortOpt = "area";
                 sortDir = "asc";
-                sort = sortDir.equalsIgnoreCase(Sort.Direction.ASC.name())?
-                        Sort.by(sortOpt).ascending(): Sort.by(sortOpt).descending();
+                sort = sortDir.equalsIgnoreCase(Sort.Direction.ASC.name()) ?
+                        Sort.by(sortOpt).ascending() : Sort.by(sortOpt).descending();
                 pageable = PageRequest.of(pageNo, pageSize, sort);
                 listPosts = postRepository.searchPosts(ward, district, province, minP, maxP,
                         minA, maxA, listType, keyword, check, listId, bedroom, 0, 0, pageable);
@@ -525,8 +525,8 @@ public class PostServiceImpl implements PostService {
             case 6:
                 sortOpt = "area";
                 sortDir = "desc";
-                sort = sortDir.equalsIgnoreCase(Sort.Direction.ASC.name())?
-                        Sort.by(sortOpt).ascending(): Sort.by(sortOpt).descending();
+                sort = sortDir.equalsIgnoreCase(Sort.Direction.ASC.name()) ?
+                        Sort.by(sortOpt).ascending() : Sort.by(sortOpt).descending();
                 pageable = PageRequest.of(pageNo, pageSize, sort);
                 listPosts = postRepository.searchPosts(ward, district, province, minP, maxP,
                         minA, maxA, listType, keyword, check, listId, bedroom, 0, 0, pageable);
@@ -535,14 +535,14 @@ public class PostServiceImpl implements PostService {
                 break;
         }
         List<SearchDTO> listSearchDto = new ArrayList<>();
-        for (PostDTO postDto: listDto) {
+        for (PostDTO postDto : listDto) {
             SearchDTO dto = new SearchDTO();
             setDataToSearchDTO(dto, postDto);
             listSearchDto.add(dto);
         }
         SearchResponse searchResponse = new SearchResponse();
         searchResponse.setPosts(listSearchDto);
-        searchResponse.setPageNo(pageNo+1);
+        searchResponse.setPageNo(pageNo + 1);
         searchResponse.setTotalPages(listPosts.getTotalPages());
         searchResponse.setTotalResult(listPosts.getTotalElements());
         return searchResponse;
@@ -555,21 +555,21 @@ public class PostServiceImpl implements PostService {
                                               List<String> direction, int bedroom, int pageNo, int pageSize, String option,
                                               int userId) {
         Long minP = null;
-        if(minPrice != null){
+        if (minPrice != null) {
             minP = Long.parseLong(minPrice);
         }
 
         Long maxP = 0L;
-        if(maxPrice == null){
+        if (maxPrice == null) {
             maxP = Long.MAX_VALUE;
-        }else{
+        } else {
             maxP = Long.parseLong(maxPrice);
         }
 
         Float maxA = 0f;
-        if(maxArea == null){
+        if (maxArea == null) {
             maxA = Float.MAX_VALUE;
-        }else{
+        } else {
             maxA = Float.parseFloat(maxArea);
         }
 
@@ -597,12 +597,12 @@ public class PostServiceImpl implements PostService {
         Page<Post> listPosts = null;
         List<Post> list = null;
         List<PostDTO> listDto = null;
-        switch (sortOption){
+        switch (sortOption) {
             case 0:
                 sortOpt = "start_date";
                 sortDir = "desc";
-                sort = sortDir.equalsIgnoreCase(Sort.Direction.ASC.name())?
-                        Sort.by(sortOpt).ascending(): Sort.by(sortOpt).descending();
+                sort = sortDir.equalsIgnoreCase(Sort.Direction.ASC.name()) ?
+                        Sort.by(sortOpt).ascending() : Sort.by(sortOpt).descending();
                 pageable = PageRequest.of(pageNo, pageSize, sort);
                 listPosts = postRepository.searchPosts(ward, district, province, minP, maxP,
                         minA, maxA, listType, keyword, check, listId, bedroom, 1, userId, pageable);
@@ -642,8 +642,8 @@ public class PostServiceImpl implements PostService {
             case 5:
                 sortOpt = "area";
                 sortDir = "asc";
-                sort = sortDir.equalsIgnoreCase(Sort.Direction.ASC.name())?
-                        Sort.by(sortOpt).ascending(): Sort.by(sortOpt).descending();
+                sort = sortDir.equalsIgnoreCase(Sort.Direction.ASC.name()) ?
+                        Sort.by(sortOpt).ascending() : Sort.by(sortOpt).descending();
                 pageable = PageRequest.of(pageNo, pageSize, sort);
                 listPosts = postRepository.searchPosts(ward, district, province, minP, maxP,
                         minA, maxA, listType, keyword, check, listId, bedroom, 1, userId, pageable);
@@ -653,8 +653,8 @@ public class PostServiceImpl implements PostService {
             case 6:
                 sortOpt = "area";
                 sortDir = "desc";
-                sort = sortDir.equalsIgnoreCase(Sort.Direction.ASC.name())?
-                        Sort.by(sortOpt).ascending(): Sort.by(sortOpt).descending();
+                sort = sortDir.equalsIgnoreCase(Sort.Direction.ASC.name()) ?
+                        Sort.by(sortOpt).ascending() : Sort.by(sortOpt).descending();
                 pageable = PageRequest.of(pageNo, pageSize, sort);
                 listPosts = postRepository.searchPosts(ward, district, province, minP, maxP,
                         minA, maxA, listType, keyword, check, listId, bedroom, 1, userId, pageable);
@@ -663,14 +663,14 @@ public class PostServiceImpl implements PostService {
                 break;
         }
         List<SearchDTO> listSearchDto = new ArrayList<>();
-        for (PostDTO postDto: listDto) {
+        for (PostDTO postDto : listDto) {
             SearchDTO dto = new SearchDTO();
             setDataToSearchDTO(dto, postDto);
             listSearchDto.add(dto);
         }
         SearchResponse searchResponse = new SearchResponse();
         searchResponse.setPosts(listSearchDto);
-        searchResponse.setPageNo(pageNo+1);
+        searchResponse.setPageNo(pageNo + 1);
         searchResponse.setTotalPages(listPosts.getTotalPages());
         searchResponse.setTotalResult(listPosts.getTotalElements());
         return searchResponse;
@@ -768,16 +768,41 @@ public class PostServiceImpl implements PostService {
         List<PostDTO> list = listPosts.stream().map(post -> mapToDTO(post)).collect(Collectors.toList());
 
         List<SearchDTO> listDto = new ArrayList<>();
-        for (PostDTO postDto: list) {
+        for (PostDTO postDto : list) {
             SearchDTO dto = new SearchDTO();
             setDataToSearchDTO(dto, postDto);
             listDto.add(dto);
         }
         SearchResponse searchResponse = new SearchResponse();
         searchResponse.setPosts(listDto);
-        searchResponse.setPageNo(pageNo+1);
+        searchResponse.setPageNo(pageNo + 1);
         searchResponse.setTotalPages(posts.getTotalPages());
         searchResponse.setTotalResult(posts.getTotalElements());
+        return searchResponse;
+    }
+
+    @Override
+    public SearchResponse getExpiredPostByUserId(int userId, int pageNo, int pageSize) {
+        Pageable pageable = PageRequest.of(pageNo, pageSize);
+//        long millis = System.currentTimeMillis();
+//        java.sql.Date date = new java.sql.Date(millis);
+
+        Page<Post> pagePost = postRepository.getExpiredPostByUserId(userId, pageable);
+        List<Post> listPosts = pagePost.getContent();
+
+        List<PostDTO> list = listPosts.stream().map(post -> mapToDTO(post)).collect(Collectors.toList());
+
+        List<SearchDTO> listDto = new ArrayList<>();
+        for (PostDTO postDto : list) {
+            SearchDTO dto = new SearchDTO();
+            setDataToSearchDTO(dto, postDto);
+            listDto.add(dto);
+        }
+        SearchResponse searchResponse = new SearchResponse();
+        searchResponse.setPosts(listDto);
+        searchResponse.setPageNo(pageNo + 1);
+        searchResponse.setTotalPages(pagePost.getTotalPages());
+        searchResponse.setTotalResult(pagePost.getTotalElements());
         return searchResponse;
     }
 
@@ -791,14 +816,14 @@ public class PostServiceImpl implements PostService {
         List<PostDTO> list = listPosts.stream().map(post -> mapToDTO(post)).collect(Collectors.toList());
 
         List<SearchDTO> listDto = new ArrayList<>();
-        for (PostDTO postDto: list) {
+        for (PostDTO postDto : list) {
             SearchDTO dto = new SearchDTO();
             setDataToSearchDTO(dto, postDto);
             listDto.add(dto);
         }
         SearchResponse searchResponse = new SearchResponse();
         searchResponse.setPosts(listDto);
-        searchResponse.setPageNo(pageNo+1);
+        searchResponse.setPageNo(pageNo + 1);
         searchResponse.setTotalPages(posts.getTotalPages());
         searchResponse.setTotalResult(posts.getTotalElements());
         return searchResponse;
@@ -809,42 +834,42 @@ public class PostServiceImpl implements PostService {
         Post post = postRepository.findById(postId).orElseThrow(() -> new ResourceNotFoundException("Post", "id", postId));
         int propertyType = post.getPropertyType().getId();
         Map<String, List> histories = new HashMap<>();
-        if(propertyType == 1){
+        if (propertyType == 1) {
             ResidentialHouse house = houseRepository.findByPostId(postId);
             String barcode = house.getBarcode();
-            String historyBarcode = "" ;
-            if(barcode.length() == 13){
+            String historyBarcode = "";
+            if (barcode.length() == 13) {
                 historyBarcode = barcode.substring(0, 5);
             }
-            if(barcode.length() == 15){
+            if (barcode.length() == 15) {
                 historyBarcode = barcode.substring(0, 7);
             }
             List<ResidentialHouseHistory> houseHistories = houseHistoryRepository.getHouseHistoryByBarcodeAndPlotNumber(historyBarcode, house.getPlotNumber());
             histories.remove("houseHistories");
             histories.put("houseHistories", houseHistories);
         }
-        if(propertyType == 2){
+        if (propertyType == 2) {
             Apartment apartment = apartmentRepository.findByPostId(postId);
             String barcode = apartment.getBarcode();
-            String historyBarcode = "" ;
-            if(barcode.length() == 13){
+            String historyBarcode = "";
+            if (barcode.length() == 13) {
                 historyBarcode = barcode.substring(0, 5);
             }
-            if(barcode.length() == 15){
+            if (barcode.length() == 15) {
                 historyBarcode = barcode.substring(0, 7);
             }
             List<ApartmentHistory> apartmentHistories = apartmentHistoryRepository.getApartmentHistoryByBarcode(historyBarcode, apartment.getPlotNumber(), apartment.getBuildingName(), apartment.getRoomNumber());
             histories.remove("apartmentHistories");
             histories.put("apartmentHistories", apartmentHistories);
         }
-        if(propertyType == 3){
+        if (propertyType == 3) {
             ResidentialLand land = landRepository.findByPostId(postId);
             String barcode = land.getBarcode();
-            String historyBarcode = "" ;
-            if(barcode.length() == 13){
+            String historyBarcode = "";
+            if (barcode.length() == 13) {
                 historyBarcode = barcode.substring(0, 5);
             }
-            if(barcode.length() == 15){
+            if (barcode.length() == 15) {
                 historyBarcode = barcode.substring(0, 7);
             }
             List<ResidentialLandHistory> landHistories = landHistoryRepository.getLandHistoryByBarcodeAndPlotNumber(historyBarcode, land.getPlotNumber());
@@ -862,12 +887,12 @@ public class PostServiceImpl implements PostService {
         Sort sort = null;
         Pageable pageable = null;
         Page<Post> listPosts = null;
-        switch (sortOption){
+        switch (sortOption) {
             case 0:
                 sortOpt = "start_date";
                 sortDir = "desc";
-                sort = sortDir.equalsIgnoreCase(Sort.Direction.ASC.name())?
-                        Sort.by(sortOpt).ascending(): Sort.by(sortOpt).descending();
+                sort = sortDir.equalsIgnoreCase(Sort.Direction.ASC.name()) ?
+                        Sort.by(sortOpt).ascending() : Sort.by(sortOpt).descending();
                 pageable = PageRequest.of(pageNo, pageSize, sort);
                 listPosts = postRepository.findAll(pageable);
                 break;
@@ -891,16 +916,16 @@ public class PostServiceImpl implements PostService {
             case 5:
                 sortOpt = "area";
                 sortDir = "asc";
-                sort = sortDir.equalsIgnoreCase(Sort.Direction.ASC.name())?
-                        Sort.by(sortOpt).ascending(): Sort.by(sortOpt).descending();
+                sort = sortDir.equalsIgnoreCase(Sort.Direction.ASC.name()) ?
+                        Sort.by(sortOpt).ascending() : Sort.by(sortOpt).descending();
                 pageable = PageRequest.of(pageNo, pageSize, sort);
                 listPosts = postRepository.findAll(pageable);
                 break;
             case 6:
                 sortOpt = "area";
                 sortDir = "desc";
-                sort = sortDir.equalsIgnoreCase(Sort.Direction.ASC.name())?
-                        Sort.by(sortOpt).ascending(): Sort.by(sortOpt).descending();
+                sort = sortDir.equalsIgnoreCase(Sort.Direction.ASC.name()) ?
+                        Sort.by(sortOpt).ascending() : Sort.by(sortOpt).descending();
                 pageable = PageRequest.of(pageNo, pageSize, sort);
                 listPosts = postRepository.findAll(pageable);
                 break;
@@ -920,7 +945,7 @@ public class PostServiceImpl implements PostService {
     public List<DerivativeDTO> getDerivativePostByUserIdPaging(int userId, String propertyId, int pageNo, int pageSize, String option) {
         String check = null;
         int typeId = 0;
-        if(propertyId != null){
+        if (propertyId != null) {
             typeId = Integer.parseInt(propertyId);
             check = "";
         }
@@ -933,12 +958,12 @@ public class PostServiceImpl implements PostService {
         Page<Post> listPosts = null;
         List<Post> list = null;
         List<DerivativeDTO> listDto = null;
-        switch (sortOption){
+        switch (sortOption) {
             case 0:
                 sortOpt = "start_date";
                 sortDir = "desc";
-                sort = sortDir.equalsIgnoreCase(Sort.Direction.ASC.name())?
-                        Sort.by(sortOpt).ascending(): Sort.by(sortOpt).descending();
+                sort = sortDir.equalsIgnoreCase(Sort.Direction.ASC.name()) ?
+                        Sort.by(sortOpt).ascending() : Sort.by(sortOpt).descending();
                 break;
             case 1:
                 pageable = PageRequest.of(pageNo, pageSize);
@@ -968,14 +993,14 @@ public class PostServiceImpl implements PostService {
             case 5:
                 sortOpt = "area";
                 sortDir = "asc";
-                sort = sortDir.equalsIgnoreCase(Sort.Direction.ASC.name())?
-                        Sort.by(sortOpt).ascending(): Sort.by(sortOpt).descending();
+                sort = sortDir.equalsIgnoreCase(Sort.Direction.ASC.name()) ?
+                        Sort.by(sortOpt).ascending() : Sort.by(sortOpt).descending();
                 break;
             case 6:
                 sortOpt = "area";
                 sortDir = "desc";
-                sort = sortDir.equalsIgnoreCase(Sort.Direction.ASC.name())?
-                        Sort.by(sortOpt).ascending(): Sort.by(sortOpt).descending();
+                sort = sortDir.equalsIgnoreCase(Sort.Direction.ASC.name()) ?
+                        Sort.by(sortOpt).ascending() : Sort.by(sortOpt).descending();
                 break;
         }
 
@@ -1003,12 +1028,12 @@ public class PostServiceImpl implements PostService {
         Page<Post> listPosts = null;
         List<Post> list = null;
         List<PostDTO> listDto = null;
-        switch (sortOption){
+        switch (sortOption) {
             case 0:
                 sortOpt = "start_date";
                 sortDir = "desc";
-                sort = sortDir.equalsIgnoreCase(Sort.Direction.ASC.name())?
-                        Sort.by(sortOpt).ascending(): Sort.by(sortOpt).descending();
+                sort = sortDir.equalsIgnoreCase(Sort.Direction.ASC.name()) ?
+                        Sort.by(sortOpt).ascending() : Sort.by(sortOpt).descending();
                 pageable = PageRequest.of(pageNo, pageSize, sort);
                 listPosts = postRepository.findDerivativePostOfBroker(userId, typeId, check, pageable);
                 list = listPosts.getContent();
@@ -1043,8 +1068,8 @@ public class PostServiceImpl implements PostService {
             case 5:
                 sortOpt = "area";
                 sortDir = "asc";
-                sort = sortDir.equalsIgnoreCase(Sort.Direction.ASC.name())?
-                        Sort.by(sortOpt).ascending(): Sort.by(sortOpt).descending();
+                sort = sortDir.equalsIgnoreCase(Sort.Direction.ASC.name()) ?
+                        Sort.by(sortOpt).ascending() : Sort.by(sortOpt).descending();
                 pageable = PageRequest.of(pageNo, pageSize, sort);
                 listPosts = postRepository.findDerivativePostOfBroker(userId, typeId, check, pageable);
                 list = listPosts.getContent();
@@ -1053,8 +1078,8 @@ public class PostServiceImpl implements PostService {
             case 6:
                 sortOpt = "area";
                 sortDir = "desc";
-                sort = sortDir.equalsIgnoreCase(Sort.Direction.ASC.name())?
-                        Sort.by(sortOpt).ascending(): Sort.by(sortOpt).descending();
+                sort = sortDir.equalsIgnoreCase(Sort.Direction.ASC.name()) ?
+                        Sort.by(sortOpt).ascending() : Sort.by(sortOpt).descending();
                 pageable = PageRequest.of(pageNo, pageSize, sort);
                 listPosts = postRepository.findDerivativePostOfBroker(userId, typeId, check, pageable);
                 list = listPosts.getContent();
@@ -1063,14 +1088,14 @@ public class PostServiceImpl implements PostService {
         }
 
         List<SearchDTO> listSearchDto = new ArrayList<>();
-        for (PostDTO postDto: listDto) {
+        for (PostDTO postDto : listDto) {
             SearchDTO dto = new SearchDTO();
             setDataToSearchDTO(dto, postDto);
             listSearchDto.add(dto);
         }
         SearchResponse searchResponse = new SearchResponse();
         searchResponse.setPosts(listSearchDto);
-        searchResponse.setPageNo(pageNo+1);
+        searchResponse.setPageNo(pageNo + 1);
         searchResponse.setTotalPages(listPosts.getTotalPages());
         searchResponse.setTotalResult(listPosts.getTotalElements());
         return searchResponse;
@@ -1097,9 +1122,9 @@ public class PostServiceImpl implements PostService {
         SimpleDateFormat simpleDateFormat = new SimpleDateFormat("dd-MM-yyyy HH:mm:ss");
         searchDTO.setStartDate(simpleDateFormat.format(date));
 
-        if(postDTO.getPrice() !=  null){
+        if (postDTO.getPrice() != null) {
             searchDTO.setPrice(postDTO.getPrice());
-        }else{
+        } else {
             searchDTO.setPrice(0);
         }
 
@@ -1126,7 +1151,50 @@ public class PostServiceImpl implements PostService {
         return post;
     }
 
-    public PostDTO setDataToPostDTO(GeneralPostDTO generalPostDTO, int userId, Date date) {
+    public PostDTO setDataToPostDTO(GeneralPostDTO generalPostDTO, int userId, Date date, boolean check) {
+        PostDTO postDTO = new PostDTO();
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new ResourceNotFoundException("User", "id", userId));
+        postDTO.setUser(mapper.map(user, UserDTO.class));
+        postDTO.setTitle(generalPostDTO.getTitle());
+        postDTO.setDescription(generalPostDTO.getDescription());
+        postDTO.setArea(generalPostDTO.getArea());
+        postDTO.setCertification(generalPostDTO.isCertification());
+        Calendar c = Calendar.getInstance();
+        c.setTime(date);
+        c.add(Calendar.DAY_OF_MONTH, generalPostDTO.getNumberOfPostedDay());
+        postDTO.setStartDate(date);
+        if (check == true) {
+            postDTO.setTransactionStartDate(date);
+            postDTO.setTransactionEndDate(c.getTime());
+        } else {
+            postDTO.setTransactionStartDate(null);
+            postDTO.setTransactionEndDate(null);
+        }
+        postDTO.setAllowDerivative(true);
+
+        // unit name "thoa thuan" price null
+        if (generalPostDTO.getUnitPriceId() == 3 || generalPostDTO.getPrice() < 0) {
+            postDTO.setPrice(null);
+        } else {
+            postDTO.setPrice(generalPostDTO.getPrice());
+        }
+        postDTO.setAdditionalDescription(generalPostDTO.getAdditionalDescription());
+        postDTO.setContactName(generalPostDTO.getContactName());
+        postDTO.setContactPhone(generalPostDTO.getContactPhone());
+        postDTO.setContactAddress(generalPostDTO.getContactAddress());
+        postDTO.setContactEmail(generalPostDTO.getContactEmail());
+        postDTO.setWard(generalPostDTO.getWard());
+        postDTO.setDistrict(generalPostDTO.getDistrict());
+        postDTO.setProvince(generalPostDTO.getProvince());
+        postDTO.setAddress(generalPostDTO.getAddress());
+        postDTO.setThumbnail(generalPostDTO.getImages().get(1));
+        postDTO.setOriginalPost(null);
+        return postDTO;
+    }
+
+    @Override
+    public PostDTO setDataToUpdatePost(GeneralPostDTO generalPostDTO, int userId, Date date) {
         PostDTO postDTO = new PostDTO();
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new ResourceNotFoundException("User", "id", userId));
@@ -1137,6 +1205,8 @@ public class PostServiceImpl implements PostService {
         postDTO.setCertification(generalPostDTO.isCertification());
 
         postDTO.setStartDate(date);
+//        postDTO.setTransactionStartDate(date);
+
         // unit name "thoa thuan" price null
         if (generalPostDTO.getUnitPriceId() == 3 || generalPostDTO.getPrice() < 0) {
             postDTO.setPrice(null);
@@ -1160,12 +1230,12 @@ public class PostServiceImpl implements PostService {
     // set information residential house from general post and create
     public ResidentialHouseDTO setDataToResidentialHouse(GeneralPostDTO generalPostDTO) {
         ResidentialHouseDTO residentialHouseDTO = new ResidentialHouseDTO();
-        if(!generalPostDTO.isCertification()){
+        if (!generalPostDTO.isCertification()) {
             residentialHouseDTO.setBarcode(null);
             residentialHouseDTO.setPlotNumber(null);
             residentialHouseDTO.setOwner(null);
             residentialHouseDTO.setOwnerPhone(null);
-        }else{
+        } else {
             residentialHouseDTO.setBarcode(generalPostDTO.getBarcode());
             residentialHouseDTO.setPlotNumber(generalPostDTO.getPlotNumber());
             residentialHouseDTO.setOwner(generalPostDTO.getOwner());
@@ -1192,14 +1262,14 @@ public class PostServiceImpl implements PostService {
     // set information apartment from general post and create
     public ApartmentDTO setDataToApartment(GeneralPostDTO generalPostDTO) {
         ApartmentDTO apartmentDTO = new ApartmentDTO();
-        if(!generalPostDTO.isCertification()){
+        if (!generalPostDTO.isCertification()) {
             apartmentDTO.setBarcode(null);
             apartmentDTO.setBuildingName(null);
             apartmentDTO.setFloorNumber(null);
             apartmentDTO.setRoomNumber(null);
             apartmentDTO.setOwner(null);
             apartmentDTO.setOwnerPhone(null);
-        }else{
+        } else {
             apartmentDTO.setBarcode(generalPostDTO.getBarcode());
             apartmentDTO.setBuildingName(generalPostDTO.getBuildingName());
             apartmentDTO.setFloorNumber(generalPostDTO.getFloorNumber());
@@ -1226,12 +1296,12 @@ public class PostServiceImpl implements PostService {
     // set information residential land from general post and create
     public ResidentialLandDTO setDataToResidentialLand(GeneralPostDTO generalPostDTO) {
         ResidentialLandDTO residentialLandDTO = new ResidentialLandDTO();
-        if(!generalPostDTO.isCertification()){
+        if (!generalPostDTO.isCertification()) {
             residentialLandDTO.setBarcode(null);
             residentialLandDTO.setPlotNumber(null);
             residentialLandDTO.setOwner(null);
             residentialLandDTO.setOwnerPhone(null);
-        }else{
+        } else {
             residentialLandDTO.setBarcode(generalPostDTO.getBarcode());
             residentialLandDTO.setPlotNumber(generalPostDTO.getPlotNumber());
             residentialLandDTO.setOwner(generalPostDTO.getOwner());
@@ -1264,7 +1334,13 @@ public class PostServiceImpl implements PostService {
         Date date = postDTO.getStartDate();
         SimpleDateFormat simpleDateFormat = new SimpleDateFormat("dd-MM-yyyy HH:mm:ss");
         realEstatePostDTO.setStartDate(simpleDateFormat.format(date));
-
+        if(postDTO.getTransactionStartDate() == null && postDTO.getTransactionEndDate()==null){
+            realEstatePostDTO.setTransactionStartDate(null);
+            realEstatePostDTO.setTransactionEndDate(null);
+        }else{
+            realEstatePostDTO.setTransactionStartDate(simpleDateFormat.format(postDTO.getTransactionStartDate()));
+            realEstatePostDTO.setTransactionEndDate(simpleDateFormat.format(postDTO.getTransactionEndDate()));
+        }
         realEstatePostDTO.setAdditionalDescription(postDTO.getAdditionalDescription());
         realEstatePostDTO.setPrice(postDTO.getPrice());
         realEstatePostDTO.setContactPhone(postDTO.getContactPhone());
@@ -1292,22 +1368,22 @@ public class PostServiceImpl implements PostService {
     public boolean changeStatusOfPost(int postId) {
         Post post = postRepository.findPostByPostId(postId);
 
-        if(post != null){
+        if (post != null) {
             Status status = new Status();
             //khong phai bai da hoan thanh giao dich
-            if(post.getStatus().getId() != 3){
-                if(post.getStatus().getId() == 1){
+            if (post.getStatus().getId() != 3) {
+                if (post.getStatus().getId() == 1) {
                     status.setId(2);
-                }else{
+                } else {
                     status.setId(1);
                 }
                 post.setStatus(status);
                 postRepository.save(post);
                 return true;
-            }else{
+            } else {
                 return false;
             }
-        }else {
+        } else {
             return false;
         }
     }

@@ -52,45 +52,25 @@ public class UserCareServiceImpl implements UserCareService {
     }
 
     @Override
-    public UserCareDTO createUserCare(UserCareDTO userCareDTO, User user) {
+    public UserCareDTO createUserCare(UserCareDTO userCareDTO, User user, UserCare userCareWithOnlyUserCaredId, int check) {
         UserCare userCare = mapToEntity(userCareDTO);
         userCare.setUser(user);
         long millis = System.currentTimeMillis();
         java.sql.Date date = new java.sql.Date(millis);
         Integer postId = userCareDTO.getPostId();
-        try {
-            if (postId != null) {
-                UserCare oldUserCare = userCareRepository.findUserCareByUserCaredIdAndPostId(userCareDTO.getUserCaredId(), userCareDTO.getPostId());
-                if (oldUserCare == null) {
-                    UserCare oldUserCared = userCareRepository.findUserCareByUserCaredId(userCareDTO.getUserCaredId());
-                    if (oldUserCared != null) {
-                        // add more post in post care
-                        Post post = postRepository.findById(postId).orElseThrow(() -> new ResourceNotFoundException("Post", "id", postId));
-                        oldUserCared.getPosts().add(post);
-                        userCare = oldUserCared;
-
-                    } else { // insert new user-care not duplicate
-                        Post post = postRepository.findById(postId).orElseThrow(() -> new ResourceNotFoundException("Post", "id", postId));
-                        userCare.setStartDate(date);
-                        userCare.setPosts(Collections.singleton(post));
-                    }
-                } else {  // duplicate phone and post id
-                    setDataUserCare(userCare, oldUserCare);
-                    userCare.setPosts(oldUserCare.getPosts());
-                }
-            } else {
-                UserCare oldUserCared = userCareRepository.findUserCareByUserCaredId(userCareDTO.getUserCaredId());
-                if (oldUserCared != null) {
-                    userCare = oldUserCared;
-                } else {
-                    userCare.setStartDate(date);
-                }
-
-            }
-        } catch (Exception e) {
-
+        if (check == 1) { // insert duplicate user-care and post not duplicate
+            Post post = postRepository.findById(postId).orElseThrow(() -> new ResourceNotFoundException("Post", "id", postId));
+            userCareWithOnlyUserCaredId.getPosts().add(post);
+            userCare = userCareWithOnlyUserCaredId;
         }
-//        userCare.setUserCaredId(userCareDTO.getUserCaredId());
+        if (check == 2) { // insert new user-care not duplicate
+            Post post = postRepository.findById(postId).orElseThrow(() -> new ResourceNotFoundException("Post", "id", postId));
+            userCare.setStartDate(date);
+            userCare.setPosts(Collections.singleton(post));
+        }
+        if (check == 3) {
+            userCare.setStartDate(date);
+        }
         userCare.setStatus(false);
         UserCare newUserCare = userCareRepository.save(userCare);
         return mapToDTO(newUserCare);
@@ -193,3 +173,37 @@ public class UserCareServiceImpl implements UserCareService {
         userCare.setSummarize(oldUserCare.getSummarize());
     }
 }
+
+//        try {
+//            if (postId != null) {
+//                UserCare oldUserCare = userCareRepository.findUserCareByUserCaredIdAndPostId(userCareDTO.getUserCaredId(), userCareDTO.getPostId());
+//                if (oldUserCare == null) {
+//                    UserCare oldUserCared = userCareRepository.findUserCareByUserCaredId(userCareDTO.getUserCaredId());
+//                    if (oldUserCared != null) {
+//                        //{ add more post in post care
+//
+//
+//
+//                    } else { // insert new user-care not duplicate
+//                        Post post = postRepository.findById(postId).orElseThrow(() -> new ResourceNotFoundException("Post", "id", postId));
+//                        userCare.setStartDate(date);
+//                        userCare.setPosts(Collections.singleton(post));
+//                    }
+//                }
+////                else {  // duplicate phone and post id
+////                    setDataUserCare(userCare, oldUserCare);
+////                    userCare.setPosts(oldUserCare.getPosts());
+////                }
+//            } else {
+//                UserCare oldUserCared = userCareRepository.findUserCareByUserCaredId(userCareDTO.getUserCaredId());
+//                if (userCareWithOnlyUserCaredId != null) {
+//                    userCare = userCareWithOnlyUserCaredId;
+//                } else {
+//                    userCare.setStartDate(date);
+//                }
+//
+//            }
+//        } catch (Exception e) {
+//
+//        }
+//        userCare.setUserCaredId(userCareDTO.getUserCaredId());

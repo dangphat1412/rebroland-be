@@ -2,7 +2,8 @@ package vn.edu.fpt.rebroland.controller;
 
 import vn.edu.fpt.rebroland.config.PaymentConfig;
 import vn.edu.fpt.rebroland.entity.User;
-import vn.edu.fpt.rebroland.payload.PaymentDTO;
+import vn.edu.fpt.rebroland.payload.TransactionDTO;
+import vn.edu.fpt.rebroland.payload.UserDTO;
 import vn.edu.fpt.rebroland.repository.UserRepository;
 import vn.edu.fpt.rebroland.service.PaymentService;
 import org.cloudinary.json.JSONObject;
@@ -12,6 +13,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.web.bind.annotation.*;
 
+import javax.servlet.http.HttpServletResponse;
 import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
@@ -34,25 +36,28 @@ public class PaymentController {
     }
 
     @PostMapping("/create-payment")
-    public ResponseEntity<?> createPayment(@RequestBody PaymentDTO paymentDTO) throws UnsupportedEncodingException {
-        int amount = 0;
-        if(paymentDTO.getTypeId() == 1){
-            amount = 55000 * 100;
-        }else{
-            amount = 100000 * 100;
-        }
+    public ResponseEntity<?> createPayment(@RequestBody TransactionDTO transactionDTO,
+                                           @RequestHeader(name = "Authorization") String token) throws UnsupportedEncodingException {
+//        int amount = 0;
+//        if(transactionDTO.getTypeId() == 1){
+//            amount = 55000 * 100;
+//        }else{
+//            amount = 100000 * 100;
+//        }
+//        User user = getUserFromToken(token);
 
         Map<String, String> vnp_Params = new HashMap<>();
         vnp_Params.put("vnp_Version", PaymentConfig.VERSIONVNPAY);
         vnp_Params.put("vnp_Command", PaymentConfig.COMMAND);
         vnp_Params.put("vnp_TmnCode", PaymentConfig.TMNCODE);
-        vnp_Params.put("vnp_Amount", String.valueOf(amount));
+        vnp_Params.put("vnp_Amount", String.valueOf(transactionDTO.getAmount() * 100));
         vnp_Params.put("vnp_BankCode", "NCB");
         vnp_Params.put("vnp_CurrCode", PaymentConfig.CURRCODE);
         vnp_Params.put("vnp_TxnRef", PaymentConfig.getRandomNumber(8));
-        vnp_Params.put("vnp_OrderInfo", paymentDTO.getDescription());
+        vnp_Params.put("vnp_OrderInfo", "Nap tien vao vi");
         vnp_Params.put("vnp_Locale", PaymentConfig.LOCALEDEFAULT);
-        vnp_Params.put("vnp_ReturnUrl", PaymentConfig.RETURNURL);
+        vnp_Params.put("vnp_ReturnUrl", PaymentConfig.RETURNURL + "?token=" + token);
+//        vnp_Params.put("vnp_ReturnUrl", PaymentConfig.RETURNURL);
         vnp_Params.put("vnp_IpAddr", PaymentConfig.IPDEFAULT);
 
         Date dt = new Date();
@@ -107,9 +112,10 @@ public class PaymentController {
                                                @RequestParam(value = "vnp_TransactionNo", required = false) String transactionNo,
                                                @RequestParam(value = "vnp_TxnRef", required = false) String txnRef,
                                                @RequestParam(value = "vnp_SecureHashType", required = false) String secureHashType,
-                                               @RequestParam(value = "vnp_SecureHash", required = false) String secureHash
+                                               @RequestParam(value = "vnp_SecureHash", required = false) String secureHash,
+                                               @RequestParam(value = "token") String token
                                                ){
-        PaymentDTO newPayment = new PaymentDTO();
+        TransactionDTO newPayment = new TransactionDTO();
         int price = Integer.parseInt(amount) / 100;
         newPayment.setAmount(price);
         newPayment.setDescription(orderInfo);
@@ -118,13 +124,61 @@ public class PaymentController {
         }else{
             newPayment.setTypeId(2);
         }
-        //fix user id
-//        User user = getUserFromToken(token);
-//        newPayment.setUser(new UserDTO(1));
 
-        PaymentDTO paymentDTO = paymentService.createPayment(newPayment);
-        return new ResponseEntity<>(paymentDTO, HttpStatus.OK);
+        //fix user id
+        User user = getUserFromToken(token);
+        newPayment.setUser(mapper.map(user, UserDTO.class));
+
+
+        TransactionDTO transactionDTO = paymentService.createTransaction(newPayment);
+        return new ResponseEntity<>(transactionDTO, HttpStatus.OK);
     }
+
+    @RequestMapping("/recharge")
+    public void depositMoneyIntoWallet(@RequestParam(value = "vnp_Amount", required = false) String amount,
+                                                    @RequestParam(value = "vnp_BankCode", required = false) String bankCode,
+                                                    @RequestParam(value = "vnp_BankTranNo", required = false) String bankTranNo,
+                                                    @RequestParam(value = "vnp_CardType", required = false) String cardType,
+                                                    @RequestParam(value = "vnp_OrderInfo", required = false) String orderInfo,
+                                                    @RequestParam(value = "vnp_PayDate", required = false) String payDate,
+                                                    @RequestParam(value = "vnp_ResponseCode", required = false) String responseCode,
+                                                    @RequestParam(value = "vnp_TmnCode", required = false) String tmnCode,
+                                                    @RequestParam(value = "vnp_TransactionNo", required = false) String transactionNo,
+                                                    @RequestParam(value = "vnp_TxnRef", required = false) String txnRef,
+                                                    @RequestParam(value = "vnp_SecureHashType", required = false) String secureHashType,
+                                                    @RequestParam(value = "vnp_SecureHash", required = false) String secureHash,
+                                                    @RequestParam(value = "token") String token,
+                                                    HttpServletResponse response){
+        try{
+            TransactionDTO transactionDTO = new TransactionDTO();
+            User user = getUserFromToken(token);
+            transactionDTO.setUser(mapper.map(user, UserDTO.class));
+            transactionDTO.setTypeId(3);
+            long money = Long.parseLong(amount) / 100;
+            transactionDTO.setAmount(money);
+            transactionDTO.setDescription(orderInfo);
+
+            TransactionDTO newTransactionDTO = paymentService.createTransaction(transactionDTO);
+            if(newTransactionDTO != null){
+                long accountBalance = user.getAccountBalance();
+                user.setAccountBalance(accountBalance + transactionDTO.getAmount());
+                userRepository.save(user);
+//            return "redirect:http://localhost:3000/thanh-toan-thanh-cong";
+//            return "redirect:https://www.google.com.vn/?hl=vi";
+                String linkRedirect = "http://localhost:3000/thanh-toan-thanh-cong?amount=" + money +"&orderInfo="
+                        + orderInfo +"&bankCode=" + bankCode + "&cardType=" + cardType + "&payDate=" + payDate + "&transactionNo=" + transactionNo;
+                response.sendRedirect(linkRedirect);
+            }
+        }catch (Exception e){
+            e.printStackTrace();
+        }
+    }
+
+//    public void autoRenewPost(boolean auto){
+//        if(auto){
+//
+//        }
+//    }
 
     private static String decode(String encodedString) {
         return new String(Base64.getUrlDecoder().decode(encodedString));

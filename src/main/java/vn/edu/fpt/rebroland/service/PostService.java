@@ -12,7 +12,7 @@ public interface PostService {
     PostDTO createPost(PostDTO postDTO, int userId, Integer directionId, int propertyTypeId,
                        int unitId, int statusId, Integer longevityId);
 
-    SearchResponse getPostByUserId(int pageNo, int pageSize, int userId, String propertyId, String sortValue);
+    SearchResponse getPostByUserId(int pageNo, int pageSize, int userId, String propertyId, String sortValue, String status);
 
     SearchResponse getAllPostByUserId(int pageNo, int pageSize, int userId, String propertyId, String sortValue);
 
@@ -44,6 +44,7 @@ public interface PostService {
     void deletePost(int postId);
     SearchResponse getAllPost(int pageNo, int pageSize);
     SearchResponse getAllPost(int pageNo, int pageSize, String keyword, String sortValue);
+    SearchResponse getExpiredPostByUserId(int userId, int pageNo, int pageSize);
 
     Map<String, List> getRealEstateHistory(int postId);
 
@@ -58,7 +59,9 @@ public interface PostService {
 
     List<DerivativeDTO> getDerivativePostByUserId(int userId);
 
-    PostDTO setDataToPostDTO(GeneralPostDTO generalPostDTO, int userId, Date date);
+    PostDTO setDataToPostDTO(GeneralPostDTO generalPostDTO, int userId, Date date, boolean check);
+
+    PostDTO setDataToUpdatePost(GeneralPostDTO generalPostDTO,int userId, Date date);
 
     ResidentialHouseDTO setDataToResidentialHouse(GeneralPostDTO generalPostDTO);
 

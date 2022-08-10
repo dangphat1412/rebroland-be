@@ -28,6 +28,8 @@ public class Post {
     private float area;
     private boolean certification;
     private Date startDate;
+    private Date transactionStartDate;
+    private Date transactionEndDate;
     private Long price;
     @Column(length = 1000)
     private String additionalDescription;

@@ -42,16 +42,18 @@ public class UserController {
     private UserFollowPostService followPostService;
 
     private RoleRepository roleRepository;
+    private PriceService priceService;
 
 
     public UserController(UserService userService, ImageService imageService, ModelMapper mapper, PostService postService, UserFollowPostService followPostService,
-                          RoleRepository roleRepository) {
+                          RoleRepository roleRepository, PriceService priceService) {
         this.userService = userService;
         this.imageService = imageService;
         this.mapper = mapper;
         this.postService = postService;
         this.followPostService = followPostService;
         this.roleRepository = roleRepository;
+        this.priceService = priceService;
     }
 
     @Autowired
@@ -216,22 +218,32 @@ public class UserController {
 
     }
 
-    @PostMapping("/broker/signup")
-    public ResponseEntity<?> createBroker(@RequestHeader(name = "Authorization") String token){
+    @PostMapping("/broker/signup/{priceId}")
+    public ResponseEntity<?> createBroker(@RequestHeader(name = "Authorization") String token,
+                                          @PathVariable(name = "priceId") int priceId){
         String[] parts = token.split("\\.");
         JSONObject payload = new JSONObject(decode(parts[1]));
         String phone = payload.getString("sub");
         User user = userRepository.findByPhone(phone).
                 orElseThrow(() -> new UsernameNotFoundException("User not found with phone: " + phone));
-        Role role = roleRepository.findByName("BROKER").get();
-        //ko co role broker
-        if(!user.getRoles().contains(role)){
-            //payment
-            UserDTO userDTO = userService.createBroker(user, role);
-            return new ResponseEntity<>(userDTO, HttpStatus.OK);
+        PriceDTO newPriceDTO = priceService.getPriceBroker(priceId);
+        long accountBalance = user.getAccountBalance();
+        long price = newPriceDTO.getPrice() * (100 - newPriceDTO.getDiscount()) / 100;
+        if(accountBalance > price){
+            Role role = roleRepository.findByName("BROKER").get();
+            //ko co role broker
+            if(!user.getRoles().contains(role)){
+                //payment
+                UserDTO userDTO = userService.createBroker(user, role);
+                user.setAccountBalance(accountBalance - price);
+                userRepository.save(user);
+                return new ResponseEntity<>(userDTO, HttpStatus.OK);
+            }
+            return new ResponseEntity<>("Người dùng đã có tài khoản broker!", HttpStatus.BAD_REQUEST);
+        }else{
+            return new ResponseEntity<>("Số tiền trong tài khoản không đủ!", HttpStatus.BAD_REQUEST);
         }
 
-        return new ResponseEntity<>("Người dùng đã có tài khoản broker!", HttpStatus.BAD_REQUEST);
     }
 
     @PostMapping("/switch")
@@ -280,9 +292,7 @@ public class UserController {
         try{
 //            List<UserDTO> listBroker = userService.getAllBrokerPaging(pageNumber, pageSize, user.getId());
             List<UserDTO> listBroker = userService.searchBroker(fullName, ward, district, province, listPropertyType, pageNumber, pageSize, sortValue);
-            if(listBroker == null){
-                return new ResponseEntity<>("Đã xảy ra lỗi !", HttpStatus.BAD_REQUEST);
-            }
+
             List<UserDTO> listAllBroker = userService.getAllBroker(fullName, ward, district, province, listPropertyType);
             int totalResult = listAllBroker.size();
 
@@ -378,5 +388,11 @@ public class UserController {
             return new ResponseEntity<>("Mật khẩu cũ không đúng!", HttpStatus.BAD_REQUEST);
         }
 
+    }
+
+    @GetMapping("/broker/price")
+    public ResponseEntity<?> getPriceBroker(@RequestHeader(name = "Authorization") String token){
+        List<PriceDTO> priceDTO = priceService.getListPriceBroker(2);
+        return new ResponseEntity<>(priceDTO, HttpStatus.OK);
     }
 }

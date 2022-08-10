@@ -100,7 +100,7 @@ public class ContactController {
         userRepository.save(user);
 
         //send message to user or broker
-        sendSMS(user.getPhone(), message);
+//        sendSMS(user.getPhone(), message);
         return new ResponseEntity<>("Create Contact Successfully !!!", HttpStatus.CREATED);
 
     }

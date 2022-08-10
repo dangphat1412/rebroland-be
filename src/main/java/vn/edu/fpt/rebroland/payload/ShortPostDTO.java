@@ -14,6 +14,8 @@ public class ShortPostDTO {
     @Size(max = 200)
     private String title;
 
+    private String description;
+
     private Date startDate;
 
     private Integer originalPost;

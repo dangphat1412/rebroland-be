@@ -104,25 +104,23 @@ public class ContactServiceImpl implements ContactService {
 //            }
 //            i++;
 //        }
-        SearchDTO searchDTO = new SearchDTO();
+
         for (ContactDTO contactDTO: contactDTOList) {
+            if(contactDTO.getPost() == null){
+                contactDTO.setShortPost(null);
+            }else{
+                SearchDTO searchDTO = new SearchDTO();
+                setDataToSearchDTO(searchDTO, contactDTO.getPost());
+                contactDTO.setShortPost(searchDTO);
+                contactDTO.setPost(null);
+            }
             int userRequest = contactDTO.getUserRequest().getId();
             User user = userRepository.findById(userRequest)
                     .orElseThrow(() -> new ResourceNotFoundException("User", "id", userRequest));
             contactDTO.setUserRequest(modelMapper.map(user, UserDTO.class));
             contactDTO.setUser(null);
-            if(contactDTO.getPost() == null){
-                contactDTO.setShortPost(null);
-            }else{
-                setDataToSearchDTO(searchDTO, contactDTO.getPost());
-                contactDTO.setShortPost(searchDTO);
-                contactDTO.setPost(null);
-            }
 
         }
-//        List<Contact> contacts1 = contactRepository.getContactsByUserId(userId);
-
-
 
         ContactResponse contactResponse = new ContactResponse();
         contactResponse.setTotalResult(contacts.getTotalElements());
@@ -177,7 +175,6 @@ public class ContactServiceImpl implements ContactService {
 //    }
 
     public void setDataToSearchDTO(SearchDTO searchDTO, PostDTO postDTO) {
-
         searchDTO.setPostId(postDTO.getPostId());
         searchDTO.setArea(postDTO.getArea());
         searchDTO.setTitle(postDTO.getTitle());

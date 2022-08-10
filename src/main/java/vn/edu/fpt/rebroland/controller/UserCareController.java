@@ -70,24 +70,36 @@ public class UserCareController {
                                                      @RequestHeader(name = "Authorization") String token) {
         try {
             int userId = getUserIdFromToken(token);
+            int check = 0;
             User broker = userRepository.findById(userId).orElseThrow(() -> new ResourceNotFoundException("Broker", "id", userId));
             contactService.deleteContact(contactId);
             if (userCareDTO.getPostId() != null) {
-                UserCare userCare = userCareRepository.findUserCareByUserCaredIdAndPostId(userCareDTO.getUserCaredId(), userCareDTO.getPostId());
-                if (userCare == null) {
+                UserCare userCareWithUserCaredIdAndPostId = userCareRepository.findUserCareByUserCaredIdAndPostId(userCareDTO.getUserCaredId(), userCareDTO.getPostId());
+                if (userCareWithUserCaredIdAndPostId == null) {
+                    UserCare userCareWithOnlyUserCaredId = userCareRepository.findUserCareByUserCaredId(userCareDTO.getUserCaredId());
+                    if (userCareWithOnlyUserCaredId != null) {
+                        check = 1;
+                    } else {
+                        check = 2;
+                    }
                     if (broker.getRoles().size() == 2) {
-                        UserCareDTO newUserCareDTO = userCareService.createUserCare(userCareDTO, broker);
+                        UserCareDTO newUserCareDTO = userCareService.createUserCare(userCareDTO, broker, userCareWithOnlyUserCaredId, check);
                         return new ResponseEntity<>(newUserCareDTO, HttpStatus.CREATED);
                     } else {
                         return new ResponseEntity<>("User is not broker", HttpStatus.BAD_REQUEST);
                     }
                 } else {
-                    return new ResponseEntity<>("Duplicate UserCaredId and Post", HttpStatus.OK);
-
+                    return new ResponseEntity<>("Duplicate User Cared Id and Post", HttpStatus.OK);
                 }
             } else {
-                UserCareDTO newUserCareDTO = userCareService.createUserCare(userCareDTO, broker);
-                return new ResponseEntity<>(newUserCareDTO, HttpStatus.CREATED);
+                UserCare userCareWithOnlyUserCaredId = userCareRepository.findUserCareByUserCaredId(userCareDTO.getUserCaredId());
+                if (userCareWithOnlyUserCaredId != null) {
+                    return new ResponseEntity<>("Duplicate UserCaredId", HttpStatus.OK);
+                } else {
+                    check = 3;
+                    UserCareDTO newUserCareDTO = userCareService.createUserCare(userCareDTO, broker, null, check);
+                    return new ResponseEntity<>(newUserCareDTO, HttpStatus.CREATED);
+                }
             }
         } catch (Exception e) {
 
@@ -235,7 +247,7 @@ public class UserCareController {
                 .orElseThrow(() -> new ResourceNotFoundException("User", "id", userId));
         if (user.getCurrentRole() == 3) {
             UserCareDTO newCareDTO = userCareService.updateUserCare(userCareDTO, careId);
-            return new ResponseEntity<>(newCareDTO, HttpStatus.OK);
+            return new ResponseEntity<>("Cập nhật thành công !", HttpStatus.CREATED);
         } else {
             return new ResponseEntity<>("You need to change broker role!", HttpStatus.BAD_REQUEST);
         }

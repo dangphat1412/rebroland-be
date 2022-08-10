@@ -6,7 +6,7 @@ import java.util.List;
 
 @Data
 public class PaymentResponse {
-    private List<PaymentDTO> payments;
+    private List<TransactionDTO> payments;
     private int pageNo;
     private int totalPages;
     private Long totalResult;

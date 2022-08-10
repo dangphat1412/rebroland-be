@@ -11,8 +11,7 @@ public class ResidentialHouseHistoryDTO {
     private int id;
 
     @NotEmpty(message = "Cập nhập thông tin này.")
-    @Size(min = 13,max = 15,message = "Độ dài từ 13 hoặc 15 ký tự.")
-    @Pattern(regexp = "[0-9]+", message = "Mã vạch chỉ nhập số")
+    @Pattern(regexp = "(^\\d{13}$)|(^\\d{15}$)", message = "Mã vạch chỉ nhập số 13 hoặc 15 kí tự")
     private String barcode;
 
     @NotEmpty(message = "Cập nhập thông tin này.")

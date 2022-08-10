@@ -36,30 +36,30 @@ public interface UserRepository extends JpaRepository<User, Integer> {
 //    Page<User> searchBroker(String fullName, String ward, String district, String province,
 //                            String address, Pageable pageable);
 
-    @Query(value = " SELECT u.*, r.avg_rate FROM `users` u " +
+    @Query(value = " SELECT u.* FROM `users` u " +
             " LEFT JOIN average_rates r on u.id = r.user_id " +
-            " WHERE u.id IN (SELECT user_id FROM user_roles " +
+            " WHERE u.id IN (SELECT user_id FROM `user_roles` " +
             "                WHERE role_id = 3) " +
             "AND IF(:fullName IS NULL, 1 = 1, u.full_name LIKE CONCAT('%',:fullName,'%')) " +
             "AND IF(:ward IS NULL, 1 = 1, u.ward LIKE CONCAT('%',:ward,'%')) " +
             "AND IF(:district IS NULL, 1 = 1, u.district LIKE CONCAT('%',:district,'%')) " +
             "AND IF(:province IS NULL, 1 = 1, u.province LIKE CONCAT('%',:province,'%')) " +
-            "AND IF(:check IS NULL, 1 = 1, u.id IN (SELECT user_id FROM posts " +
+            "AND IF(:check IS NULL, 1 = 1, u.id IN (SELECT user_id FROM `posts` " +
             "                                       WHERE property_id IN :propertyType)) " +
             "AND (r.role_id = 3 OR r.role_id IS NULL)"  +
             "ORDER BY r.avg_rate DESC ", nativeQuery = true)
     Page<User> searchBrokerByStarRateDesc(String fullName, String ward, String district, String province,
                                           String check, List<Integer> propertyType, Pageable pageable);
 
-    @Query(value = " SELECT u.*, r.avg_rate FROM `users` u " +
+    @Query(value = " SELECT u.* FROM `users` u " +
             " LEFT JOIN average_rates r on u.id = r.user_id " +
-            " WHERE u.id IN (SELECT user_id FROM user_roles " +
+            " WHERE u.id IN (SELECT user_id FROM `user_roles` " +
             "                WHERE role_id = 3) " +
             "AND IF(:fullName IS NULL, 1 = 1, u.full_name LIKE CONCAT('%',:fullName,'%')) " +
             "AND IF(:ward IS NULL, 1 = 1, u.ward LIKE CONCAT('%',:ward,'%')) " +
             "AND IF(:district IS NULL, 1 = 1, u.district LIKE CONCAT('%',:district,'%')) " +
             "AND IF(:province IS NULL, 1 = 1, u.province LIKE CONCAT('%',:province,'%')) " +
-            "AND IF(:check IS NULL, 1 = 1, u.id IN (SELECT user_id FROM posts " +
+            "AND IF(:check IS NULL, 1 = 1, u.id IN (SELECT user_id FROM `posts` " +
             "                                       WHERE property_id IN :propertyType)) " +
             "AND (r.role_id = 3 OR r.role_id IS NULL) ", nativeQuery = true)
     List<User> searchBroker(String fullName, String ward, String district, String province,

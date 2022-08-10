@@ -1,6 +1,7 @@
 package vn.edu.fpt.rebroland.payload;
 
 
+
 import lombok.Data;
 
 import javax.validation.constraints.*;
@@ -27,6 +28,8 @@ public class RealEstatePostDTO {
     private boolean certification;
 
     private String startDate;
+    private String transactionStartDate;
+    private String transactionEndDate;
 
     @Min(value = 0)
     @Max(value = 1000000000000L)

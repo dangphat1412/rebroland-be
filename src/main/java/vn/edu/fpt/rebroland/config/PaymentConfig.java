@@ -1,6 +1,8 @@
 package vn.edu.fpt.rebroland.config;
 
 
+
+
 import lombok.AllArgsConstructor;
 
 import javax.crypto.Mac;
@@ -12,15 +14,16 @@ import java.util.Random;
 @AllArgsConstructor
 public class PaymentConfig {
     public static final String IPDEFAULT = "0:0:0:0:0:0:0:1";
-    //    public static final String IPDEFAULT = "192.168.100.6";
+//    public static final String IPDEFAULT = "192.168.100.6";
     public static final String CURRCODE = "VND";
     public static final String VERSIONVNPAY = "2.1.0";
-    //   public static final String COMMAND = "2.0.0";
+ //   public static final String COMMAND = "2.0.0";
     public static final String COMMAND = "pay";
     public static final String TMNCODE = "98QRZWNC";
     public static final String CHECKSUM = "QQIFCJSCRTLCMEWEGVOYCPZLJQUCUUSN";
     //thanh toan xong redirect ve trang nay
-    public static final String RETURNURL = "";
+//    public static final String RETURNURL = "http://localhost:3000/thanh-toan-thanh-cong";
+    public static final String RETURNURL = "http://localhost:8080/api/payment/recharge";
     public static final String VNPAYURL = "https://sandbox.vnpayment.vn/paymentv2/vpcpay.html";
     public static final String LOCALEDEFAULT = "vn";
 

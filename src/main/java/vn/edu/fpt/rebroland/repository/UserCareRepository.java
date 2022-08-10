@@ -21,10 +21,10 @@ public interface UserCareRepository extends JpaRepository<UserCare, Integer> {
 
     @Query(value = "select * from user_cares u join post_cares p on u.care_id = p.care_id " +
             "where u.user_cared_id = :userCaredId and " +
-            "p.post_id = :postId", nativeQuery = true)
+            "p.post_id = :postId and u.status = false", nativeQuery = true)
     UserCare findUserCareByUserCaredIdAndPostId(Integer userCaredId, int postId);
 
-    @Query(value = "select * from user_cares where user_cared_id = :userCaredId", nativeQuery = true)
+    @Query(value = "select * from user_cares where user_cared_id = :userCaredId and status = false", nativeQuery = true)
     UserCare findUserCareByUserCaredId(Integer userCaredId);
 
     @Query(value = "select * from `user_cares` where user_id =:userId" +

@@ -40,6 +40,8 @@ public class User {
 
     private Date startDate;
 
+    private long accountBalance;
+
     @ManyToMany(fetch = FetchType.EAGER, cascade = CascadeType.ALL)
     @JoinTable(name = "user_roles",
             joinColumns = @JoinColumn(name = "user_id", referencedColumnName = "id"),
@@ -76,7 +78,7 @@ public class User {
     private Set<Notification> notifications = new HashSet<>();
 
     @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
-    private Set<Payment> payments = new HashSet<>();
+    private Set<Transactions> transactions = new HashSet<>();
 
     @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
     private Set<ReportDetail> reportDetails = new HashSet<>();
