@@ -1,5 +1,6 @@
 package vn.edu.fpt.rebroland.service;
 
+import vn.edu.fpt.rebroland.payload.HistoryDTO;
 import vn.edu.fpt.rebroland.payload.ResidentialHouseHistoryDTO;
 
 public interface ResidentialHouseHistoryService {
@@ -11,4 +12,6 @@ public interface ResidentialHouseHistoryService {
     void deleteResidentialHouseHistoryById(int id);
 
     String updateResidentialHouseHistory(ResidentialHouseHistoryDTO residentialHouseHistoryDTO, int id);
+
+    void setDataToResidentialHouseHistoryDTO(ResidentialHouseHistoryDTO residentialHouseHistoryDTO, HistoryDTO historyDTO);
 }

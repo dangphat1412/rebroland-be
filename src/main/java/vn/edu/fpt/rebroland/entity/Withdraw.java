@@ -11,27 +11,28 @@ import java.util.Date;
 @AllArgsConstructor
 @NoArgsConstructor
 @Entity
-@Table(name = "transactions")
-public class Transactions {
+@Table(name = "withdraw")
+public class Withdraw {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(nullable = false)
     private int id;
 
-    private long amount;
+    private int type;
 
     private Date startDate;
 
+    private String content;
 
-    private String description;
+    private String accountNumber;
 
-    private int discount;
+    private String accountName;
+
+    private long money;
+
+    private boolean status;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id", nullable = false)
     private User user;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "type_id", nullable = false)
-    private TransactionType transactionType;
 }

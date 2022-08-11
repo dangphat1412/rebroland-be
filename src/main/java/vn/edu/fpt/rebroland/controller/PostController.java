@@ -56,13 +56,16 @@ public class PostController {
 
     private HistoryImageService historyImageService;
 
+    private PaymentService paymentService;
+
     public PostController(PostService postService, CoordinateService coordinateService, ImageService imageService,
                           ApartmentService apartmentService, ResidentialLandService residentialLandService,
                           ResidentialHouseService residentialHouseService, ApartmentHistoryService apartmentHistoryService,
                           ResidentialHouseHistoryService residentialHouseHistoryService, ResidentialLandHistoryService residentialLandHistoryService,
                           PostRepository postRepository, UserRepository userRepository, ModelMapper mapper,
                           UserFollowPostService userFollowPostService, ReportService reportService, ContactService contactService,
-                          UserCareService userCareService, AvgRateRepository rateRepository, PriceService priceService, HistoryImageService historyImageService) {
+                          UserCareService userCareService, AvgRateRepository rateRepository, PriceService priceService, HistoryImageService historyImageService,
+                          PaymentService paymentService) {
         this.postService = postService;
         this.coordinateService = coordinateService;
         this.imageService = imageService;
@@ -82,6 +85,7 @@ public class PostController {
         this.rateRepository = rateRepository;
         this.priceService = priceService;
         this.historyImageService = historyImageService;
+        this.paymentService = paymentService;
     }
 
     //view detail real estate post from post id
@@ -211,6 +215,15 @@ public class PostController {
                 long newBalanceAccount = user.getAccountBalance() - totalPayment;
                 user.setAccountBalance(newBalanceAccount);
                 userRepository.save(user);
+
+                TransactionDTO transactionDTO = new TransactionDTO();
+                transactionDTO.setAmount(totalPayment);
+                transactionDTO.setDescription("Thanh toán bài đăng");
+                transactionDTO.setTypeId(1);
+                transactionDTO.setUser(mapper.map(user, UserDTO.class));
+                transactionDTO.setDiscount(priceDTO.getDiscount());
+                paymentService.createTransaction(transactionDTO);
+
                 PostDTO postDTO = postService.setDataToPostDTO(generalPostDTO, userId, date, true);
                 PostDTO newPostDTO = postService.createPost(postDTO, userId, generalPostDTO.getDirectionId(), generalPostDTO.getPropertyTypeId(),
                         generalPostDTO.getUnitPriceId(), 1, generalPostDTO.getLongevityId());
@@ -649,20 +662,23 @@ public class PostController {
     public ResponseEntity<?> createRealEstateHistory(@RequestBody HistoryDTO historyDTO){
         switch (historyDTO.getTypeId()){
             case 1:
+                ResidentialHouseHistoryDTO houseHistoryDTO = new ResidentialHouseHistoryDTO();
+                residentialHouseHistoryService.setDataToResidentialHouseHistoryDTO(houseHistoryDTO, historyDTO);
+                ResidentialHouseHistoryDTO houseDto = residentialHouseHistoryService.createResidentialHouseHistory(houseHistoryDTO);
+                return new ResponseEntity<>(houseDto, HttpStatus.CREATED);
+            case 2:
                 ApartmentHistoryDTO apartmentHistoryDTO = new ApartmentHistoryDTO();
                 apartmentHistoryService.setDataToApartmentHistoryDTO(apartmentHistoryDTO, historyDTO);
                 ApartmentHistoryDTO dto = apartmentHistoryService.createApartmentHistory(apartmentHistoryDTO);
  //               historyImageService.createHistoryImage(historyDTO.getImages(), dto.getId(), 1);
                 return new ResponseEntity<>(dto, HttpStatus.CREATED);
-            case 2:
-                ResidentialLandHistoryDTO landHistoryDTO = new ResidentialLandHistoryDTO();
-
-                return new ResponseEntity<>(null, HttpStatus.CREATED);
             case 3:
+                ResidentialLandHistoryDTO landHistoryDTO = new ResidentialLandHistoryDTO();
+                residentialLandHistoryService.setDataToResidentialLandHistoryDTO(landHistoryDTO, historyDTO);
+                ResidentialLandHistoryDTO landDto = residentialLandHistoryService.createResidentialLandHistory(landHistoryDTO);
+                return new ResponseEntity<>(landDto, HttpStatus.CREATED);
 
-                return new ResponseEntity<>(null, HttpStatus.CREATED);
         }
-
         return new ResponseEntity<>(null, HttpStatus.BAD_REQUEST);
     }
 }

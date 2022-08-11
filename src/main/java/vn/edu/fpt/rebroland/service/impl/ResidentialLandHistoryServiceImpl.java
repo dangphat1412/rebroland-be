@@ -2,6 +2,7 @@ package vn.edu.fpt.rebroland.service.impl;
 
 import vn.edu.fpt.rebroland.entity.ResidentialLandHistory;
 import vn.edu.fpt.rebroland.exception.ResourceNotFoundException;
+import vn.edu.fpt.rebroland.payload.HistoryDTO;
 import vn.edu.fpt.rebroland.payload.ResidentialLandHistoryDTO;
 import vn.edu.fpt.rebroland.repository.ResidentialLandHistoryRepository;
 import vn.edu.fpt.rebroland.service.ResidentialLandHistoryService;
@@ -51,6 +52,23 @@ public class ResidentialLandHistoryServiceImpl implements ResidentialLandHistory
         residentialLandHistory.setPlotNumber(residentialLandHistoryDTO.getPlotNumber());
         residentialLandHistoryRepository.save(residentialLandHistory);
         return "update success";
+    }
+
+    @Override
+    public void setDataToResidentialLandHistoryDTO(ResidentialLandHistoryDTO residentialLandHistoryDTO, HistoryDTO historyDTO) {
+        residentialLandHistoryDTO.setBarcode(historyDTO.getBarcode());
+        residentialLandHistoryDTO.setOwner(historyDTO.getOwner());
+        residentialLandHistoryDTO.setPhone(historyDTO.getPhone());
+        residentialLandHistoryDTO.setPlotNumber(historyDTO.getPlotNumber()+"");
+
+
+        String startDate = "";
+        if (historyDTO.getBarcode().length() == 13) {
+            startDate = "20" + historyDTO.getBarcode().substring(5, 7);
+        } else {
+            startDate = "20" + historyDTO.getBarcode().substring(7, 9);
+        }
+        residentialLandHistoryDTO.setStartDate(startDate);
     }
 
     private ResidentialLandHistoryDTO mapToDTO(ResidentialLandHistory residentialLandHistory) {

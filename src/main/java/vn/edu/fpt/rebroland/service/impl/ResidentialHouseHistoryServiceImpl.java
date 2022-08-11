@@ -4,6 +4,7 @@ package vn.edu.fpt.rebroland.service.impl;
 
 import vn.edu.fpt.rebroland.entity.ResidentialHouseHistory;
 import vn.edu.fpt.rebroland.exception.ResourceNotFoundException;
+import vn.edu.fpt.rebroland.payload.HistoryDTO;
 import vn.edu.fpt.rebroland.payload.ResidentialHouseHistoryDTO;
 import vn.edu.fpt.rebroland.repository.ResidentialHouseHistoryRepository;
 import vn.edu.fpt.rebroland.service.ResidentialHouseHistoryService;
@@ -51,6 +52,22 @@ public class ResidentialHouseHistoryServiceImpl implements ResidentialHouseHisto
         residentialHouseHistory.setPlotNumber(residentialHouseHistory.getPlotNumber());
         residentialHouseHistoryRepository.save(residentialHouseHistory);
         return "update success";
+    }
+
+    @Override
+    public void setDataToResidentialHouseHistoryDTO(ResidentialHouseHistoryDTO residentialHouseHistoryDTO, HistoryDTO historyDTO) {
+        residentialHouseHistoryDTO.setBarcode(historyDTO.getBarcode());
+        residentialHouseHistoryDTO.setOwner(historyDTO.getOwner());
+        residentialHouseHistoryDTO.setPhone(historyDTO.getPhone());
+        residentialHouseHistoryDTO.setPlotNumber(historyDTO.getPlotNumber()+"");
+
+        String startDate = "";
+        if (historyDTO.getBarcode().length() == 13) {
+            startDate = "20" + historyDTO.getBarcode().substring(5, 7);
+        } else {
+            startDate = "20" + historyDTO.getBarcode().substring(7, 9);
+        }
+        residentialHouseHistoryDTO.setStartDate(startDate);
     }
 
 
