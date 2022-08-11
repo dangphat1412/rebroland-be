@@ -21,6 +21,7 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.*;
 
 import javax.validation.Valid;
@@ -43,10 +44,11 @@ public class UserController {
 
     private RoleRepository roleRepository;
     private PriceService priceService;
+    private PaymentService paymentService;
 
 
     public UserController(UserService userService, ImageService imageService, ModelMapper mapper, PostService postService, UserFollowPostService followPostService,
-                          RoleRepository roleRepository, PriceService priceService) {
+                          RoleRepository roleRepository, PriceService priceService, PaymentService paymentService) {
         this.userService = userService;
         this.imageService = imageService;
         this.mapper = mapper;
@@ -54,6 +56,7 @@ public class UserController {
         this.followPostService = followPostService;
         this.roleRepository = roleRepository;
         this.priceService = priceService;
+        this.paymentService = paymentService;
     }
 
     @Autowired
@@ -219,6 +222,7 @@ public class UserController {
     }
 
     @PostMapping("/broker/signup/{priceId}")
+    @Transactional
     public ResponseEntity<?> createBroker(@RequestHeader(name = "Authorization") String token,
                                           @PathVariable(name = "priceId") int priceId){
         String[] parts = token.split("\\.");
@@ -235,9 +239,22 @@ public class UserController {
             if(!user.getRoles().contains(role)){
                 //payment
                 UserDTO userDTO = userService.createBroker(user, role);
-                user.setAccountBalance(accountBalance - price);
-                userRepository.save(user);
-                return new ResponseEntity<>(userDTO, HttpStatus.OK);
+                if(userDTO != null){
+                    user.setAccountBalance(accountBalance - price);
+                    userRepository.save(user);
+
+                    TransactionDTO transactionDTO = new TransactionDTO();
+                    transactionDTO.setUser(userDTO);
+                    transactionDTO.setDescription("Đăng ký broker");
+                    transactionDTO.setAmount(price);
+                    transactionDTO.setTypeId(2);
+                    paymentService.createTransaction(transactionDTO);
+
+                    return new ResponseEntity<>(userDTO, HttpStatus.OK);
+                }else {
+                    return new ResponseEntity<>("Tạo tài khoản thất bại !", HttpStatus.BAD_REQUEST);
+                }
+
             }
             return new ResponseEntity<>("Người dùng đã có tài khoản broker!", HttpStatus.BAD_REQUEST);
         }else{
@@ -394,5 +411,74 @@ public class UserController {
     public ResponseEntity<?> getPriceBroker(@RequestHeader(name = "Authorization") String token){
         List<PriceDTO> priceDTO = priceService.getListPriceBroker(2);
         return new ResponseEntity<>(priceDTO, HttpStatus.OK);
+    }
+
+    @PostMapping("/change-phone/send-otp")
+    public ResponseEntity<?> updatePhone(@RequestHeader(name = "Authorization") String token,
+                                         @Valid @RequestBody PhoneDTO registerDTO){
+        String[] parts = token.split("\\.");
+        JSONObject payload = new JSONObject(decode(parts[1]));
+        String phone = payload.getString("sub");
+        User user = userRepository.findByPhone(phone).
+                orElseThrow(() -> new UsernameNotFoundException("User not found with phone: " + phone));
+        if(user.getPhone().equals(registerDTO.getPhone())){
+            return new ResponseEntity<>("SĐT cập nhật trùng với SĐT hiện tại !", HttpStatus.BAD_REQUEST);
+        }else{
+            String otp = otpService.generateOtp(registerDTO.getPhone()) + "";
+//                sendSMS(registerDTO.getPhone(), otp);
+            Map<String, Object> map = new HashMap<>();
+            map.put("phoneData", registerDTO);
+            map.put("tokenTime", otpService.EXPIRE_MINUTES);
+            map.put("otp", otp);
+            return new ResponseEntity<>(map, HttpStatus.OK);
+        }
+    }
+
+    @PostMapping("/change-phone")
+    @Transactional
+    public ResponseEntity<?> processUpdatePhone(@RequestHeader(name = "Authorization") String token,
+                                                @Valid @RequestBody PhoneDTO registerDTO){
+        String[] parts = token.split("\\.");
+        JSONObject payload = new JSONObject(decode(parts[1]));
+        String phone = payload.getString("sub");
+        User newUser = userRepository.findByPhone(phone).
+                orElseThrow(() -> new UsernameNotFoundException("User not found with phone: " + phone));
+        if(otpService.getOtp(registerDTO.getPhone()) == null){
+            return new ResponseEntity<>("Mã OTP hết hạn!", HttpStatus.BAD_REQUEST);
+        }
+        if(registerDTO.getToken().isEmpty() || registerDTO.getToken() == null){
+            return new ResponseEntity<>("Mã OTP sai!", HttpStatus.BAD_REQUEST);
+        }
+        int otp = Integer.parseInt(registerDTO.getToken());
+
+        if (otp != otpService.getOtp(registerDTO.getPhone())) {
+            return new ResponseEntity<>("Mã OTP sai!", HttpStatus.BAD_REQUEST);
+        }else{
+            UserDTO userDTO = userService.getUserByPhone(registerDTO.getPhone());
+            if(userDTO != null){
+                User user = userRepository.findByPhone(registerDTO.getPhone()).
+                        orElseThrow(() -> new UsernameNotFoundException("User not found with phone: " + registerDTO.getPhone()));;
+                user.setBlock(true);
+                userRepository.save(user);
+                //inactive all post of user
+                postService.blockAllPostByUserId(user.getId());
+
+                newUser.setPhone(registerDTO.getPhone());
+                userRepository.save(newUser);
+
+                String newToken = tokenProvider.generateToken(newUser.getPhone());
+                return new ResponseEntity<>(new JWTAuthResponse(newToken), HttpStatus.OK);
+//                return new ResponseEntity<>("Cập nhật SĐT thành công!", HttpStatus.OK);
+            }else{
+                newUser.setPhone(registerDTO.getPhone());
+                userRepository.save(newUser);
+//                return new ResponseEntity<>("Cập nhật SĐT thành công !", HttpStatus.OK);
+
+                String newToken = tokenProvider.generateToken(newUser.getPhone());
+                return new ResponseEntity<>(new JWTAuthResponse(newToken), HttpStatus.OK);
+            }
+
+        }
+
     }
 }

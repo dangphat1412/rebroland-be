@@ -54,13 +54,15 @@ public class PostController {
 
     private PriceService priceService;
 
+    private HistoryImageService historyImageService;
+
     public PostController(PostService postService, CoordinateService coordinateService, ImageService imageService,
                           ApartmentService apartmentService, ResidentialLandService residentialLandService,
                           ResidentialHouseService residentialHouseService, ApartmentHistoryService apartmentHistoryService,
                           ResidentialHouseHistoryService residentialHouseHistoryService, ResidentialLandHistoryService residentialLandHistoryService,
                           PostRepository postRepository, UserRepository userRepository, ModelMapper mapper,
                           UserFollowPostService userFollowPostService, ReportService reportService, ContactService contactService,
-                          UserCareService userCareService, AvgRateRepository rateRepository, PriceService priceService) {
+                          UserCareService userCareService, AvgRateRepository rateRepository, PriceService priceService, HistoryImageService historyImageService) {
         this.postService = postService;
         this.coordinateService = coordinateService;
         this.imageService = imageService;
@@ -79,6 +81,7 @@ public class PostController {
         this.userCareService = userCareService;
         this.rateRepository = rateRepository;
         this.priceService = priceService;
+        this.historyImageService = historyImageService;
     }
 
     //view detail real estate post from post id
@@ -197,12 +200,7 @@ public class PostController {
         long millis = System.currentTimeMillis();
         java.sql.Date date = new java.sql.Date(millis);
         User user = userRepository.findById(userId).orElseThrow(() -> new ResourceNotFoundException("User", "id", userId));
-//        String startDate = "";
-//        if (generalPostDTO.getBarcode().length() == 13) {
-//            startDate = "20" + generalPostDTO.getBarcode().substring(5, 7);
-//        } else {
-//            startDate = "20" + generalPostDTO.getBarcode().substring(7, 9);
-//        }
+
 
         PriceDTO priceDTO = priceService.getPriceByTypeIdAndStatus(1);
         long totalPayment = generalPostDTO.getNumberOfPostedDay() * (priceDTO.getPrice()*(100-priceDTO.getDiscount())/100);
@@ -645,5 +643,26 @@ public class PostController {
     public ResponseEntity<?> getNumberOfPropertyTypeForBroker() {
         Map<String, Integer> map = postService.getNumberOfPropertyTypeForBroker();
         return new ResponseEntity<>(map, HttpStatus.OK);
+    }
+
+    @PostMapping("/history")
+    public ResponseEntity<?> createRealEstateHistory(@RequestBody HistoryDTO historyDTO){
+        switch (historyDTO.getTypeId()){
+            case 1:
+                ApartmentHistoryDTO apartmentHistoryDTO = new ApartmentHistoryDTO();
+                apartmentHistoryService.setDataToApartmentHistoryDTO(apartmentHistoryDTO, historyDTO);
+                ApartmentHistoryDTO dto = apartmentHistoryService.createApartmentHistory(apartmentHistoryDTO);
+ //               historyImageService.createHistoryImage(historyDTO.getImages(), dto.getId(), 1);
+                return new ResponseEntity<>(dto, HttpStatus.CREATED);
+            case 2:
+                ResidentialLandHistoryDTO landHistoryDTO = new ResidentialLandHistoryDTO();
+
+                return new ResponseEntity<>(null, HttpStatus.CREATED);
+            case 3:
+
+                return new ResponseEntity<>(null, HttpStatus.CREATED);
+        }
+
+        return new ResponseEntity<>(null, HttpStatus.BAD_REQUEST);
     }
 }

@@ -22,8 +22,6 @@ public class Transactions {
 
     private Date startDate;
 
-    private Date endDate;
-
     private String description;
 
     @ManyToOne(fetch = FetchType.LAZY)

@@ -3,6 +3,7 @@ package vn.edu.fpt.rebroland.service.impl;
 import vn.edu.fpt.rebroland.entity.ApartmentHistory;
 import vn.edu.fpt.rebroland.exception.ResourceNotFoundException;
 import vn.edu.fpt.rebroland.payload.ApartmentHistoryDTO;
+import vn.edu.fpt.rebroland.payload.HistoryDTO;
 import vn.edu.fpt.rebroland.repository.ApartmentHistoryRepository;
 import vn.edu.fpt.rebroland.service.ApartmentHistoryService;
 import org.modelmapper.ModelMapper;
@@ -49,6 +50,24 @@ public class ApartmentHistoryServiceImpl implements ApartmentHistoryService {
         apartmentHistoryRepository.save(apartmentHistory);
         return "update success";
 
+    }
+
+    @Override
+    public void setDataToApartmentHistoryDTO(ApartmentHistoryDTO apartmentHistoryDTO, HistoryDTO historyDTO) {
+        apartmentHistoryDTO.setBarcode(historyDTO.getBarcode());
+        apartmentHistoryDTO.setOwner(historyDTO.getOwner());
+        apartmentHistoryDTO.setPhone(historyDTO.getPhone());
+        apartmentHistoryDTO.setBuildingName(historyDTO.getBuildingName());
+        apartmentHistoryDTO.setPlotNumber(historyDTO.getPlotNumber());
+        apartmentHistoryDTO.setRoomNumber(historyDTO.getRoomNumber());
+
+        String startDate = "";
+        if (historyDTO.getBarcode().length() == 13) {
+            startDate = "20" + historyDTO.getBarcode().substring(5, 7);
+        } else {
+            startDate = "20" + historyDTO.getBarcode().substring(7, 9);
+        }
+        apartmentHistoryDTO.setStartDate(startDate);
     }
 
     private ApartmentHistoryDTO mapToDTO(ApartmentHistory apartmentHistory) {

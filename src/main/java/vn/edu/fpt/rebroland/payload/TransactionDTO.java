@@ -13,7 +13,6 @@ public class TransactionDTO {
     private int id;
     private long amount;
     private Date startDate;
-    private Date endDate;
     private String description;
     private int typeId;
     private UserDTO user;

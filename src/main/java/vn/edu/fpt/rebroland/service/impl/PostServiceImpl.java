@@ -405,6 +405,16 @@ public class PostServiceImpl implements PostService {
     }
 
     @Override
+    public void blockAllPostByUserId(int userId) {
+        List<Post> listPost = postRepository.getAllPostToBlock(userId);
+        Status status = new Status(5);
+        for (Post post: listPost) {
+            post.setStatus(status);
+            postRepository.save(post);
+        }
+    }
+
+    @Override
     public List<BrokerInfoOfPostDTO> getDerivativePostOfOriginalPost(int originalPostId) {
         List<Post> listPost = postRepository.getDerivativePostOfOriginalPost(originalPostId);
         List<BrokerInfoOfPostDTO> listPostDto = new ArrayList<>();

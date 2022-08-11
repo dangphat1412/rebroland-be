@@ -2,18 +2,22 @@ package vn.edu.fpt.rebroland.controller;
 
 import vn.edu.fpt.rebroland.config.PaymentConfig;
 import vn.edu.fpt.rebroland.entity.User;
-import vn.edu.fpt.rebroland.payload.TransactionDTO;
-import vn.edu.fpt.rebroland.payload.UserDTO;
+import vn.edu.fpt.rebroland.payload.*;
 import vn.edu.fpt.rebroland.repository.UserRepository;
+import vn.edu.fpt.rebroland.service.OtpService;
 import vn.edu.fpt.rebroland.service.PaymentService;
+import vn.edu.fpt.rebroland.service.UserService;
 import org.cloudinary.json.JSONObject;
 import org.modelmapper.ModelMapper;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.*;
 
 import javax.servlet.http.HttpServletResponse;
+import javax.validation.Valid;
 import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
@@ -28,12 +32,17 @@ public class PaymentController {
     private PaymentService paymentService;
     private UserRepository userRepository;
     private ModelMapper mapper;
+    private UserService userService;
 
-    public PaymentController(PaymentService paymentService, UserRepository userRepository, ModelMapper mapper) {
+    public PaymentController(PaymentService paymentService, UserRepository userRepository, ModelMapper mapper, UserService userService) {
         this.paymentService = paymentService;
         this.userRepository = userRepository;
         this.mapper = mapper;
+        this.userService = userService;
     }
+
+    @Autowired
+    private OtpService otpService;
 
     @PostMapping("/create-payment")
     public ResponseEntity<?> createPayment(@RequestBody TransactionDTO transactionDTO,
@@ -100,39 +109,39 @@ public class PaymentController {
         return new ResponseEntity<>(result, HttpStatus.OK);
     }
 
-    @GetMapping("/payment-info")
-    public ResponseEntity<?> transactionHandle(@RequestParam(value = "vnp_Amount", required = false) String amount,
-                                               @RequestParam(value = "vnp_BankCode", required = false) String bankCode,
-                                               @RequestParam(value = "vnp_BankTranNo", required = false) String bankTranNo,
-                                               @RequestParam(value = "vnp_CardType", required = false) String cardType,
-                                               @RequestParam(value = "vnp_OrderInfo", required = false) String orderInfo,
-                                               @RequestParam(value = "vnp_PayDate", required = false) String payDate,
-                                               @RequestParam(value = "vnp_ResponseCode", required = false) String responseCode,
-                                               @RequestParam(value = "vnp_TmnCode", required = false) String tmnCode,
-                                               @RequestParam(value = "vnp_TransactionNo", required = false) String transactionNo,
-                                               @RequestParam(value = "vnp_TxnRef", required = false) String txnRef,
-                                               @RequestParam(value = "vnp_SecureHashType", required = false) String secureHashType,
-                                               @RequestParam(value = "vnp_SecureHash", required = false) String secureHash,
-                                               @RequestParam(value = "token") String token
-                                               ){
-        TransactionDTO newPayment = new TransactionDTO();
-        int price = Integer.parseInt(amount) / 100;
-        newPayment.setAmount(price);
-        newPayment.setDescription(orderInfo);
-        if(price == 55000){
-            newPayment.setTypeId(1);
-        }else{
-            newPayment.setTypeId(2);
-        }
-
-        //fix user id
-        User user = getUserFromToken(token);
-        newPayment.setUser(mapper.map(user, UserDTO.class));
-
-
-        TransactionDTO transactionDTO = paymentService.createTransaction(newPayment);
-        return new ResponseEntity<>(transactionDTO, HttpStatus.OK);
-    }
+//    @GetMapping("/payment-info")
+//    public ResponseEntity<?> transactionHandle(@RequestParam(value = "vnp_Amount", required = false) String amount,
+//                                               @RequestParam(value = "vnp_BankCode", required = false) String bankCode,
+//                                               @RequestParam(value = "vnp_BankTranNo", required = false) String bankTranNo,
+//                                               @RequestParam(value = "vnp_CardType", required = false) String cardType,
+//                                               @RequestParam(value = "vnp_OrderInfo", required = false) String orderInfo,
+//                                               @RequestParam(value = "vnp_PayDate", required = false) String payDate,
+//                                               @RequestParam(value = "vnp_ResponseCode", required = false) String responseCode,
+//                                               @RequestParam(value = "vnp_TmnCode", required = false) String tmnCode,
+//                                               @RequestParam(value = "vnp_TransactionNo", required = false) String transactionNo,
+//                                               @RequestParam(value = "vnp_TxnRef", required = false) String txnRef,
+//                                               @RequestParam(value = "vnp_SecureHashType", required = false) String secureHashType,
+//                                               @RequestParam(value = "vnp_SecureHash", required = false) String secureHash,
+//                                               @RequestParam(value = "token") String token
+//                                               ){
+//        TransactionDTO newPayment = new TransactionDTO();
+//        int price = Integer.parseInt(amount) / 100;
+//        newPayment.setAmount(price);
+//        newPayment.setDescription(orderInfo);
+//        if(price == 55000){
+//            newPayment.setTypeId(1);
+//        }else{
+//            newPayment.setTypeId(2);
+//        }
+//
+//        //fix user id
+//        User user = getUserFromToken(token);
+//        newPayment.setUser(mapper.map(user, UserDTO.class));
+//
+//
+//        TransactionDTO transactionDTO = paymentService.createTransaction(newPayment);
+//        return new ResponseEntity<>(transactionDTO, HttpStatus.OK);
+//    }
 
     @RequestMapping("/recharge")
     public void depositMoneyIntoWallet(@RequestParam(value = "vnp_Amount", required = false) String amount,
@@ -163,8 +172,6 @@ public class PaymentController {
                 long accountBalance = user.getAccountBalance();
                 user.setAccountBalance(accountBalance + transactionDTO.getAmount());
                 userRepository.save(user);
-//            return "redirect:http://localhost:3000/thanh-toan-thanh-cong";
-//            return "redirect:https://www.google.com.vn/?hl=vi";
                 String linkRedirect = "http://localhost:3000/thanh-toan-thanh-cong?amount=" + money +"&orderInfo="
                         + orderInfo +"&bankCode=" + bankCode + "&cardType=" + cardType + "&payDate=" + payDate + "&transactionNo=" + transactionNo;
                 response.sendRedirect(linkRedirect);
@@ -179,6 +186,95 @@ public class PaymentController {
 //
 //        }
 //    }
+
+    @PostMapping("/transfer/send-otp")
+    public ResponseEntity<?> preTransfer(@RequestHeader(name = "Authorization") String token,
+                                         @Valid @RequestBody TransferDTO registerDTO){
+        User user = getUserFromToken(token);
+        if(user.getPhone().equals(registerDTO.getPhone())){
+            return new ResponseEntity<>("SĐT nhận tiền trùng với SĐT hiện tại !", HttpStatus.BAD_REQUEST);
+        }else{
+            UserDTO userDTO = userService.getUserByPhone(registerDTO.getPhone());
+            if(userDTO != null){
+                User sender = userRepository.findByPhone(user.getPhone()).
+                        orElseThrow(() -> new UsernameNotFoundException("User not found with phone: " + user.getPhone()));
+                long amount = registerDTO.getAmount();
+                long newSenderAccountBalance = sender.getAccountBalance();
+                if(amount > newSenderAccountBalance){
+                    return new ResponseEntity<>("Số dư không đủ để thực hiện giao dịch!", HttpStatus.BAD_REQUEST);
+                }
+
+                String otp = otpService.generateOtp(registerDTO.getPhone()) + "";
+//                sendSMS(registerDTO.getPhone(), otp);
+                Map<String, Object> map = new HashMap<>();
+                map.put("transferData", registerDTO);
+                map.put("tokenTime", otpService.EXPIRE_MINUTES);
+                map.put("otp", otp);
+                return new ResponseEntity<>(map, HttpStatus.OK);
+            }else {
+                return new ResponseEntity<>("Số điện thoại không tồn tại!", HttpStatus.BAD_REQUEST);
+            }
+
+        }
+    }
+
+    @PostMapping("/transfer")
+    @Transactional
+    public ResponseEntity<?> processTransfer(@RequestHeader(name = "Authorization") String token,
+                                                @Valid @RequestBody TransferDTO transferDTO){
+        User sender = getUserFromToken(token);
+        if(otpService.getOtp(transferDTO.getPhone()) == null){
+            return new ResponseEntity<>("Mã OTP hết hạn!", HttpStatus.BAD_REQUEST);
+        }
+        if(transferDTO.getToken().isEmpty() || transferDTO.getToken() == null){
+            return new ResponseEntity<>("Mã OTP sai!", HttpStatus.BAD_REQUEST);
+        }
+        int otp = Integer.parseInt(transferDTO.getToken());
+
+        if (otp != otpService.getOtp(transferDTO.getPhone())) {
+            return new ResponseEntity<>("Mã OTP sai!", HttpStatus.BAD_REQUEST);
+        }else{
+            UserDTO userDTO = userService.getUserByPhone(transferDTO.getPhone());
+            if(userDTO != null){
+                User receiver = userRepository.findByPhone(transferDTO.getPhone()).
+                        orElseThrow(() -> new UsernameNotFoundException("User not found with phone: " + transferDTO.getPhone()));
+                long amount = transferDTO.getAmount();
+                long newSenderAccountBalance = sender.getAccountBalance() - amount;
+                long newReceiverAccountBalance = receiver.getAccountBalance() + amount;
+                if(amount > newSenderAccountBalance){
+                    return new ResponseEntity<>("Số dư không đủ để thực hiện giao dịch!", HttpStatus.BAD_REQUEST);
+                }
+                sender.setAccountBalance(newSenderAccountBalance);
+                userRepository.save(sender);
+
+                receiver.setAccountBalance(newReceiverAccountBalance);
+                userRepository.save(receiver);
+
+                TransactionDTO senderDto = new TransactionDTO();
+                senderDto.setUser(mapper.map(sender, UserDTO.class));
+                senderDto.setDescription(transferDTO.getContent());
+                senderDto.setAmount(amount);
+                senderDto.setTypeId(4);
+                TransactionDTO dto = paymentService.createTransaction(senderDto);
+
+                TransactionDTO receiverDto = new TransactionDTO();
+                receiverDto.setUser(mapper.map(receiver, UserDTO.class));
+                receiverDto.setDescription("Nhận tiền");
+                receiverDto.setAmount(amount);
+                receiverDto.setTypeId(5);
+                TransactionDTO transactionDTO = paymentService.createTransaction(senderDto);
+                if(dto != null && transactionDTO != null){
+                    return new ResponseEntity<>(transferDTO, HttpStatus.OK);
+                }else{
+                    return new ResponseEntity<>("Chuyển tiền thất bại!", HttpStatus.BAD_REQUEST);
+                }
+            }else{
+                return new ResponseEntity<>("SĐT nhận tiền không tồn tại trong hệ thống!", HttpStatus.BAD_REQUEST);
+            }
+
+        }
+
+    }
 
     private static String decode(String encodedString) {
         return new String(Base64.getUrlDecoder().decode(encodedString));

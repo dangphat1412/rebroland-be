@@ -7,6 +7,7 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 
+import java.util.Date;
 import java.util.List;
 
 public interface PostRepository extends JpaRepository<Post, Integer> {
@@ -152,6 +153,11 @@ public interface PostRepository extends JpaRepository<Post, Integer> {
     @Query(value = " SELECT * FROM `posts` " +
             " WHERE user_id = :userId ", nativeQuery = true)
     List<Post> getAllDerivativePostByUserId(int userId);
+
+    @Query(value = " SELECT * FROM `posts` " +
+            " WHERE user_id = :userId " +
+            " AND status_id = 1", nativeQuery = true)
+    List<Post> getAllPostToBlock(int userId);
 
     @Query(value = " SELECT * FROM `posts` p " +
             " WHERE p.user_id = :userId ", nativeQuery = true)
@@ -494,4 +500,9 @@ public interface PostRepository extends JpaRepository<Post, Integer> {
             " WHERE status_id = 5 " +
             " AND user_id = :userId ", nativeQuery = true)
     Page<Post> getExpiredPostByUserId(int userId, Pageable pageable);
+
+    @Query(value = " SELECT * FROM `posts`" +
+            " WHERE transaction_end_date < :date " +
+            " AND status_id = 1 ", nativeQuery = true)
+    List<Post> getExpiredPostByDate(Date date);
 }

@@ -22,6 +22,8 @@ public interface PostService {
 
     SearchResponse getAllPostByUserId(int pageNo, int pageSize, int userId);
 
+    void blockAllPostByUserId(int userId);
+
     List<BrokerInfoOfPostDTO> getDerivativePostOfOriginalPost(int originalPostId);
 
     SearchResponse searchPosts(String ward, String district, String province, String minPrice, String maxPrice,

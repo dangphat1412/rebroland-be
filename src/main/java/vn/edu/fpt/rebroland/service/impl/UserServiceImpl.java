@@ -268,6 +268,17 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
+    public UserDTO getUserByPhone(String phone) {
+        User user = userRepository.getUserByPhone(phone);
+        if(user != null){
+            return mapToDTO(user);
+        }else {
+            return null;
+        }
+
+    }
+
+    @Override
     public void updatePassword(User user, String newPassword) {
         user.setPassword(passwordEncoder.encode(newPassword));
         userRepository.save(user);

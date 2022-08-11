@@ -23,4 +23,6 @@ public interface UserService {
     List<UserDTO> getAllUserForAdmin(int userId, String keyword, String sortValue);
 
     boolean changeStatusOfUser(int userId);
+
+    UserDTO getUserByPhone(String phone);
 }
