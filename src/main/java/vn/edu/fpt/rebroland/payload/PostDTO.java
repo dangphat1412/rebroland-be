@@ -76,6 +76,12 @@ public class PostDTO {
 
     private boolean allowDerivative;
 
+    private long spendMoney;
+
+    private Date blockDate;
+
+    private boolean block;
+
     private UserDTO user;
 
     private PropertyTypeDTO propertyType;

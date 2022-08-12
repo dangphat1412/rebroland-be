@@ -46,9 +46,10 @@ public class UserController {
     private PriceService priceService;
     private PaymentService paymentService;
 
+    private BrokerInfoService brokerInfoService;
 
     public UserController(UserService userService, ImageService imageService, ModelMapper mapper, PostService postService, UserFollowPostService followPostService,
-                          RoleRepository roleRepository, PriceService priceService, PaymentService paymentService) {
+                          RoleRepository roleRepository, PriceService priceService, PaymentService paymentService, BrokerInfoService brokerInfoService) {
         this.userService = userService;
         this.imageService = imageService;
         this.mapper = mapper;
@@ -57,6 +58,7 @@ public class UserController {
         this.roleRepository = roleRepository;
         this.priceService = priceService;
         this.paymentService = paymentService;
+        this.brokerInfoService = brokerInfoService;
     }
 
     @Autowired
@@ -107,12 +109,12 @@ public class UserController {
             }
 
             String token = otpService.generateOtp(registerDTO.getPhone()) + "";
-            sendSMS(registerDTO.getPhone(), token);
+//            sendSMS(registerDTO.getPhone(), token);
 //            registerDTO.setToken(token);
             Map<String, Object> map = new HashMap<>();
             map.put("user", registerDTO);
             map.put("tokenTime", otpService.EXPIRE_MINUTES);
-
+            map.put("otp", token);
             return new ResponseEntity<>(map, HttpStatus.OK);
         }catch (AuthenticationException e){
             return new ResponseEntity<>("Đăng ký thất bại!", HttpStatus.BAD_REQUEST);
@@ -187,6 +189,7 @@ public class UserController {
             Map<String, Object> map = new HashMap<>();
             map.put("user", resetPasswordDTO);
             map.put("tokenTime", otpService.EXPIRE_MINUTES + token);
+            map.put("otp", token);
             return new ResponseEntity<>(map, HttpStatus.OK);
         }
         return new ResponseEntity<>("Gửi OTP thất bại!", HttpStatus.BAD_REQUEST);
@@ -249,6 +252,17 @@ public class UserController {
                     transactionDTO.setAmount(price);
                     transactionDTO.setTypeId(2);
                     paymentService.createTransaction(transactionDTO);
+
+                    BrokerInfoDTO brokerInfoDTO = new BrokerInfoDTO();
+                    brokerInfoDTO.setUserId(userDTO.getId());
+
+                    long millis = System.currentTimeMillis();
+                    java.sql.Date dateNow = new java.sql.Date(millis);
+                    Calendar c = Calendar.getInstance();
+                    c.setTime(dateNow);
+                    c.add(Calendar.DAY_OF_MONTH, newPriceDTO.getUnitDate());
+                    brokerInfoDTO.setEndDate(c.getTime());
+                    brokerInfoService.createBrokerInfo(brokerInfoDTO);
 
                     return new ResponseEntity<>(userDTO, HttpStatus.OK);
                 }else {

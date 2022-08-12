@@ -122,5 +122,4 @@ public interface UserRepository extends JpaRepository<User, Integer> {
             "                     WHERE user_id IS NOT NULL AND status = 2)" +
             " AND ((u.phone LIKE CONCAT('%',:keyword,'%')) OR (u.full_name LIKE CONCAT('%',:keyword,'%'))) ", nativeQuery = true)
     Page<User> getListReportedUserProcessed(Pageable pageable, String keyword);
-
 }

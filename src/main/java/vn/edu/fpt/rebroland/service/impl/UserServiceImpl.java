@@ -1,12 +1,11 @@
 package vn.edu.fpt.rebroland.service.impl;
 
-import vn.edu.fpt.rebroland.entity.AvgRate;
-import vn.edu.fpt.rebroland.entity.Role;
-import vn.edu.fpt.rebroland.entity.User;
+import vn.edu.fpt.rebroland.entity.*;
 import vn.edu.fpt.rebroland.payload.ChangePasswordDTO;
 import vn.edu.fpt.rebroland.payload.RegisterDTO;
 import vn.edu.fpt.rebroland.payload.UserDTO;
 import vn.edu.fpt.rebroland.repository.AvgRateRepository;
+import vn.edu.fpt.rebroland.repository.PostRepository;
 import vn.edu.fpt.rebroland.repository.RoleRepository;
 import vn.edu.fpt.rebroland.repository.UserRepository;
 import vn.edu.fpt.rebroland.service.UserService;
@@ -28,10 +27,12 @@ public class UserServiceImpl implements UserService {
     private ModelMapper mapper;
 
     private AvgRateRepository rateRepository;
-    public UserServiceImpl(UserRepository userRepository, ModelMapper mapper, AvgRateRepository rateRepository) {
+    private PostRepository postRepository;
+    public UserServiceImpl(UserRepository userRepository, ModelMapper mapper, AvgRateRepository rateRepository, PostRepository postRepository) {
         this.userRepository = userRepository;
         this.mapper = mapper;
         this.rateRepository = rateRepository;
+        this.postRepository = postRepository;
     }
     @Autowired
     private PasswordEncoder passwordEncoder;
@@ -259,6 +260,18 @@ public class UserServiceImpl implements UserService {
             }else{
                 user.setBlock(true);
                 userRepository.save(user);
+                List<Post> listPost = postRepository.getAllPostActiveByUserId(user.getId());
+                List<Post> listDerivative = new ArrayList<>();
+                for(Post post: listPost){
+                    post.setStatus(new Status(4));
+                    postRepository.save(post);
+                    listDerivative = postRepository.getDerivativePostOfOriginalPost(post.getPostId());
+                    for(Post p: listDerivative){
+//                        p.setStatus();
+                    }
+
+                }
+
                 return true;
             }
         }else {

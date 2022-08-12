@@ -18,6 +18,18 @@ public class WithdrawServiceImpl implements WithdrawService {
         this.modelMapper = modelMapper;
     }
 
+    @Override
+    public WithdrawDTO createWithdraw(WithdrawDTO withdrawDTO) {
+        long millis = System.currentTimeMillis();
+        java.sql.Date date = new java.sql.Date(millis);
+        withdrawDTO.setStartDate(date);
+        withdrawDTO.setStatus(false);
+
+        Withdraw withdraw = mapToEntity(withdrawDTO);
+        Withdraw newWithDraw = withdrawRepository.save(withdraw);
+        return mapToDTO(newWithDraw);
+    }
+
     private WithdrawDTO mapToDTO(Withdraw withdraw) {
         return modelMapper.map(withdraw, WithdrawDTO.class);
     }
@@ -25,4 +37,6 @@ public class WithdrawServiceImpl implements WithdrawService {
     private Withdraw mapToEntity(WithdrawDTO withdrawDTO) {
         return modelMapper.map(withdrawDTO, Withdraw.class);
     }
+
+
 }

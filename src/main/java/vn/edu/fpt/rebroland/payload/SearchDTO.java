@@ -52,7 +52,13 @@ public class SearchDTO {
 
     private UnitPriceDTO unitPrice;
 
+    private int directionId;
+
     private UserDTO user;
+
+    private int numberOfBedroom;
+
+    private int numberOfBathroom;
 
     private int numberOfUserReport;
 

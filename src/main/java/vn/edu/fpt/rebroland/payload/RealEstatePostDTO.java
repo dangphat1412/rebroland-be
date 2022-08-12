@@ -73,6 +73,12 @@ public class RealEstatePostDTO {
 
     private boolean allowDerivative;
 
+    private long spendMoney;
+
+    private String blockDate;
+
+    private boolean block;
+
     private UserDTO user;
     private PropertyTypeDTO propertyType;
     private DirectionDTO direction;

@@ -48,6 +48,12 @@ public class Post {
 
     private boolean allowDerivative;
 
+    private long spendMoney;
+
+    private Date blockDate;
+
+    private boolean block;
+
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "property_id", nullable = false)
     private PropertyType propertyType;

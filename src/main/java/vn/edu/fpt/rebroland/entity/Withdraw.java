@@ -27,6 +27,8 @@ public class Withdraw {
 
     private String accountName;
 
+    private String bankName;
+
     private long money;
 
     private boolean status;

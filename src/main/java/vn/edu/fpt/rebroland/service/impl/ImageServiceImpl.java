@@ -126,23 +126,23 @@ public class ImageServiceImpl implements ImageService {
     @Override
     public String updateImage(List<String> imageLink, int postId) {
         Post post = postRepository.findById(postId).orElseThrow(() -> new ResourceNotFoundException("Post", "ID", postId));
-//        List<Image> images = imageRepository.findImageByPostId(postId);
-//        for (Image image : images) {
-//            imageRepository.delete(image);
-//        }
         imageRepository.deleteByPost(postId);
-        try {
-
-            for (String link : imageLink) {
-                Image image = new Image();
-                image.setImage(link);
-                image.setPost(post);
-                imageRepository.save(image);
+        if (imageLink == null) {
+            return "update image success";
+        } else {
+            try {
+                for (String link : imageLink) {
+                    Image image = new Image();
+                    image.setImage(link);
+                    image.setPost(post);
+                    imageRepository.save(image);
+                }
+                return "update image success!";
+            } catch (Exception e) {
+                return "update fail";
             }
-            return "update image success!";
-        } catch (Exception e) {
-            return "update fail";
         }
+
 
     }
 

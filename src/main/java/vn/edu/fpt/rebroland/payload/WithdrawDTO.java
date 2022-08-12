@@ -15,7 +15,7 @@ public class WithdrawDTO {
     private int type;
 
     private Date startDate;
-    @NotEmpty(message = "Cập nhập thông tin này.")
+    @NotEmpty(message = "Nội dung không được để trống!")
     @Size(max = 200)
     private String content;
 
@@ -23,9 +23,15 @@ public class WithdrawDTO {
 
     private String accountName;
 
-    @NotNull(message = "Cập nhập thông tin này.")
+    private String bankName;
+
+    @NotNull(message = "Số tiền không được để trống!")
     @Min(value = 0)
     private long money;
 
     private boolean status;
+
+    private UserDTO user;
+
+    private String token;
 }

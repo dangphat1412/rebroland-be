@@ -142,10 +142,10 @@ public class AdminController {
         if(status){
             TextMessageDTO messageDTO = new TextMessageDTO();
             String message = "";
-            if(post.getStatus().getId() == 2){
+            if(post.isBlock()){
                 message = "Chúng tôi đã ẩn bài viết của bạn. Nếu có thắc mắc xin liên hệ số 0397975445.";
             }
-            if(post.getStatus().getId() == 1){
+            if(!post.isBlock()){
                 message = "Chúng tôi đã hiển thị lại bài viết của bạn !";
             }
             messageDTO.setMessage(message);

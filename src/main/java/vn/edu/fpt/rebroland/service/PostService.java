@@ -41,7 +41,7 @@ public interface PostService {
 
     PostDTO updatePost(PostDTO postDTO, int postId, int userId,
                        Integer directionId, int propertyTypeId,
-                       int unitId, int statusId, Integer longevityId);
+                       int unitId, Integer longevityId,List<String> imageLink);
 
     void deletePost(int postId);
     SearchResponse getAllPost(int pageNo, int pageSize);
@@ -84,4 +84,12 @@ public interface PostService {
     Map<String, Integer> getNumberOfPropertyType();
 
     Map<String, Integer> getNumberOfPropertyTypeForBroker();
+
+    void extendPost(int postId, int numberOfPostedDay, Long totalPayment);
+
+    void changeStatus(int postId,int statusId);
+
+    void changeStatusOfDerivativePostOfPost(int postId);
+
+
 }

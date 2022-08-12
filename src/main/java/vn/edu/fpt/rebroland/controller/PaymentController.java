@@ -7,6 +7,7 @@ import vn.edu.fpt.rebroland.repository.UserRepository;
 import vn.edu.fpt.rebroland.service.OtpService;
 import vn.edu.fpt.rebroland.service.PaymentService;
 import vn.edu.fpt.rebroland.service.UserService;
+import vn.edu.fpt.rebroland.service.WithdrawService;
 import org.cloudinary.json.JSONObject;
 import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -33,12 +34,14 @@ public class PaymentController {
     private UserRepository userRepository;
     private ModelMapper mapper;
     private UserService userService;
+    private WithdrawService withdrawService;
 
-    public PaymentController(PaymentService paymentService, UserRepository userRepository, ModelMapper mapper, UserService userService) {
+    public PaymentController(PaymentService paymentService, UserRepository userRepository, ModelMapper mapper, UserService userService, WithdrawService withdrawService) {
         this.paymentService = paymentService;
         this.userRepository = userRepository;
         this.mapper = mapper;
         this.userService = userService;
+        this.withdrawService = withdrawService;
     }
 
     @Autowired
@@ -172,7 +175,7 @@ public class PaymentController {
                 long accountBalance = user.getAccountBalance();
                 user.setAccountBalance(accountBalance + transactionDTO.getAmount());
                 userRepository.save(user);
-                String linkRedirect = "https://rebroland-frontend.vercel.app/thanh-toan-thanh-cong?amount=" + money +"&orderInfo="
+                final String linkRedirect = "https://rebroland-frontend.vercel.app/thanh-toan-thanh-cong?amount=" + money +"&orderInfo="
                         + orderInfo +"&bankCode=" + bankCode + "&cardType=" + cardType + "&payDate=" + payDate + "&transactionNo=" + transactionNo;
                 response.sendRedirect(linkRedirect);
             }
@@ -196,23 +199,23 @@ public class PaymentController {
         }else{
             UserDTO userDTO = userService.getUserByPhone(registerDTO.getPhone());
             if(userDTO != null){
-                User sender = userRepository.findByPhone(user.getPhone()).
-                        orElseThrow(() -> new UsernameNotFoundException("User not found with phone: " + user.getPhone()));
+//                User sender = userRepository.findByPhone(user.getPhone()).
+//                        orElseThrow(() -> new UsernameNotFoundException("User not found with phone: " + user.getPhone()));
                 long amount = registerDTO.getAmount();
-                long newSenderAccountBalance = sender.getAccountBalance();
-                if(amount > newSenderAccountBalance){
+                long senderAccountBalance = user.getAccountBalance();
+                if(amount > senderAccountBalance){
                     return new ResponseEntity<>("Số dư không đủ để thực hiện giao dịch!", HttpStatus.BAD_REQUEST);
                 }
 
-                String otp = otpService.generateOtp(registerDTO.getPhone()) + "";
-//                sendSMS(registerDTO.getPhone(), otp);
+                String otp = otpService.generateOtp(user.getPhone()) + "";
+//                sendSMS(user.getPhone(), otp);
                 Map<String, Object> map = new HashMap<>();
                 map.put("transferData", registerDTO);
                 map.put("tokenTime", otpService.EXPIRE_MINUTES);
                 map.put("otp", otp);
                 return new ResponseEntity<>(map, HttpStatus.OK);
             }else {
-                return new ResponseEntity<>("Số điện thoại không tồn tại!", HttpStatus.BAD_REQUEST);
+                return new ResponseEntity<>("Số điện thoại nhận tiền không tồn tại!", HttpStatus.BAD_REQUEST);
             }
 
         }
@@ -239,11 +242,12 @@ public class PaymentController {
                 User receiver = userRepository.findByPhone(transferDTO.getPhone()).
                         orElseThrow(() -> new UsernameNotFoundException("User not found with phone: " + transferDTO.getPhone()));
                 long amount = transferDTO.getAmount();
-                long newSenderAccountBalance = sender.getAccountBalance() - amount;
-                long newReceiverAccountBalance = receiver.getAccountBalance() + amount;
-                if(amount > newSenderAccountBalance){
+
+                if(amount > sender.getAccountBalance()){
                     return new ResponseEntity<>("Số dư không đủ để thực hiện giao dịch!", HttpStatus.BAD_REQUEST);
                 }
+                long newSenderAccountBalance = sender.getAccountBalance() - amount;
+                long newReceiverAccountBalance = receiver.getAccountBalance() + amount;
                 sender.setAccountBalance(newSenderAccountBalance);
                 userRepository.save(sender);
 
@@ -265,7 +269,7 @@ public class PaymentController {
                 TransactionDTO transactionDTO = paymentService.createTransaction(receiverDto);
                 if(dto != null && transactionDTO != null){
                     transferDTO.setToken(null);
-                    return new ResponseEntity<>(transferDTO, HttpStatus.OK);
+                    return new ResponseEntity<>(transferDTO, HttpStatus.CREATED);
                 }else{
                     return new ResponseEntity<>("Chuyển tiền thất bại!", HttpStatus.BAD_REQUEST);
                 }
@@ -277,11 +281,66 @@ public class PaymentController {
 
     }
 
-    @PostMapping("/withdraw/send-otp")
-    public ResponseEntity<?> preWithdraw(){
+    @PostMapping("/cash-out/send-otp")
+    public ResponseEntity<?> preWithdraw(@RequestHeader(name = "Authorization") String token,
+                                             @Valid @RequestBody WithdrawDTO withdrawDTO){
+        User user = getUserFromToken(token);
+        if (user != null) {
+            long amount = withdrawDTO.getMoney();
+            long accountBalance = user.getAccountBalance();
+            if (amount > accountBalance) {
+                return new ResponseEntity<>("Số dư không đủ để thực hiện giao dịch!", HttpStatus.BAD_REQUEST);
+            }
 
-        return new ResponseEntity<>(null, HttpStatus.OK);
+            String otp = otpService.generateOtp(user.getPhone()) + "";
+//                sendSMS(user.getPhone(), otp);
+            Map<String, Object> map = new HashMap<>();
+            map.put("cashoutData", withdrawDTO);
+            map.put("tokenTime", otpService.EXPIRE_MINUTES);
+            map.put("otp", otp);
+            return new ResponseEntity<>(map, HttpStatus.OK);
+        } else {
+            return new ResponseEntity<>("Số điện thoại không tồn tại!", HttpStatus.BAD_REQUEST);
+        }
     }
+
+    @PostMapping("/cash-out")
+    @Transactional
+    public ResponseEntity<?> processWithdraw(@RequestHeader(name = "Authorization") String token,
+                                             @Valid @RequestBody WithdrawDTO withdrawDTO){
+        User sender = getUserFromToken(token);
+        if(otpService.getOtp(sender.getPhone()) == null){
+            return new ResponseEntity<>("Mã OTP hết hạn!", HttpStatus.BAD_REQUEST);
+        }
+        if(withdrawDTO.getToken().isEmpty() || withdrawDTO.getToken() == null){
+            return new ResponseEntity<>("Mã OTP sai!", HttpStatus.BAD_REQUEST);
+        }
+        int otp = Integer.parseInt(withdrawDTO.getToken());
+
+        if (otp != otpService.getOtp(sender.getPhone())) {
+            return new ResponseEntity<>("Mã OTP sai!", HttpStatus.BAD_REQUEST);
+        } else {
+            long amount = withdrawDTO.getMoney();
+
+            if (amount > sender.getAccountBalance()) {
+                return new ResponseEntity<>("Số dư không đủ để thực hiện giao dịch!", HttpStatus.BAD_REQUEST);
+            }
+            long newSenderAccountBalance = sender.getAccountBalance() - amount;
+            sender.setAccountBalance(newSenderAccountBalance);
+            userRepository.save(sender);
+
+            withdrawDTO.setUser(mapper.map(sender, UserDTO.class));
+            WithdrawDTO dto = withdrawService.createWithdraw(withdrawDTO);
+
+            if(dto.getType() == 1){
+                return new ResponseEntity<>("Yêu cầu của bạn được chấp thuận. Mời bạn đến trụ sở của ReBroLand tại Số 1, Lê Đại Hành, Hải Phòng để nhận lại tiền!", HttpStatus.CREATED);
+            }else{
+                return new ResponseEntity<>("Yêu cầu của bạn được chấp thuận. Chúng tôi sẽ gửi tiền cho bạn trong vòng 24h.", HttpStatus.CREATED);
+            }
+        }
+
+    }
+
 
     private static String decode(String encodedString) {
         return new String(Base64.getUrlDecoder().decode(encodedString));

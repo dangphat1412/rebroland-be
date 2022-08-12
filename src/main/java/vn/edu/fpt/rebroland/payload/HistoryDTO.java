@@ -9,6 +9,8 @@ import java.util.List;
 public class HistoryDTO {
     private int typeId;
 
+    private boolean provideInfo ;
+
     @NotEmpty(message = "Cập nhập thông tin này.")
     @Size(max = 50)
     private String owner;

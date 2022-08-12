@@ -295,7 +295,7 @@ public interface PostRepository extends JpaRepository<Post, Integer> {
     Page<Post> getFollowPostIdByUserPagingOrderByPricePerSquareAsc(int userId, int roleId, int propertyId, String check, Pageable pageable);
 
     @Query(value = " SELECT *, IF(unit_id = 1, price, price * area) as Total, IF(unit_id = 2, price, price / area) as per_m2  FROM `posts` p " +
-            "WHERE p.post_id in (SELECT post_id FROM `user_follow_posts` u " +
+            "WHERE p.post_id in (SELECT u.post_id FROM `user_follow_posts` u " +
             "WHERE u.user_id = :userId " +
             "AND u.role_id = :roleId) " +
             "AND IF(:check IS NULL OR :propertyId = 0, 1 = 1, p.property_id = :propertyId) " +
@@ -305,7 +305,7 @@ public interface PostRepository extends JpaRepository<Post, Integer> {
 
 
     @Query(value = " SELECT * FROM `posts` p " +
-            "WHERE p.post_id in (SELECT post_id FROM `user_follow_posts` u " +
+            "WHERE p.post_id in (SELECT u.post_id FROM `user_follow_posts` u " +
             "WHERE u.user_id = :userId " +
             "AND u.role_id = :roleId)" +
             "AND IF(:check IS NULL OR :propertyId = 0, 1 = 1, p.property_id = :propertyId)"
@@ -321,10 +321,11 @@ public interface PostRepository extends JpaRepository<Post, Integer> {
             , nativeQuery = true)
     List<Post> getAllFollowPostIdByUser(int userId, int roleId, int propertyId, String check);
 
-    @Query(value = " (SELECT * FROM `posts` p " +
+    @Query(value = " SELECT * FROM `posts` p " +
             "WHERE p.post_id in (SELECT post_id FROM `user_follow_posts` u " +
             "WHERE u.user_id = :userId " +
-            "AND u.role_id = :roleId)) " , nativeQuery = true)
+            "AND u.role_id = :roleId) " +
+            "ORDER BY p.start_date DESC " , nativeQuery = true)
     List<Post> getFollowPostIdByUser(int userId, int roleId);
 
 
@@ -335,8 +336,8 @@ public interface PostRepository extends JpaRepository<Post, Integer> {
             "OR p.post_id IN " +
             "      (SELECT post_id FROM `residential_houses` " +
             "       WHERE number_of_bedroom >= :bedroom) " +
-            "OR p.post_id IN " +
-            "      (SELECT post_id FROM `residential_lands`)) " +
+            "OR IF(:bedroom > 0, 1 = 0, p.post_id IN" +
+            "                    (SELECT post_id FROM `residential_lands`))) " +
             "AND p.ward LIKE CONCAT('%',:ward,'%')" +
             "AND p.district LIKE CONCAT('%',:district,'%') " +
             "AND p.province LIKE CONCAT('%',:province,'%') " +
@@ -374,8 +375,8 @@ public interface PostRepository extends JpaRepository<Post, Integer> {
             "OR p.post_id IN " +
             "      (SELECT post_id FROM `residential_houses` " +
             "       WHERE number_of_bedroom >= :bedroom) " +
-            "OR p.post_id IN " +
-            "      (SELECT post_id FROM `residential_lands`)) " +
+            "OR IF(:bedroom > 0, 1 = 0, p.post_id IN" +
+            "                    (SELECT post_id FROM `residential_lands`))) " +
             "AND p.ward LIKE CONCAT('%',:ward,'%')" +
             "AND p.district LIKE CONCAT('%',:district,'%') " +
             "AND p.province LIKE CONCAT('%',:province,'%') " +
@@ -400,8 +401,8 @@ public interface PostRepository extends JpaRepository<Post, Integer> {
             "OR p.post_id IN " +
             "      (SELECT post_id FROM `residential_houses` " +
             "       WHERE number_of_bedroom >= :bedroom) " +
-            "OR p.post_id IN " +
-            "      (SELECT post_id FROM `residential_lands`)) " +
+            "OR IF(:bedroom > 0, 1 = 0, p.post_id IN" +
+            "                    (SELECT post_id FROM `residential_lands`))) " +
             "AND p.ward LIKE CONCAT('%',:ward,'%')" +
             "AND p.district LIKE CONCAT('%',:district,'%') " +
             "AND p.province LIKE CONCAT('%',:province,'%') " +
@@ -426,8 +427,8 @@ public interface PostRepository extends JpaRepository<Post, Integer> {
             "OR p.post_id IN " +
             "      (SELECT post_id FROM `residential_houses` " +
             "       WHERE number_of_bedroom >= :bedroom) " +
-            "OR p.post_id IN " +
-            "      (SELECT post_id FROM `residential_lands`)) " +
+            "OR IF(:bedroom > 0, 1 = 0, p.post_id IN" +
+            "                    (SELECT post_id FROM `residential_lands`))) " +
             "AND p.ward LIKE CONCAT('%',:ward,'%')" +
             "AND p.district LIKE CONCAT('%',:district,'%') " +
             "AND p.province LIKE CONCAT('%',:province,'%') " +
@@ -452,8 +453,8 @@ public interface PostRepository extends JpaRepository<Post, Integer> {
             "OR p.post_id IN " +
             "      (SELECT post_id FROM `residential_houses` " +
             "       WHERE number_of_bedroom >= :bedroom) " +
-            "OR p.post_id IN " +
-            "      (SELECT post_id FROM `residential_lands`)) " +
+            "OR IF(:bedroom > 0, 1 = 0, p.post_id IN" +
+            "                    (SELECT post_id FROM `residential_lands`))) " +
             "AND p.ward LIKE CONCAT('%',:ward,'%')" +
             "AND p.district LIKE CONCAT('%',:district,'%') " +
             "AND p.province LIKE CONCAT('%',:province,'%') " +
@@ -505,4 +506,17 @@ public interface PostRepository extends JpaRepository<Post, Integer> {
             " WHERE transaction_end_date < :date " +
             " AND status_id = 1 ", nativeQuery = true)
     List<Post> getExpiredPostByDate(Date date);
+
+    @Query(value = " SELECT * FROM `posts` " +
+            " WHERE user_id = :userId " +
+            " AND status_id = 1 ", nativeQuery = true)
+    List<Post> getAllPostActiveByUserId(int userId);
+
+    @Query(value = " SELECT SUM(amount * (100 - discount) / 100) FROM `transactions` " +
+            " WHERE start_date < :currentDate " +
+            " AND user_id = :userId " +
+            " AND type_id = 1 " +
+            " AND start_date >= (SELECT start_date FROM `posts` " +
+            "                                    WHERE post_id = :postId) ", nativeQuery = true)
+    long getTotalAmountOfPost(Date currentDate, int userId, int postId);
 }

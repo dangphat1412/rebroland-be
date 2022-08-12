@@ -23,8 +23,6 @@ public class CoordinateServiceImpl implements CoordinateService {
     private PostRepository postRepository;
 
 
-
-
     public CoordinateServiceImpl(CoordinateRepository coordinateRepository, ModelMapper modelMapper,
                                  PostRepository postRepository) {
         this.coordinateRepository = coordinateRepository;
@@ -62,7 +60,6 @@ public class CoordinateServiceImpl implements CoordinateService {
     }
 
 
-
     @Override
     public List<RealEstateCoordinateDTO> getCoordinateByPostId(int postId) {
         List<Coordinate> coordinates = coordinateRepository.findByPostId(postId);
@@ -86,27 +83,29 @@ public class CoordinateServiceImpl implements CoordinateService {
 
         }
 
-
     }
 
     @Override
     public String updateCoordinate(List<Coordinate> coordinateList, int postId) {
         Post post = postRepository.findById(postId).orElseThrow(() -> new ResourceNotFoundException("Post", "ID", postId));
-
         coordinateRepository.deleteByPost(postId);
 
-        try {
-
-            for (Coordinate listCoordinate : coordinateList) {
-                listCoordinate.setPost(post);
-                listCoordinate.setLatitude(listCoordinate.getLatitude());
-                listCoordinate.setLongitude(listCoordinate.getLongitude());
-                coordinateRepository.save(listCoordinate);
-            }
+        if (coordinateList == null) {
             return "update success Coordinate";
-        } catch (Exception e) {
-            return "update fail Coordinate";
+        } else {
+            try {
+                for (Coordinate listCoordinate : coordinateList) {
+                    listCoordinate.setPost(post);
+                    listCoordinate.setLatitude(listCoordinate.getLatitude());
+                    listCoordinate.setLongitude(listCoordinate.getLongitude());
+                    coordinateRepository.save(listCoordinate);
+                }
+                return "update success Coordinate";
+            } catch (Exception e) {
+                return "update fail Coordinate";
+            }
         }
+
     }
 
 

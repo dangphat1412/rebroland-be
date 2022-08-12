@@ -87,6 +87,7 @@ public class PostServiceImpl implements PostService {
         post.setPropertyType(propertyType);
         post.setUnitPrice(unitPrice);
         post.setStatus(status);
+        post.setBlock(false);
         Post newPost = postRepository.save(post);
         return mapToDTO(newPost);
     }
@@ -172,7 +173,30 @@ public class PostServiceImpl implements PostService {
         List<SearchDTO> listSearchDto = new ArrayList<>();
         for (PostDTO postDto : listDto) {
             SearchDTO dto = new SearchDTO();
+            if(postDto.getDirection() != null){
+                dto.setDirectionId(postDto.getDirection().getId());
+            }else{
+                dto.setDirectionId(0);
+            }
             setDataToSearchDTO(dto, postDto);
+            int postId = postDto.getPostId();
+            switch (postDto.getPropertyType().getId()) {
+                case 1: // view residential house
+                    ResidentialHouse residentialHouse = houseRepository.findByPostId(postId);
+                    dto.setNumberOfBedroom(residentialHouse.getNumberOfBedroom());
+                    dto.setNumberOfBathroom(residentialHouse.getNumberOfBathroom());
+                    break;
+                case 2:// view apartment
+                    Apartment apartment = apartmentRepository.findByPostId(postId);
+                    dto.setNumberOfBedroom(apartment.getNumberOfBedroom());
+                    dto.setNumberOfBathroom(apartment.getNumberOfBathroom());
+                    break;
+                case 3:// view residential land
+                    dto.setNumberOfBedroom(0);
+                    dto.setNumberOfBathroom(0);
+                    break;
+            }
+
             listSearchDto.add(dto);
         }
         SearchResponse searchResponse = new SearchResponse();
@@ -408,7 +432,7 @@ public class PostServiceImpl implements PostService {
     public void blockAllPostByUserId(int userId) {
         List<Post> listPost = postRepository.getAllPostToBlock(userId);
         Status status = new Status(5);
-        for (Post post: listPost) {
+        for (Post post : listPost) {
             post.setStatus(status);
             postRepository.save(post);
         }
@@ -423,10 +447,15 @@ public class PostServiceImpl implements PostService {
             BrokerInfoOfPostDTO dto = mapper.map(post, BrokerInfoOfPostDTO.class);
             UserDTO userDTO = dto.getUser();
             avgRate = rateRepository.getAvgRateByUserIdAndRoleId(userDTO.getId(), 3);
-            userDTO.setAvgRate(avgRate.getAvgRate());
+            if(avgRate != null){
+                userDTO.setAvgRate(avgRate.getAvgRate());
+            }else{
+                userDTO.setAvgRate(0);
+            }
             dto.setUser(userDTO);
             listPostDto.add(dto);
         }
+
 //        return listPost.stream().map(post -> mapper.map(post, BrokerInfoOfPostDTO.class)).collect(Collectors.toList());
         return listPostDto;
     }
@@ -478,7 +507,7 @@ public class PostServiceImpl implements PostService {
         Pageable pageable = null;
         Page<Post> listPosts = null;
         List<Post> list = null;
-        List<PostDTO> listDto = null;
+        List<PostDTO> listDto = new ArrayList<>();
         switch (sortOption) {
             case 0:
                 sortOpt = "start_date";
@@ -544,10 +573,34 @@ public class PostServiceImpl implements PostService {
                 listDto = list.stream().map(post -> mapToDTO(post)).collect(Collectors.toList());
                 break;
         }
+
         List<SearchDTO> listSearchDto = new ArrayList<>();
         for (PostDTO postDto : listDto) {
             SearchDTO dto = new SearchDTO();
+            if(postDto.getDirection() != null){
+                dto.setDirectionId(postDto.getDirection().getId());
+            }else{
+                dto.setDirectionId(0);
+            }
             setDataToSearchDTO(dto, postDto);
+            int postId = postDto.getPostId();
+            switch (postDto.getPropertyType().getId()) {
+                case 1: // view residential house
+                    ResidentialHouse residentialHouse = houseRepository.findByPostId(postId);
+                    dto.setNumberOfBedroom(residentialHouse.getNumberOfBedroom());
+                    dto.setNumberOfBathroom(residentialHouse.getNumberOfBathroom());
+                    break;
+                case 2:// view apartment
+                    Apartment apartment = apartmentRepository.findByPostId(postId);
+                    dto.setNumberOfBedroom(apartment.getNumberOfBedroom());
+                    dto.setNumberOfBathroom(apartment.getNumberOfBathroom());
+                    break;
+                case 3:// view residential land
+                    dto.setNumberOfBedroom(0);
+                    dto.setNumberOfBathroom(0);
+                    break;
+            }
+
             listSearchDto.add(dto);
         }
         SearchResponse searchResponse = new SearchResponse();
@@ -675,9 +728,33 @@ public class PostServiceImpl implements PostService {
         List<SearchDTO> listSearchDto = new ArrayList<>();
         for (PostDTO postDto : listDto) {
             SearchDTO dto = new SearchDTO();
+            if(postDto.getDirection() != null){
+                dto.setDirectionId(postDto.getDirection().getId());
+            }else{
+                dto.setDirectionId(0);
+            }
             setDataToSearchDTO(dto, postDto);
+            int postId = postDto.getPostId();
+            switch (postDto.getPropertyType().getId()) {
+                case 1: // view residential house
+                    ResidentialHouse residentialHouse = houseRepository.findByPostId(postId);
+                    dto.setNumberOfBedroom(residentialHouse.getNumberOfBedroom());
+                    dto.setNumberOfBathroom(residentialHouse.getNumberOfBathroom());
+                    break;
+                case 2:// view apartment
+                    Apartment apartment = apartmentRepository.findByPostId(postId);
+                    dto.setNumberOfBedroom(apartment.getNumberOfBedroom());
+                    dto.setNumberOfBathroom(apartment.getNumberOfBathroom());
+                    break;
+                case 3:// view residential land
+                    dto.setNumberOfBedroom(0);
+                    dto.setNumberOfBathroom(0);
+                    break;
+            }
+
             listSearchDto.add(dto);
         }
+
         SearchResponse searchResponse = new SearchResponse();
         searchResponse.setPosts(listSearchDto);
         searchResponse.setPageNo(pageNo + 1);
@@ -702,7 +779,7 @@ public class PostServiceImpl implements PostService {
     @Override
     public PostDTO updatePost(PostDTO postDTO, int postId, int userId,
                               Integer directionId, int propertyTypeId,
-                              int unitId, int statusId, Integer longevityId) {
+                              int unitId, Integer longevityId, List<String> imageLink) {
         Post post = postRepository.findById(postId).orElseThrow(() -> new ResourceNotFoundException("Post", "id", postId));
         Direction direction = directionRepository.findById(directionId)
                 .orElseThrow(() -> new ResourceNotFoundException("Direction", "id", directionId));
@@ -710,8 +787,8 @@ public class PostServiceImpl implements PostService {
                 .orElseThrow(() -> new ResourceNotFoundException("PropertyType", "id", propertyTypeId));
         UnitPrice unitPrice = unitPriceRepository.findById(unitId)
                 .orElseThrow(() -> new ResourceNotFoundException("UnitPrice", "id", unitId));
-        Status status = statusRepository.findById(statusId)
-                .orElseThrow(() -> new ResourceNotFoundException("Status", "id", statusId));
+        Status status = statusRepository.findById(post.getStatus().getId())
+                .orElseThrow(() -> new ResourceNotFoundException("Status", "id", post.getStatus().getId()));
         Longevity longevity = longevityRepository.findById(longevityId)
                 .orElseThrow(() -> new ResourceNotFoundException("Longevity", "id", longevityId));
         User user = userRepository.findById(userId)
@@ -737,9 +814,6 @@ public class PostServiceImpl implements PostService {
         post.setDescription(postDTO.getDescription());
         post.setArea(postDTO.getArea());
         post.setCertification(postDTO.isCertification());
-//        long millis = System.currentTimeMillis();
-//        java.sql.Date date = new java.sql.Date(millis);
-//        post.setStartDate(date);
         // unit name "thoa thuan" price null
         if (post.getUnitPrice().getId() == 3 || postDTO.getPrice() < 0) {
             post.setPrice(null);
@@ -755,6 +829,11 @@ public class PostServiceImpl implements PostService {
         post.setDistrict(postDTO.getDistrict());
         post.setProvince(postDTO.getProvince());
         post.setAddress(postDTO.getAddress());
+        if (imageLink == null) {
+            post.setThumbnail(null);
+        } else {
+            post.setThumbnail(imageLink.get(1));
+        }
 //        post.setParentId(postDTO.getParentId());
         Post newPost = postRepository.save(post);
         return mapToDTO(newPost);
@@ -1148,6 +1227,7 @@ public class PostServiceImpl implements PostService {
         searchDTO.setOriginalPost(postDTO.getOriginalPost());
         searchDTO.setAllowDerivative(postDTO.isAllowDerivative());
         searchDTO.setUser(postDTO.getUser());
+
     }
 
 
@@ -1198,7 +1278,12 @@ public class PostServiceImpl implements PostService {
         postDTO.setDistrict(generalPostDTO.getDistrict());
         postDTO.setProvince(generalPostDTO.getProvince());
         postDTO.setAddress(generalPostDTO.getAddress());
-        postDTO.setThumbnail(generalPostDTO.getImages().get(1));
+        if (generalPostDTO.getImages() != null) {
+            postDTO.setThumbnail(generalPostDTO.getImages().get(1));
+
+        } else {
+            postDTO.setThumbnail(null);
+        }
         postDTO.setOriginalPost(null);
         return postDTO;
     }
@@ -1232,7 +1317,12 @@ public class PostServiceImpl implements PostService {
         postDTO.setDistrict(generalPostDTO.getDistrict());
         postDTO.setProvince(generalPostDTO.getProvince());
         postDTO.setAddress(generalPostDTO.getAddress());
-        postDTO.setThumbnail(generalPostDTO.getImages().get(1));
+        if (generalPostDTO.getImages() == null) {
+            postDTO.setThumbnail(null);
+        } else {
+            postDTO.setThumbnail(generalPostDTO.getImages().get(1));
+
+        }
         postDTO.setOriginalPost(null);
         return postDTO;
     }
@@ -1344,13 +1434,19 @@ public class PostServiceImpl implements PostService {
         Date date = postDTO.getStartDate();
         SimpleDateFormat simpleDateFormat = new SimpleDateFormat("dd-MM-yyyy HH:mm:ss");
         realEstatePostDTO.setStartDate(simpleDateFormat.format(date));
-        if(postDTO.getTransactionStartDate() == null && postDTO.getTransactionEndDate()==null){
+        if (postDTO.getTransactionStartDate() == null && postDTO.getTransactionEndDate() == null) {
             realEstatePostDTO.setTransactionStartDate(null);
             realEstatePostDTO.setTransactionEndDate(null);
-        }else{
+        } else {
             realEstatePostDTO.setTransactionStartDate(simpleDateFormat.format(postDTO.getTransactionStartDate()));
             realEstatePostDTO.setTransactionEndDate(simpleDateFormat.format(postDTO.getTransactionEndDate()));
         }
+        if(postDTO.getBlockDate() == null){
+            realEstatePostDTO.setBlockDate(null);
+        }else{
+            realEstatePostDTO.setBlockDate(simpleDateFormat.format(postDTO.getBlockDate()));
+        }
+        realEstatePostDTO.setBlock(postDTO.isBlock());
         realEstatePostDTO.setAdditionalDescription(postDTO.getAdditionalDescription());
         realEstatePostDTO.setPrice(postDTO.getPrice());
         realEstatePostDTO.setContactPhone(postDTO.getContactPhone());
@@ -1371,6 +1467,7 @@ public class PostServiceImpl implements PostService {
         realEstatePostDTO.setCoordinates(postDTO.getCoordinates());
         realEstatePostDTO.setOriginalPost(postDTO.getOriginalPost());
         realEstatePostDTO.setAllowDerivative(postDTO.isAllowDerivative());
+        realEstatePostDTO.setSpendMoney(postDTO.getSpendMoney());
 
     }
 
@@ -1379,16 +1476,35 @@ public class PostServiceImpl implements PostService {
         Post post = postRepository.findPostByPostId(postId);
 
         if (post != null) {
-            Status status = new Status();
+//            Status status = new Status();
             //khong phai bai da hoan thanh giao dich
             if (post.getStatus().getId() != 3) {
-                if (post.getStatus().getId() == 1) {
-                    status.setId(2);
-                } else {
-                    status.setId(1);
+//                if (post.getStatus().getId() == 1) {
+//                    status.setId(2);
+//                } else {
+//                    status.setId(1);
+//                }
+//                post.setStatus(status);
+                if(post.isBlock()){
+                    post.setBlock(false);
+                    postRepository.save(post);
+
+                    List<Post> listPost = postRepository.getDerivativePostOfOriginalPost(postId);
+                    for(Post p: listPost){
+                        p.setBlock(false);
+                        postRepository.save(p);
+                    }
+                }else{
+                    post.setBlock(true);
+                    postRepository.save(post);
+
+                    List<Post> listPost = postRepository.getDerivativePostOfOriginalPost(postId);
+                    for(Post p: listPost){
+                        p.setBlock(true);
+                        postRepository.save(p);
+                    }
                 }
-                post.setStatus(status);
-                postRepository.save(post);
+
                 return true;
             } else {
                 return false;
@@ -1420,6 +1536,40 @@ public class PostServiceImpl implements PostService {
         map.put("apartment", numberOfApartment);
         map.put("land", numberOfLand);
         return map;
+    }
+
+    @Override
+    public void extendPost(int postId, int numberOfPostedDay,Long totalPayment) {
+        Post post = postRepository.findById(postId).orElseThrow(() -> new ResourceNotFoundException("Post", "id", postId));
+        long millis = System.currentTimeMillis();
+        Date dateNow = new Date(millis);
+        Calendar c = Calendar.getInstance();
+        c.setTime(dateNow);
+        c.add(Calendar.DAY_OF_MONTH, numberOfPostedDay);
+        post.setTransactionStartDate(dateNow);
+        post.setTransactionEndDate(c.getTime());
+        Long oldPayment = post.getSpendMoney();
+        post.setSpendMoney(oldPayment+totalPayment);
+        Status status = statusRepository.findById(1).orElseThrow(() -> new ResourceNotFoundException("Post", "id", postId));
+        post.setStatus(status);
+        postRepository.save(post);
+    }
+
+    @Override
+    public void changeStatus(int postId, int statusId) {
+        Status status = statusRepository.findById(statusId).orElseThrow(() -> new ResourceNotFoundException("Status", "id", statusId));
+        Post post = postRepository.findById(postId).orElseThrow(() -> new ResourceNotFoundException("Post", "id", postId));
+        post.setStatus(status);
+        postRepository.save(post);
+    }
+
+    @Override
+    public void changeStatusOfDerivativePostOfPost(int postId) {
+        List<Post> listPost = postRepository.getDerivativePostOfOriginalPost(postId);
+        for (Post post: listPost) {
+            post.setStatus(new Status(3));
+            postRepository.save(post);
+        }
     }
 
 
