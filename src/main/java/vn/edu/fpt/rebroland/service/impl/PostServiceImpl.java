@@ -4,12 +4,15 @@ import vn.edu.fpt.rebroland.entity.*;
 import vn.edu.fpt.rebroland.exception.ResourceNotFoundException;
 import vn.edu.fpt.rebroland.payload.*;
 import vn.edu.fpt.rebroland.repository.*;
+import vn.edu.fpt.rebroland.service.NotificationService;
 import vn.edu.fpt.rebroland.service.PostService;
 import org.modelmapper.ModelMapper;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
+import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Service;
 
 import java.sql.Date;
@@ -33,8 +36,9 @@ public class PostServiceImpl implements PostService {
     private ApartmentHistoryRepository apartmentHistoryRepository;
     private ResidentialLandRepository landRepository;
     private ResidentialLandHistoryRepository landHistoryRepository;
-
     private AvgRateRepository rateRepository;
+    private RoleRepository roleRepository;
+    private NotificationService notificationService;
 
     public PostServiceImpl(PostRepository postRepository, UserRepository userRepository, DirectionRepository directionRepository,
                            PropertyTypeRepository propertyTypeRepository, UnitPriceRepository unitPriceRepository,
@@ -42,7 +46,7 @@ public class PostServiceImpl implements PostService {
                            ResidentialHouseRepository houseRepository, ResidentialHouseHistoryRepository houseHistoryRepository,
                            ApartmentRepository apartmentRepository, ApartmentHistoryRepository apartmentHistoryRepository,
                            ResidentialLandRepository landRepository, ResidentialLandHistoryRepository landHistoryRepository,
-                           AvgRateRepository rateRepository) {
+                           AvgRateRepository rateRepository, RoleRepository roleRepository, NotificationService notificationService) {
 
         this.postRepository = postRepository;
         this.userRepository = userRepository;
@@ -59,6 +63,8 @@ public class PostServiceImpl implements PostService {
         this.landRepository = landRepository;
         this.landHistoryRepository = landHistoryRepository;
         this.rateRepository = rateRepository;
+        this.roleRepository = roleRepository;
+        this.notificationService = notificationService;
     }
 
     @Override
@@ -179,6 +185,13 @@ public class PostServiceImpl implements PostService {
                 dto.setDirectionId(0);
             }
             setDataToSearchDTO(dto, postDto);
+
+            if(postDto.getTransactionEndDate() != null){
+                dto.setEndDate(postDto.getTransactionEndDate());
+            }else{
+                dto.setEndDate(null);
+            }
+
             int postId = postDto.getPostId();
             switch (postDto.getPropertyType().getId()) {
                 case 1: // view residential house
@@ -446,10 +459,18 @@ public class PostServiceImpl implements PostService {
         for (Post post : listPost) {
             BrokerInfoOfPostDTO dto = mapper.map(post, BrokerInfoOfPostDTO.class);
             UserDTO userDTO = dto.getUser();
+            User user = userRepository.findById(userDTO.getId()).orElseThrow(() -> new ResourceNotFoundException("User", "id", userDTO.getId()));;
+            Boolean isBroker = false;
+            Set<Role> setRole = user.getRoles();
+            Role role = roleRepository.findByName("BROKER").get();
+            if(setRole.contains(role)){
+                isBroker = true;
+            }
+            userDTO.setBroker(isBroker);
             avgRate = rateRepository.getAvgRateByUserIdAndRoleId(userDTO.getId(), 3);
-            if(avgRate != null){
+            if (avgRate != null) {
                 userDTO.setAvgRate(avgRate.getAvgRate());
-            }else{
+            } else {
                 userDTO.setAvgRate(0);
             }
             dto.setUser(userDTO);
@@ -488,7 +509,7 @@ public class PostServiceImpl implements PostService {
 
         String check = null;
         List<Integer> listId = new ArrayList<>();
-        if (direction != null) {
+        if (direction != null && direction.size() != 0) {
             for (String s : direction) {
                 listId.add(Integer.parseInt(s));
             }
@@ -777,64 +798,52 @@ public class PostServiceImpl implements PostService {
     }
 
     @Override
-    public PostDTO updatePost(PostDTO postDTO, int postId, int userId,
-                              Integer directionId, int propertyTypeId,
-                              int unitId, Integer longevityId, List<String> imageLink) {
-        Post post = postRepository.findById(postId).orElseThrow(() -> new ResourceNotFoundException("Post", "id", postId));
-        Direction direction = directionRepository.findById(directionId)
-                .orElseThrow(() -> new ResourceNotFoundException("Direction", "id", directionId));
-        PropertyType propertyType = propertyTypeRepository.findById(propertyTypeId)
-                .orElseThrow(() -> new ResourceNotFoundException("PropertyType", "id", propertyTypeId));
-        UnitPrice unitPrice = unitPriceRepository.findById(unitId)
-                .orElseThrow(() -> new ResourceNotFoundException("UnitPrice", "id", unitId));
-        Status status = statusRepository.findById(post.getStatus().getId())
-                .orElseThrow(() -> new ResourceNotFoundException("Status", "id", post.getStatus().getId()));
-        Longevity longevity = longevityRepository.findById(longevityId)
-                .orElseThrow(() -> new ResourceNotFoundException("Longevity", "id", longevityId));
+    public PostDTO updatePost(GeneralPostDTO generalPostDTO, Post post, int userId,
+                            List<String> imageLink) {
+        UnitPrice unitPrice = unitPriceRepository.findById(generalPostDTO.getUnitPriceId())
+                .orElseThrow(() -> new ResourceNotFoundException("UnitPrice", "id", generalPostDTO.getUnitPriceId()));
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new ResourceNotFoundException("User", "id", userId));
-        if (directionId == null) {
-            post.setUnitPrice(null);
+        if (generalPostDTO.getDirectionId() == null) {
+            post.setDirection(null);
         } else {
-            post.setUnitPrice(unitPrice);
+            Direction direction = directionRepository.findById(generalPostDTO.getDirectionId())
+                    .orElseThrow(() -> new ResourceNotFoundException("Direction", "id", generalPostDTO.getDirectionId()));
+            post.setDirection(direction);
         }
-
-        if (longevityId == null) {
+        if (generalPostDTO.getLongevityId() == null) {
             post.setLongevity(null);
         } else {
+            Longevity longevity = longevityRepository.findById(generalPostDTO.getLongevityId())
+                    .orElseThrow(() -> new ResourceNotFoundException("Longevity", "id", generalPostDTO.getLongevityId()));
             post.setLongevity(longevity);
         }
-        post.setDirection(direction);
-        post.setPropertyType(propertyType);
         post.setUnitPrice(unitPrice);
-        post.setStatus(status);
         post.setUser(user);
-
-        post.setTitle(postDTO.getTitle());
-        post.setDescription(postDTO.getDescription());
-        post.setArea(postDTO.getArea());
-        post.setCertification(postDTO.isCertification());
+        post.setTitle(generalPostDTO.getTitle());
+        post.setDescription(generalPostDTO.getDescription());
+        post.setArea(generalPostDTO.getArea());
+        post.setCertification(generalPostDTO.isCertification());
         // unit name "thoa thuan" price null
-        if (post.getUnitPrice().getId() == 3 || postDTO.getPrice() < 0) {
+        if (post.getUnitPrice().getId() == 3 || generalPostDTO.getPrice() < 0) {
             post.setPrice(null);
         } else {
-            post.setPrice(postDTO.getPrice());
+            post.setPrice(generalPostDTO.getPrice());
         }
-        post.setAdditionalDescription(postDTO.getAdditionalDescription());
-        post.setContactName(postDTO.getContactName());
-        post.setContactPhone(postDTO.getContactPhone());
-        post.setContactAddress(postDTO.getContactAddress());
-        post.setContactEmail(postDTO.getContactEmail());
-        post.setWard(postDTO.getWard());
-        post.setDistrict(postDTO.getDistrict());
-        post.setProvince(postDTO.getProvince());
-        post.setAddress(postDTO.getAddress());
+        post.setAdditionalDescription(generalPostDTO.getAdditionalDescription());
+        post.setContactName(generalPostDTO.getContactName());
+        post.setContactPhone(generalPostDTO.getContactPhone());
+        post.setContactAddress(generalPostDTO.getContactAddress());
+        post.setContactEmail(generalPostDTO.getContactEmail());
+        post.setWard(generalPostDTO.getWard());
+        post.setDistrict(generalPostDTO.getDistrict());
+        post.setProvince(generalPostDTO.getProvince());
+        post.setAddress(generalPostDTO.getAddress());
         if (imageLink == null) {
             post.setThumbnail(null);
         } else {
-            post.setThumbnail(imageLink.get(1));
+            post.setThumbnail(imageLink.get(0));
         }
-//        post.setParentId(postDTO.getParentId());
         Post newPost = postRepository.save(post);
         return mapToDTO(newPost);
     }
@@ -1179,9 +1188,33 @@ public class PostServiceImpl implements PostService {
         List<SearchDTO> listSearchDto = new ArrayList<>();
         for (PostDTO postDto : listDto) {
             SearchDTO dto = new SearchDTO();
+            if(postDto.getDirection() != null){
+                dto.setDirectionId(postDto.getDirection().getId());
+            }else{
+                dto.setDirectionId(0);
+            }
             setDataToSearchDTO(dto, postDto);
+            int postId = postDto.getPostId();
+            switch (postDto.getPropertyType().getId()) {
+                case 1: // view residential house
+                    ResidentialHouse residentialHouse = houseRepository.findByPostId(postId);
+                    dto.setNumberOfBedroom(residentialHouse.getNumberOfBedroom());
+                    dto.setNumberOfBathroom(residentialHouse.getNumberOfBathroom());
+                    break;
+                case 2:// view apartment
+                    Apartment apartment = apartmentRepository.findByPostId(postId);
+                    dto.setNumberOfBedroom(apartment.getNumberOfBedroom());
+                    dto.setNumberOfBathroom(apartment.getNumberOfBathroom());
+                    break;
+                case 3:// view residential land
+                    dto.setNumberOfBedroom(0);
+                    dto.setNumberOfBathroom(0);
+                    break;
+            }
+
             listSearchDto.add(dto);
         }
+
         SearchResponse searchResponse = new SearchResponse();
         searchResponse.setPosts(listSearchDto);
         searchResponse.setPageNo(pageNo + 1);
@@ -1279,7 +1312,7 @@ public class PostServiceImpl implements PostService {
         postDTO.setProvince(generalPostDTO.getProvince());
         postDTO.setAddress(generalPostDTO.getAddress());
         if (generalPostDTO.getImages() != null) {
-            postDTO.setThumbnail(generalPostDTO.getImages().get(1));
+            postDTO.setThumbnail(generalPostDTO.getImages().get(0));
 
         } else {
             postDTO.setThumbnail(null);
@@ -1288,44 +1321,6 @@ public class PostServiceImpl implements PostService {
         return postDTO;
     }
 
-    @Override
-    public PostDTO setDataToUpdatePost(GeneralPostDTO generalPostDTO, int userId, Date date) {
-        PostDTO postDTO = new PostDTO();
-        User user = userRepository.findById(userId)
-                .orElseThrow(() -> new ResourceNotFoundException("User", "id", userId));
-        postDTO.setUser(mapper.map(user, UserDTO.class));
-        postDTO.setTitle(generalPostDTO.getTitle());
-        postDTO.setDescription(generalPostDTO.getDescription());
-        postDTO.setArea(generalPostDTO.getArea());
-        postDTO.setCertification(generalPostDTO.isCertification());
-
-        postDTO.setStartDate(date);
-//        postDTO.setTransactionStartDate(date);
-
-        // unit name "thoa thuan" price null
-        if (generalPostDTO.getUnitPriceId() == 3 || generalPostDTO.getPrice() < 0) {
-            postDTO.setPrice(null);
-        } else {
-            postDTO.setPrice(generalPostDTO.getPrice());
-        }
-        postDTO.setAdditionalDescription(generalPostDTO.getAdditionalDescription());
-        postDTO.setContactName(generalPostDTO.getContactName());
-        postDTO.setContactPhone(generalPostDTO.getContactPhone());
-        postDTO.setContactAddress(generalPostDTO.getContactAddress());
-        postDTO.setContactEmail(generalPostDTO.getContactEmail());
-        postDTO.setWard(generalPostDTO.getWard());
-        postDTO.setDistrict(generalPostDTO.getDistrict());
-        postDTO.setProvince(generalPostDTO.getProvince());
-        postDTO.setAddress(generalPostDTO.getAddress());
-        if (generalPostDTO.getImages() == null) {
-            postDTO.setThumbnail(null);
-        } else {
-            postDTO.setThumbnail(generalPostDTO.getImages().get(1));
-
-        }
-        postDTO.setOriginalPost(null);
-        return postDTO;
-    }
 
     // set information residential house from general post and create
     public ResidentialHouseDTO setDataToResidentialHouse(GeneralPostDTO generalPostDTO) {
@@ -1424,7 +1419,16 @@ public class PostServiceImpl implements PostService {
     }
 
     public void setDataToRealEstateDTO(RealEstatePostDTO realEstatePostDTO, PostDTO postDTO, int postId) {
-        realEstatePostDTO.setUser(postDTO.getUser());
+        UserDTO userDTO = postDTO.getUser();
+        User user = userRepository.findById(userDTO.getId()).orElseThrow(() -> new ResourceNotFoundException("User", "id", userDTO.getId()));
+        Boolean isBroker = false;
+        Set<Role> setRole = user.getRoles();
+        Role role = roleRepository.findByName("BROKER").get();
+        if(setRole.contains(role)){
+            isBroker = true;
+        }
+        userDTO.setBroker(isBroker);
+        realEstatePostDTO.setUser(userDTO);
         realEstatePostDTO.setPostId(postId);
         realEstatePostDTO.setArea(postDTO.getArea());
         realEstatePostDTO.setTitle(postDTO.getTitle());
@@ -1441,9 +1445,9 @@ public class PostServiceImpl implements PostService {
             realEstatePostDTO.setTransactionStartDate(simpleDateFormat.format(postDTO.getTransactionStartDate()));
             realEstatePostDTO.setTransactionEndDate(simpleDateFormat.format(postDTO.getTransactionEndDate()));
         }
-        if(postDTO.getBlockDate() == null){
+        if (postDTO.getBlockDate() == null) {
             realEstatePostDTO.setBlockDate(null);
-        }else{
+        } else {
             realEstatePostDTO.setBlockDate(simpleDateFormat.format(postDTO.getBlockDate()));
         }
         realEstatePostDTO.setBlock(postDTO.isBlock());
@@ -1539,7 +1543,7 @@ public class PostServiceImpl implements PostService {
     }
 
     @Override
-    public void extendPost(int postId, int numberOfPostedDay,Long totalPayment) {
+    public void extendPost(int postId, int numberOfPostedDay, Long totalPayment) {
         Post post = postRepository.findById(postId).orElseThrow(() -> new ResourceNotFoundException("Post", "id", postId));
         long millis = System.currentTimeMillis();
         Date dateNow = new Date(millis);
@@ -1549,11 +1553,14 @@ public class PostServiceImpl implements PostService {
         post.setTransactionStartDate(dateNow);
         post.setTransactionEndDate(c.getTime());
         Long oldPayment = post.getSpendMoney();
-        post.setSpendMoney(oldPayment+totalPayment);
+        post.setSpendMoney(oldPayment + totalPayment);
         Status status = statusRepository.findById(1).orElseThrow(() -> new ResourceNotFoundException("Post", "id", postId));
         post.setStatus(status);
         postRepository.save(post);
     }
+
+    @Autowired
+    SimpMessagingTemplate template;
 
     @Override
     public void changeStatus(int postId, int statusId) {
@@ -1561,15 +1568,175 @@ public class PostServiceImpl implements PostService {
         Post post = postRepository.findById(postId).orElseThrow(() -> new ResourceNotFoundException("Post", "id", postId));
         post.setStatus(status);
         postRepository.save(post);
+
+        List<Post> listPost = postRepository.getDerivativePostOfOriginalPost(postId);
+        if(listPost.size() != 0){
+            for (Post p: listPost) {
+                if(statusId == 2 || statusId == 6){
+                    p.setBlock(true);
+                    postRepository.save(p);
+
+                    TextMessageDTO messageDTO = new TextMessageDTO();
+                    String message = "Bài viết gốc bị gỡ, vì vậy chúng tôi sẽ đóng bài phái sinh của bạn!";
+                    messageDTO.setMessage(message);
+                    template.convertAndSend("/topic/message/" + p.getUser().getId(), messageDTO);
+                    saveNotificationAndUpdateUser(message, p.getUser().getId());
+                }
+                if(statusId == 1){
+                    p.setBlock(false);
+                    postRepository.save(p);
+
+                    TextMessageDTO messageDTO = new TextMessageDTO();
+                    String message = "Bài viết gốc đã được hiển thị trở lại, chúng tôi hiển thị lại bài phái sinh của bạn!";
+                    messageDTO.setMessage(message);
+                    template.convertAndSend("/topic/message/" + p.getUser().getId(), messageDTO);
+                    saveNotificationAndUpdateUser(message, p.getUser().getId());
+                }
+
+            }
+        }
+
+    }
+
+    private void saveNotificationAndUpdateUser(String message, int userId){
+        NotificationDTO notificationDTO = new NotificationDTO();
+        notificationDTO.setUserId(userId);
+        if(message == null){
+            notificationDTO.setContent("");
+        }else{
+            notificationDTO.setContent(message);
+        }
+//        notificationDTO.setPhone(userRequest.getPhone());
+        notificationDTO.setType("Post Status");
+        notificationService.createContactNotification(notificationDTO);
+
+        //update unread notification user
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new ResourceNotFoundException("User", "id", userId));
+        int numberUnread = user.getUnreadNotification();
+        numberUnread++;
+        user.setUnreadNotification(numberUnread);
+        userRepository.save(user);
     }
 
     @Override
     public void changeStatusOfDerivativePostOfPost(int postId) {
         List<Post> listPost = postRepository.getDerivativePostOfOriginalPost(postId);
-        for (Post post: listPost) {
+        for (Post post : listPost) {
             post.setStatus(new Status(3));
             postRepository.save(post);
         }
+    }
+
+    @Override
+    public SearchResponse getAllOriginalPostByUserId(int userId, int pageNo, int pageSize, String option) {
+        int sortOption = Integer.parseInt(option);
+
+        String sortOpt = "";
+        String sortDir = "";
+        Sort sort = null;
+        Pageable pageable = null;
+        Page<Post> listPosts = null;
+        List<Post> list = null;
+        List<PostDTO> listDto = null;
+        switch (sortOption) {
+            case 0:
+                sortOpt = "start_date";
+                sortDir = "desc";
+                sort = sortDir.equalsIgnoreCase(Sort.Direction.ASC.name()) ?
+                        Sort.by(sortOpt).ascending() : Sort.by(sortOpt).descending();
+                pageable = PageRequest.of(pageNo, pageSize, sort);
+                listPosts = postRepository.getAllOriginalPostByUserId(userId, pageable);
+                list = listPosts.getContent();
+                listDto = list.stream().map(post -> mapToDTO(post)).collect(Collectors.toList());
+                break;
+            case 1:
+                pageable = PageRequest.of(pageNo, pageSize);
+                listPosts = postRepository.getAllOriginalPostByUserIdOrderByPriceAsc(userId, pageable);
+                list = listPosts.getContent();
+                listDto = list.stream().map(post -> mapToDTO(post)).collect(Collectors.toList());
+
+                break;
+            case 2:
+                pageable = PageRequest.of(pageNo, pageSize);
+                listPosts = postRepository.getAllOriginalPostByUserIdOrderByPriceDesc(userId, pageable);
+                list = listPosts.getContent();
+                listDto = list.stream().map(post -> mapToDTO(post)).collect(Collectors.toList());
+                break;
+            case 3:
+                //giá trên m2 từ thấp đến cao
+                pageable = PageRequest.of(pageNo, pageSize);
+                listPosts = postRepository.getAllOriginalPostByUserIdOrderByPricePerSquareAsc(userId, pageable);
+                list = listPosts.getContent();
+                listDto = list.stream().map(post -> mapToDTO(post)).collect(Collectors.toList());
+                break;
+            case 4:
+                pageable = PageRequest.of(pageNo, pageSize);
+                listPosts = postRepository.getAllOriginalPostByUserIdOrderByPricePerSquareDesc(userId, pageable);
+                list = listPosts.getContent();
+                listDto = list.stream().map(post -> mapToDTO(post)).collect(Collectors.toList());
+                break;
+            case 5:
+                sortOpt = "area";
+                sortDir = "asc";
+                sort = sortDir.equalsIgnoreCase(Sort.Direction.ASC.name()) ?
+                        Sort.by(sortOpt).ascending() : Sort.by(sortOpt).descending();
+                pageable = PageRequest.of(pageNo, pageSize, sort);
+                listPosts = postRepository.getAllOriginalPostByUserId(userId, pageable);
+                list = listPosts.getContent();
+                listDto = list.stream().map(post -> mapToDTO(post)).collect(Collectors.toList());
+                break;
+            case 6:
+                sortOpt = "area";
+                sortDir = "desc";
+                sort = sortDir.equalsIgnoreCase(Sort.Direction.ASC.name()) ?
+                        Sort.by(sortOpt).ascending() : Sort.by(sortOpt).descending();
+                pageable = PageRequest.of(pageNo, pageSize, sort);
+                listPosts = postRepository.getAllOriginalPostByUserId(userId, pageable);
+                list = listPosts.getContent();
+                listDto = list.stream().map(post -> mapToDTO(post)).collect(Collectors.toList());
+                break;
+        }
+
+        List<SearchDTO> listSearchDto = new ArrayList<>();
+        for (PostDTO postDto : listDto) {
+            SearchDTO dto = new SearchDTO();
+            if(postDto.getDirection() != null){
+                dto.setDirectionId(postDto.getDirection().getId());
+            }else{
+                dto.setDirectionId(0);
+            }
+            setDataToSearchDTO(dto, postDto);
+            int postId = postDto.getPostId();
+            switch (postDto.getPropertyType().getId()) {
+                case 1: // view residential house
+                    ResidentialHouse residentialHouse = houseRepository.findByPostId(postId);
+                    dto.setNumberOfBedroom(residentialHouse.getNumberOfBedroom());
+                    dto.setNumberOfBathroom(residentialHouse.getNumberOfBathroom());
+                    break;
+                case 2:// view apartment
+                    Apartment apartment = apartmentRepository.findByPostId(postId);
+                    dto.setNumberOfBedroom(apartment.getNumberOfBedroom());
+                    dto.setNumberOfBathroom(apartment.getNumberOfBathroom());
+                    break;
+                case 3:// view residential land
+                    dto.setNumberOfBedroom(0);
+                    dto.setNumberOfBathroom(0);
+                    break;
+            }
+
+            listSearchDto.add(dto);
+        }
+        SearchResponse searchResponse = new SearchResponse();
+        searchResponse.setPosts(listSearchDto);
+        searchResponse.setPageNo(pageNo + 1);
+        searchResponse.setTotalPages(listPosts.getTotalPages());
+        searchResponse.setTotalResult(listPosts.getTotalElements());
+        return searchResponse;
+
+//        List<Post> listPost = postRepository.getAllOriginalPostByUserId(userId);
+//        return listPost.stream().map(post -> mapper.map(post, PostDTO.class)).collect(Collectors.toList());
+//
     }
 
 

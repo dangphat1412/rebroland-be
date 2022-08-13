@@ -41,8 +41,8 @@ public class UserRateServiceImpl implements UserRateService {
         UserRate newUserRate = userRateRepository.save(userRate);
 
         //insert to average_rates
-        int userRatedId = userRateDTO.getUserRated();
-        int userRoleRatedId = userRateDTO.getUserRoleRated();
+        int userRatedId = newUserRate.getUserRated();
+        int userRoleRatedId = newUserRate.getUserRoleRated();
         List<UserRate> starRate = userRateRepository.getStarRateOfUserRated(userRatedId, userRoleRatedId);
         float average = 0;
         for (UserRate i : starRate) {
@@ -51,11 +51,17 @@ public class UserRateServiceImpl implements UserRateService {
 //        AvgRate avgRate = new AvgRate(userRatedId, userRoleRatedId, average / starRate.size());
         AvgRate avgRate = rateRepository.getAvgRateByUserIdAndRoleId(userRatedId, userRoleRatedId);
 
-//        DecimalFormat df = new DecimalFormat("#.0");
-//        avgRate.setAvgRate(Float.parseFloat(df.format(average / starRate.size())));
+        if(avgRate != null){
+            avgRate.setAvgRate((float) Math.round((average / starRate.size()) * 10) / 10);
+            rateRepository.save(avgRate);
+        }else{
+            AvgRate rate = new AvgRate();
+            rate.setUserId(userRatedId);
+            rate.setRoleId(userRoleRatedId);
+            rate.setAvgRate(userRateDTO.getStarRate());
+            rateRepository.save(rate);
+        }
 
-        avgRate.setAvgRate((float) Math.round((average / starRate.size()) * 10) / 10);
-        rateRepository.save(avgRate);
         return mapToDTO(newUserRate);
     }
 

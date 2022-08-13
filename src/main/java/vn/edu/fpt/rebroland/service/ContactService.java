@@ -13,4 +13,7 @@ public interface ContactService {
     ContactResponse getContactByUserId(int userId, String keyword, int pageNo, int pageSize);
 
     void deleteContactByPostId(int postId);
+
+    ContactDTO getContactByUserIdAndPostId(int userRequestId, int userId, int postId);
+    ContactDTO getContactByUserIdAndPostIdNull(int userRequestId, int userId);
 }

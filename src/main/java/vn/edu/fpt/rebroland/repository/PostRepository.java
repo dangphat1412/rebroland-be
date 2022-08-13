@@ -25,7 +25,7 @@ public interface PostRepository extends JpaRepository<Post, Integer> {
     @Query(value = " SELECT * FROM `posts` " +
             " WHERE original_post is not null " +
             " AND user_id = :userId " +
-            " AND IF(:check IS NULL, 1 = 1, property_id = :propertyId) ", nativeQuery = true)
+            " AND IF(:check IS NULL OR :propertyId = 0, 1 = 1, property_id = :propertyId) ", nativeQuery = true)
     Page<Post> findDerivativePostOfBroker(int userId, int propertyId, String check, Pageable pageable);
 
     @Query(value = " SELECT *, IF(unit_id = 1, price, price * area) as Total, IF(unit_id = 2, price, price / area) as per_m2 " +
@@ -40,7 +40,7 @@ public interface PostRepository extends JpaRepository<Post, Integer> {
             " FROM `posts` " +
             " WHERE original_post is not null " +
             " AND user_id = :userId " +
-            " AND IF(:check IS NULL, 1 = 1, property_id = :propertyId)" +
+            " AND IF(:check IS NULL OR :propertyId = 0, 1 = 1, property_id = :propertyId)" +
             " ORDER BY Total ASC", nativeQuery = true)
     Page<Post> findDerivativePostOfBrokerOrderByPriceAsc(int userId, int propertyId, String check, Pageable pageable);
 
@@ -57,7 +57,7 @@ public interface PostRepository extends JpaRepository<Post, Integer> {
             " FROM `posts` " +
             " WHERE original_post is not null " +
             " AND user_id = :userId " +
-            " AND IF(:check IS NULL, 1 = 1, property_id = :propertyId)" +
+            " AND IF(:check IS NULL OR :propertyId = 0, 1 = 1, property_id = :propertyId)" +
             " ORDER BY Total DESC", nativeQuery = true)
     Page<Post> findDerivativePostOfBrokerOrderByPriceDesc(int userId, int propertyId, String check, Pageable pageable);
 
@@ -73,7 +73,7 @@ public interface PostRepository extends JpaRepository<Post, Integer> {
             " FROM `posts` " +
             " WHERE original_post is not null " +
             " AND user_id = :userId " +
-            " AND IF(:check IS NULL, 1 = 1, property_id = :propertyId)" +
+            " AND IF(:check IS NULL OR :propertyId = 0, 1 = 1, property_id = :propertyId)" +
             " ORDER BY per_m2 ASC", nativeQuery = true)
     Page<Post> findDerivativePostOfBrokerOrderByPricePerSquareAsc(int userId, int propertyId, String check, Pageable pageable);
 
@@ -90,7 +90,7 @@ public interface PostRepository extends JpaRepository<Post, Integer> {
             " FROM `posts` " +
             " WHERE original_post is not null " +
             " AND user_id = :userId " +
-            " AND IF(:check IS NULL, 1 = 1, property_id = :propertyId)" +
+            " AND IF(:check IS NULL OR :propertyId = 0, 1 = 1, property_id = :propertyId)" +
             " ORDER BY per_m2 DESC", nativeQuery = true)
     Page<Post> findDerivativePostOfBrokerOrderByPricePerSquareDesc(int userId, int propertyId, String check, Pageable pageable);
 
@@ -355,6 +355,7 @@ public interface PostRepository extends JpaRepository<Post, Integer> {
                            List<Integer> listDirections, int bedroom, int typePost, int userId, Pageable pageable);
 
 
+
     Post findPostByPostId(int postId);
 
     @Query(value = " SELECT * FROM `posts` p " +
@@ -519,4 +520,33 @@ public interface PostRepository extends JpaRepository<Post, Integer> {
             " AND start_date >= (SELECT start_date FROM `posts` " +
             "                                    WHERE post_id = :postId) ", nativeQuery = true)
     long getTotalAmountOfPost(Date currentDate, int userId, int postId);
+
+    @Query(value = " SELECT * FROM `posts` " +
+            " WHERE original_post IS NULL " +
+            " AND user_id = :userId ", nativeQuery = true)
+    Page<Post> getAllOriginalPostByUserId(int userId, Pageable pageable);
+
+    @Query(value = " SELECT *, IF(p.unit_id = 1, p.price, p.price * p.area) as Total, IF(p.unit_id = 2, p.price, p.price / p.area) as per_m2 FROM `posts` p " +
+            " WHERE p.original_post IS NULL " +
+            " AND p.user_id = :userId " +
+            " ORDER BY Total ASC ", nativeQuery = true)
+    Page<Post> getAllOriginalPostByUserIdOrderByPriceAsc(int userId, Pageable pageable);
+
+    @Query(value = " SELECT *, IF(p.unit_id = 1, p.price, p.price * p.area) as Total, IF(p.unit_id = 2, p.price, p.price / p.area) as per_m2 FROM `posts` p " +
+            " WHERE p.original_post IS NULL " +
+            " AND p.user_id = :userId " +
+            " ORDER BY Total DESC ", nativeQuery = true)
+    Page<Post> getAllOriginalPostByUserIdOrderByPriceDesc(int userId, Pageable pageable);
+
+    @Query(value = " SELECT *, IF(p.unit_id = 1, p.price, p.price * p.area) as Total, IF(p.unit_id = 2, p.price, p.price / p.area) as per_m2 FROM `posts` p " +
+            " WHERE p.original_post IS NULL " +
+            " AND p.user_id = :userId " +
+            " ORDER BY per_m2 ASC ", nativeQuery = true)
+    Page<Post> getAllOriginalPostByUserIdOrderByPricePerSquareAsc(int userId, Pageable pageable);
+
+    @Query(value = " SELECT *, IF(p.unit_id = 1, p.price, p.price * p.area) as Total, IF(p.unit_id = 2, p.price, p.price / p.area) as per_m2 FROM `posts` p " +
+            " WHERE p.original_post IS NULL " +
+            " AND p.user_id = :userId " +
+            " ORDER BY per_m2 DESC ", nativeQuery = true)
+    Page<Post> getAllOriginalPostByUserIdOrderByPricePerSquareDesc(int userId, Pageable pageable);
 }

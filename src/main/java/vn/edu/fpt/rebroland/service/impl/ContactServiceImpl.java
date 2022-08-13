@@ -139,6 +139,27 @@ public class ContactServiceImpl implements ContactService {
         }
     }
 
+    @Override
+    public ContactDTO getContactByUserIdAndPostId(int userRequestId, int userId, int postId) {
+        Contact contact = contactRepository.getContactByUserIdAndPostId(userRequestId, userId, postId);
+        if(contact != null){
+            return mapToDTO(contact);
+        }else {
+            return null;
+        }
+
+    }
+
+    @Override
+    public ContactDTO getContactByUserIdAndPostIdNull(int userRequestId, int userId) {
+        Contact contact = contactRepository.getContactByUserIdAndPostIdNull(userRequestId, userId);
+        if(contact != null){
+            return mapToDTO(contact);
+        }else {
+            return null;
+        }
+    }
+
     private ContactDTO mapToDTO(Contact contact) {
         return modelMapper.map(contact, ContactDTO.class);
     }

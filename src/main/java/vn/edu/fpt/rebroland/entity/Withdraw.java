@@ -31,7 +31,9 @@ public class Withdraw {
 
     private long money;
 
-    private boolean status;
+    private int status;
+
+    private String comment;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id", nullable = false)

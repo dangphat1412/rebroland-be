@@ -264,7 +264,11 @@ public class UserFollowPostServiceImpl implements UserFollowPostService {
         SimpleDateFormat simpleDateFormat = new SimpleDateFormat("dd-MM-yyyy HH:mm:ss");
         searchDTO.setStartDate(simpleDateFormat.format(date));
 
-        searchDTO.setPrice(postDTO.getPrice());
+        if (postDTO.getPrice() != null) {
+            searchDTO.setPrice(postDTO.getPrice());
+        } else {
+            searchDTO.setPrice(0);
+        }
         searchDTO.setDistrict(postDTO.getDistrict());
         searchDTO.setWard(postDTO.getWard());
         searchDTO.setProvince(postDTO.getProvince());

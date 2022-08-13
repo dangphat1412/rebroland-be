@@ -1,20 +1,20 @@
 package vn.edu.fpt.rebroland.controller;
 
 
-import vn.edu.fpt.rebroland.entity.AvgRate;
-import vn.edu.fpt.rebroland.entity.Post;
-import vn.edu.fpt.rebroland.entity.Status;
-import vn.edu.fpt.rebroland.entity.User;
+import vn.edu.fpt.rebroland.entity.*;
 import vn.edu.fpt.rebroland.exception.ResourceNotFoundException;
 import vn.edu.fpt.rebroland.payload.*;
 import vn.edu.fpt.rebroland.repository.AvgRateRepository;
 import vn.edu.fpt.rebroland.repository.PostRepository;
+import vn.edu.fpt.rebroland.repository.RoleRepository;
 import vn.edu.fpt.rebroland.repository.UserRepository;
 import vn.edu.fpt.rebroland.service.*;
 import org.cloudinary.json.JSONObject;
 import org.modelmapper.ModelMapper;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.*;
@@ -56,6 +56,10 @@ public class PostController {
 
     private PaymentService paymentService;
 
+    private RoleRepository roleRepository;
+
+    private NotificationService notificationService;
+
     public PostController(PostService postService, CoordinateService coordinateService, ImageService imageService,
                           ApartmentService apartmentService, ResidentialLandService residentialLandService,
                           ResidentialHouseService residentialHouseService, ApartmentHistoryService apartmentHistoryService,
@@ -63,7 +67,7 @@ public class PostController {
                           PostRepository postRepository, UserRepository userRepository, ModelMapper mapper,
                           UserFollowPostService userFollowPostService, ReportService reportService, ContactService contactService,
                           UserCareService userCareService, AvgRateRepository rateRepository, PriceService priceService, HistoryImageService historyImageService,
-                          PaymentService paymentService) {
+                          PaymentService paymentService, RoleRepository roleRepository, NotificationService notificationService) {
         this.postService = postService;
         this.coordinateService = coordinateService;
         this.imageService = imageService;
@@ -84,6 +88,8 @@ public class PostController {
         this.priceService = priceService;
         this.historyImageService = historyImageService;
         this.paymentService = paymentService;
+        this.roleRepository = roleRepository;
+        this.notificationService = notificationService;
     }
 
     //view detail real estate post from post id
@@ -388,13 +394,17 @@ public class PostController {
                                              @RequestHeader(name = "Authorization") String token) {
         int userId = getUserIdFromToken(token);
         Post post = postRepository.findPostByPostId(postId);
-        if(userId == post.getUser().getId()){
+        if(post != null){
+            if(userId == post.getUser().getId()){
                 postService.changeStatus(postId,2);
-            return new ResponseEntity<>("Cập nhập bài đăng thành công", HttpStatus.CREATED);
+                return new ResponseEntity<>("Cập nhập bài đăng thành công", HttpStatus.CREATED);
 
+            }else{
+                return new ResponseEntity<>("Bạn không có quyền ẩn bài đăng này", HttpStatus.BAD_REQUEST);
+
+            }
         }else{
-            return new ResponseEntity<>("Bạn không có quyền sửa bài đăng này", HttpStatus.BAD_REQUEST);
-
+            return new ResponseEntity<>("Bài viết không tồn tại!", HttpStatus.BAD_REQUEST);
         }
 
     }
@@ -406,30 +416,40 @@ public class PostController {
         int userId = getUserIdFromToken(token);
 
         Post post = postRepository.findPostByPostId(postId);
-        if(userId == post.getUser().getId()){
-            postService.changeStatus(postId,1);
-            return new ResponseEntity<>("Cập nhập bài đăng thành công", HttpStatus.CREATED);
+        if(post != null){
+            if(userId == post.getUser().getId()){
+                postService.changeStatus(postId,1);
+                return new ResponseEntity<>("Cập nhập bài đăng thành công", HttpStatus.CREATED);
 
+            }else{
+                return new ResponseEntity<>("Bạn không có quyền sửa bài đăng này", HttpStatus.BAD_REQUEST);
+            }
         }else{
-            return new ResponseEntity<>("Bạn không có quyền sửa bài đăng này", HttpStatus.BAD_REQUEST);
-
+            return new ResponseEntity<>("Bài viết không tồn tại!", HttpStatus.BAD_REQUEST);
         }
 
     }
+
+
     @PutMapping("/delete-post/{postId}")
     @Transactional
     public ResponseEntity<String> deleteStatusPost(@PathVariable int postId,
                                              @RequestHeader(name = "Authorization") String token) {
         int userId = getUserIdFromToken(token);
         Post post = postRepository.findPostByPostId(postId);
-        if(userId == post.getUser().getId()){
-            postService.changeStatus(postId,6);
-            return new ResponseEntity<>("Cập nhập bài đăng thành công", HttpStatus.BAD_REQUEST);
+        if(post != null){
+            if(userId == post.getUser().getId()){
+                postService.changeStatus(postId,6);
+                return new ResponseEntity<>("Cập nhập bài đăng thành công", HttpStatus.BAD_REQUEST);
 
-        }else{
-            return new ResponseEntity<>("Bạn không có quyền sửa bài đăng này", HttpStatus.BAD_REQUEST);
+            }else{
+                return new ResponseEntity<>("Bạn không có quyền sửa bài đăng này", HttpStatus.BAD_REQUEST);
 
+            }
+        }else {
+            return new ResponseEntity<>("Bài viết không tồn tại!", HttpStatus.BAD_REQUEST);
         }
+
 
     }
 
@@ -495,24 +515,15 @@ public class PostController {
     public ResponseEntity<String> updatePost(@PathVariable int postId,
                                              @Valid @RequestBody GeneralPostDTO generalPostDTO,
                                              @RequestHeader(name = "Authorization") String token) {
-        long millis = System.currentTimeMillis();
-        java.sql.Date dateNow = new java.sql.Date(millis);
+
         int userId = getUserIdFromToken(token);
 
-        PostDTO postDTO = postService.getPostByPostId(postId);
-        int propertyId = postDTO.getPropertyType().getId();
-        Long date = postDTO.getStartDate().getTime();
-        postDTO = postService.setDataToUpdatePost(generalPostDTO, userId, dateNow);
-        SimpleDateFormat simpleDateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
-//        String startDate = "";
-//        if (generalPostDTO.getBarcode().length() == 13) {
-//            startDate = "20" + generalPostDTO.getBarcode().substring(5, 7);
-//        } else {
-//            startDate = "20" + generalPostDTO.getBarcode().substring(7, 9);
-//        }
-        if (userId == postDTO.getUser().getId()) {
-            PostDTO newPostDTO = postService.updatePost(postDTO, postId, userId, generalPostDTO.getDirectionId(),
-                    generalPostDTO.getPropertyTypeId(), generalPostDTO.getUnitPriceId(), generalPostDTO.getLongevityId(), generalPostDTO.getImages());
+
+        Post post = postRepository.findById(postId).orElseThrow(() -> new ResourceNotFoundException("Post", "id", postId));
+
+        int propertyId = post.getPropertyType().getId();
+        if (userId == post.getUser().getId()) {
+            PostDTO newPostDTO = postService.updatePost(generalPostDTO, post, userId, generalPostDTO.getImages());
             switch (propertyId) {
                 case 1:
                     ResidentialHouseDTO oldResidentialHouseDTO = residentialHouseService.getResidentialHouseByPostId(postId);
@@ -536,10 +547,10 @@ public class PostController {
             coordinateService.updateCoordinate(generalPostDTO.getCoordinates(), postId);
 
             return new ResponseEntity<>("update success", HttpStatus.OK);
+        } else {
+            return new ResponseEntity<>("Bạn Không phải là chủ bài đăng", HttpStatus.BAD_REQUEST);
         }
 
-
-        return new ResponseEntity<>("update fail", HttpStatus.BAD_REQUEST);
     }
 
     //user follow post
@@ -701,8 +712,16 @@ public class PostController {
 
         SearchResponse searchResponse = postService.getAllPostByUserId(pageNumber, pageSize, userId, propertyTypeId, sortValue);
         User user = userRepository.findById(userId).orElseThrow(() -> new ResourceNotFoundException("User", "id", userId));
-        UserDTO userDTO = mapper.map(user, UserDTO.class);
 
+//        userDTO.setBroker(true);
+        Boolean isBroker = false;
+        Set<Role> setRole = user.getRoles();
+        Role role = roleRepository.findByName("BROKER").get();
+        if(setRole.contains(role)){
+            isBroker = true;
+        }
+        UserDTO userDTO = mapper.map(user, UserDTO.class);
+        userDTO.setBroker(isBroker);
         AvgRate avgRate = rateRepository.getAvgRateByUserIdAndRoleId(user.getId(), user.getCurrentRole());
         if (avgRate != null) {
             userDTO.setAvgRate(avgRate.getAvgRate());
@@ -771,13 +790,16 @@ public class PostController {
         return new ResponseEntity<>(map, HttpStatus.OK);
     }
 
+    @Autowired
+    SimpMessagingTemplate template;
+
     @PostMapping("/history/{postId}")
     @Transactional
     public ResponseEntity<?> createRealEstateHistory(@PathVariable(name = "postId") int postId,
                                                      @RequestBody HistoryDTO historyDTO) {
         Post post = postRepository.findPostByPostId(postId);
-        if(post != null){
-            if(historyDTO.isProvideInfo()){
+        if (post != null) {
+            if (historyDTO.isProvideInfo()) {
                 switch (historyDTO.getTypeId()) {
                     case 1:
                         ResidentialHouseHistoryDTO houseHistoryDTO = new ResidentialHouseHistoryDTO();
@@ -806,19 +828,66 @@ public class PostController {
 
             //tinh tien hoan tra cho nguoi dung dang bai
 
-//            long millis = System.currentTimeMillis();
-//            java.sql.Date date = new java.sql.Date(millis);
-//            long refund = postRepository.getTotalAmountOfPost(date, post.getUser().getId(), postId);
-//
-//            User user = userRepository.findById(post.getUser().getId()).orElseThrow(
-//                    () -> new UsernameNotFoundException("User not found with id: " + post.getUser().getId()));
-//            long accountBalance = user.getAccountBalance();
-//            user.setAccountBalance(accountBalance + refund);
-//            userRepository.save(user);
+            long spendMoney = post.getSpendMoney();
+            int userId = post.getUser().getId();
+            TextMessageDTO messageDTO = new TextMessageDTO();
+            String message = "Bạn được hoàn lại " + spendMoney / 2 + " VNĐ";
+            messageDTO.setMessage(message);
+            template.convertAndSend("/topic/message/" + userId, messageDTO);
+
+            //save notification table
+            NotificationDTO notificationDTO = new NotificationDTO();
+            notificationDTO.setUserId(userId);
+            notificationDTO.setContent(message);
+//            notificationDTO.setPhone(userRequest.getPhone());
+            notificationDTO.setType("Notification");
+            notificationService.createContactNotification(notificationDTO);
+
+            //update unread notification user
+            User user = userRepository.findById(userId)
+                    .orElseThrow(() -> new ResourceNotFoundException("User", "id", userId));
+            int numberUnread = user.getUnreadNotification();
+            numberUnread++;
+            user.setUnreadNotification(numberUnread);
+            long accountBalance = user.getAccountBalance();
+            user.setAccountBalance(accountBalance + spendMoney / 2);
+            userRepository.save(user);
 
             return new ResponseEntity<>("Hoàn thành giao dịch!", HttpStatus.OK);
-        }else{
+        } else {
             return new ResponseEntity<>("Bài viết không tồn tại!", HttpStatus.BAD_REQUEST);
         }
+    }
+
+    @GetMapping("/original/{userId}")
+    public ResponseEntity<?> getAllOriginalPostOfUser(@PathVariable(name = "userId") int userId,
+                                                      @RequestParam(name = "pageNo", defaultValue = "0") String pageNo,
+                                                      @RequestParam(name = "sortValue", defaultValue = "0") String sortValue){
+        int pageNumber = Integer.parseInt(pageNo);
+        int pageSize = 6;
+
+        SearchResponse searchResponse = postService.getAllOriginalPostByUserId(userId, pageNumber, pageSize, sortValue);
+        User user = userRepository.findById(userId).orElseThrow(() -> new ResourceNotFoundException("User", "id", userId));
+
+//        userDTO.setBroker(true);
+        Boolean isBroker = false;
+        Set<Role> setRole = user.getRoles();
+        Role role = roleRepository.findByName("BROKER").get();
+        if(setRole.contains(role)){
+            isBroker = true;
+        }
+        UserDTO userDTO = mapper.map(user, UserDTO.class);
+        userDTO.setBroker(isBroker);
+        AvgRate avgRate = rateRepository.getAvgRateByUserIdAndRoleId(user.getId(), user.getCurrentRole());
+        if (avgRate != null) {
+            userDTO.setAvgRate(avgRate.getAvgRate());
+        } else {
+            userDTO.setAvgRate(0);
+        }
+
+        Map<String, Object> map = new HashMap<>();
+        map.put("lists", searchResponse);
+        map.put("user", userDTO);
+        return new ResponseEntity<>(map, HttpStatus.OK);
     }
 }

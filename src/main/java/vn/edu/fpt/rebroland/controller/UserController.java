@@ -317,14 +317,25 @@ public class UserController {
                                           @RequestParam(name = "province", required = false) String province,
                                           @RequestParam(name = "propertyTypes", required = false) List<String> listPropertyType,
                                           @RequestParam(name = "pageNo", defaultValue = "0") String pageNo,
-                                          @RequestParam(name = "sortValue", defaultValue = "0") String sortValue){
+                                          @RequestParam(name = "sortValue", defaultValue = "0") String sortValue,
+                                          @RequestHeader(name = "Authorization", required = false) String token){
         int pageNumber = Integer.parseInt(pageNo);
         int pageSize = 2;
         try{
 //            List<UserDTO> listBroker = userService.getAllBrokerPaging(pageNumber, pageSize, user.getId());
-            List<UserDTO> listBroker = userService.searchBroker(fullName, ward, district, province, listPropertyType, pageNumber, pageSize, sortValue);
+            int userId = 0;
+            if(token != null){
+                String[] parts = token.split("\\.");
+                JSONObject payload = new JSONObject(decode(parts[1]));
+                String phone = payload.getString("sub");
+                User user = userRepository.findByPhone(phone).
+                        orElseThrow(() -> new UsernameNotFoundException("User not found with phone: " + phone));
 
-            List<UserDTO> listAllBroker = userService.getAllBroker(fullName, ward, district, province, listPropertyType);
+                userId = user.getId();
+            }
+            List<UserDTO> listBroker = userService.searchBroker(fullName, ward, district, province, listPropertyType, pageNumber, pageSize, sortValue, userId);
+
+            List<UserDTO> listAllBroker = userService.getAllBroker(fullName, ward, district, province, listPropertyType, userId);
             int totalResult = listAllBroker.size();
 
             int totalPage = 0;

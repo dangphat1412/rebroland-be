@@ -15,6 +15,7 @@ import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.web.bind.annotation.*;
 
+import javax.validation.Valid;
 import java.util.Base64;
 import java.util.HashMap;
 import java.util.List;
@@ -31,11 +32,13 @@ public class AdminController {
     private PostService postService;
     private ReportService reportService;
     private NotificationService notificationService;
-
     private PaymentService paymentService;
+    private WithdrawService withdrawService;
+    private PriceService priceService;
 
     public AdminController(UserRepository userRepository, UserService userService, PostService postService, RoleRepository roleRepository,
-                           ReportService reportService, NotificationService notificationService, PaymentService paymentService) {
+                           ReportService reportService, NotificationService notificationService, PaymentService paymentService,
+                           WithdrawService withdrawService, PriceService priceService) {
         this.userRepository = userRepository;
         this.userService = userService;
         this.postService = postService;
@@ -43,6 +46,8 @@ public class AdminController {
         this.reportService = reportService;
         this.notificationService = notificationService;
         this.paymentService = paymentService;
+        this.withdrawService = withdrawService;
+        this.priceService = priceService;
     }
 
     @GetMapping("/list-users")
@@ -337,6 +342,91 @@ public class AdminController {
         if(user.getRoles().contains(role)){
             Map<String, Long> map = paymentService.getTotalMoney();
             return new ResponseEntity<>(map, HttpStatus.OK);
+        }else{
+            return new ResponseEntity<>("Người dùng không phải admin!", HttpStatus.BAD_REQUEST);
+        }
+    }
+
+    @GetMapping("/list-cashout/direct-withdraw")
+    public ResponseEntity<?> getListCashOutDirectWithdraw(@RequestHeader(name = "Authorization") String token,
+                                                          @RequestParam(name = "pageNo", defaultValue = "0") String pageNo,
+                                                          @RequestParam(name = "sortValue", defaultValue = "0") String sortValue,
+                                                          @RequestParam(name = "keyword", defaultValue = "") String keyword){
+        User user = getUserFromToken(token);
+        Role role = roleRepository.findByName("ADMIN").get();
+        int pageNumber = Integer.parseInt(pageNo);
+        int pageSize = 5;
+        if(user.getRoles().contains(role)){
+            WithdrawResponse list = withdrawService.getAllDirectWithdraw(pageNumber, pageSize, keyword, sortValue);
+            return new ResponseEntity<>(list, HttpStatus.OK);
+        }else{
+            return new ResponseEntity<>("Người dùng không phải admin!", HttpStatus.BAD_REQUEST);
+        }
+    }
+
+    @PostMapping("/list-cashout/accept/{withdrawId}")
+    public ResponseEntity<?> acceptWithdraw(@RequestHeader(name = "Authorization") String token,
+                                                  @PathVariable(name = "withdrawId") int withdrawId){
+        User user = getUserFromToken(token);
+        Role role = roleRepository.findByName("ADMIN").get();
+
+        if(user.getRoles().contains(role)){
+            boolean result = withdrawService.acceptWithdraw(withdrawId);
+            if(result){
+                return new ResponseEntity<>("Đã giải quyết yêu cầu rút tiền !", HttpStatus.OK);
+            }else{
+                return new ResponseEntity<>("Đã xảy ra lỗi !", HttpStatus.BAD_REQUEST);
+            }
+        }else{
+            return new ResponseEntity<>("Người dùng không phải admin!", HttpStatus.BAD_REQUEST);
+        }
+    }
+
+    @PostMapping("/list-cashout/reject/{withdrawId}")
+    public ResponseEntity<?> rejectWithdraw(@RequestHeader(name = "Authorization") String token,
+                                                  @PathVariable(name = "withdrawId") int withdrawId,
+                                                  @Valid @RequestBody WithdrawDTO withdrawDTO){
+        User user = getUserFromToken(token);
+        Role role = roleRepository.findByName("ADMIN").get();
+
+        if(user.getRoles().contains(role)){
+            boolean result = withdrawService.rejectWithdraw(withdrawId, withdrawDTO.getContent());
+            if(result){
+                return new ResponseEntity<>("Đã từ chối yêu cầu rút tiền !", HttpStatus.OK);
+            }else{
+                return new ResponseEntity<>("Đã xảy ra lỗi !", HttpStatus.BAD_REQUEST);
+            }
+        }else{
+            return new ResponseEntity<>("Người dùng không phải admin!", HttpStatus.BAD_REQUEST);
+        }
+    }
+
+    @GetMapping("/list-cashout/transfer-withdraw")
+    public ResponseEntity<?> getListCashOutTransferWithdraw(@RequestHeader(name = "Authorization") String token,
+                                                            @RequestParam(name = "pageNo", defaultValue = "0") String pageNo,
+                                                            @RequestParam(name = "sortValue", defaultValue = "0") String sortValue,
+                                                            @RequestParam(name = "keyword", defaultValue = "") String keyword){
+        User user = getUserFromToken(token);
+        Role role = roleRepository.findByName("ADMIN").get();
+        int pageNumber = Integer.parseInt(pageNo);
+        int pageSize = 5;
+        if(user.getRoles().contains(role)){
+            WithdrawResponse list = withdrawService.getAllTransferWithdraw(pageNumber, pageSize, keyword, sortValue);
+            return new ResponseEntity<>(list, HttpStatus.OK);
+        }else{
+            return new ResponseEntity<>("Người dùng không phải admin!", HttpStatus.BAD_REQUEST);
+        }
+    }
+
+    @PutMapping("/add-price")
+    public ResponseEntity<?> fixPrice(@RequestHeader(name = "Authorization") String token,
+                                      @Valid @RequestBody PriceDTO priceDTO){
+        User user = getUserFromToken(token);
+        Role role = roleRepository.findByName("ADMIN").get();
+
+        if(user.getRoles().contains(role)){
+            PriceDTO dto = priceService.createPrice(priceDTO);
+            return new ResponseEntity<>(dto, HttpStatus.OK);
         }else{
             return new ResponseEntity<>("Người dùng không phải admin!", HttpStatus.BAD_REQUEST);
         }

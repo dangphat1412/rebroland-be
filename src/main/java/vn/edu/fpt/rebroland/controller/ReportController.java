@@ -2,7 +2,7 @@ package vn.edu.fpt.rebroland.controller;
 
 import vn.edu.fpt.rebroland.entity.User;
 import vn.edu.fpt.rebroland.payload.ReportDTO;
-import vn.edu.fpt.rebroland.payload.UserRateDTO;
+import vn.edu.fpt.rebroland.repository.AvgRateRepository;
 import vn.edu.fpt.rebroland.service.ReportService;
 import vn.edu.fpt.rebroland.service.UserRateService;
 import org.springframework.http.HttpStatus;
@@ -20,9 +20,12 @@ public class ReportController {
 
     private UserRateService userRateService;
 
-    public ReportController(ReportService reportService, UserRateService userRateService) {
+    private AvgRateRepository rateRepository;
+
+    public ReportController(ReportService reportService, UserRateService userRateService, AvgRateRepository avgRateRepository) {
         this.reportService = reportService;
         this.userRateService = userRateService;
+        this.rateRepository = avgRateRepository;
     }
 
     @PostMapping("/post/{postId}")
@@ -54,47 +57,7 @@ public class ReportController {
         return new ResponseEntity<>(status);
     }
 
-    @PostMapping("/rating/{userId}")
-    public ResponseEntity<?> rateUser(@RequestHeader(name = "Authorization") String token,
-                                      @Valid @RequestBody UserRateDTO userRateDTO,
-                                      @PathVariable(name = "userId") String id){
-        User user = reportService.getUserByToken(token);
-        userRateDTO.setUserId(user.getId());
-        userRateDTO.setRoleId(user.getCurrentRole());
 
-        int userRatedId = Integer.parseInt(id);
-        userRateDTO.setUserRated(userRatedId);
-        userRateDTO.setUserRoleRated(2);
-
-        UserRateDTO dto = userRateService.createUserRate(userRateDTO);
-        if(dto == null){
-            return new ResponseEntity<>("Đánh giá thất bại!", HttpStatus.BAD_REQUEST);
-        }
-        return new ResponseEntity<>(dto, HttpStatus.OK);
-    }
-
-    @PostMapping("/rating/broker/{userId}")
-    public ResponseEntity<?> rateBroker(@RequestHeader(name = "Authorization") String token,
-                                      @Valid @RequestBody UserRateDTO userRateDTO,
-                                      @PathVariable(name = "userId") String id){
-        User user = reportService.getUserByToken(token);
-        userRateDTO.setUserId(user.getId());
-        userRateDTO.setRoleId(user.getCurrentRole());
-
-        int userRatedId = Integer.parseInt(id);
-        User userRated = reportService.getUserById(userRatedId);
-        if(userRated.getRoles().size() != 2){
-            return new ResponseEntity<>("Người được đánh giá không phải là broker!", HttpStatus.BAD_REQUEST);
-        }
-        userRateDTO.setUserRated(userRatedId);
-        userRateDTO.setUserRoleRated(3);
-
-        UserRateDTO dto = userRateService.createUserRate(userRateDTO);
-        if(dto == null){
-            return new ResponseEntity<>("Đánh giá thất bại!", HttpStatus.BAD_REQUEST);
-        }
-        return new ResponseEntity<>(dto, HttpStatus.OK);
-    }
 
     @GetMapping("/starRate/user/{userId}")
     public ResponseEntity<?> getStarRateOfUserRated(@PathVariable(name = "userId") String userId){

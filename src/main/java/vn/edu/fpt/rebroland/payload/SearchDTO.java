@@ -1,8 +1,10 @@
 package vn.edu.fpt.rebroland.payload;
 
+import com.fasterxml.jackson.annotation.JsonFormat;
 import lombok.Data;
 
 import javax.validation.constraints.*;
+import java.util.Date;
 
 @Data
 public class SearchDTO {
@@ -59,6 +61,9 @@ public class SearchDTO {
     private int numberOfBedroom;
 
     private int numberOfBathroom;
+
+    @JsonFormat(pattern = "dd-MM-yyyy HH:mm:ss")
+    private Date endDate;
 
     private int numberOfUserReport;
 

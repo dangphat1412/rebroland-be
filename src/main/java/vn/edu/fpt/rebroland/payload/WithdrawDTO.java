@@ -1,5 +1,6 @@
 package vn.edu.fpt.rebroland.payload;
 
+import com.fasterxml.jackson.annotation.JsonFormat;
 import lombok.Data;
 
 import javax.validation.constraints.Min;
@@ -14,7 +15,9 @@ public class WithdrawDTO {
 
     private int type;
 
+    @JsonFormat(pattern = "dd-MM-yyyy HH:mm:ss")
     private Date startDate;
+
     @NotEmpty(message = "Nội dung không được để trống!")
     @Size(max = 200)
     private String content;
@@ -29,7 +32,9 @@ public class WithdrawDTO {
     @Min(value = 0)
     private long money;
 
-    private boolean status;
+    private int status;
+
+    private String comment;
 
     private UserDTO user;
 

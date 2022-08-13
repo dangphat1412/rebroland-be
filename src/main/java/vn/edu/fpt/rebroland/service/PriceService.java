@@ -10,4 +10,5 @@ public interface PriceService {
 
     PriceDTO getPriceBroker(int priceId);
     List<PriceDTO> getListPriceBroker(int typeId);
+    PriceDTO createPrice(PriceDTO priceDTO);
 }

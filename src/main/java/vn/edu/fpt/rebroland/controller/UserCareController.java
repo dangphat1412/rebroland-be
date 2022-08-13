@@ -68,11 +68,11 @@ public class UserCareController {
     public ResponseEntity<?> createUserCareForBroker(@Valid @RequestBody UserCareDTO userCareDTO,
                                                      @PathVariable int contactId,
                                                      @RequestHeader(name = "Authorization") String token) {
-        try {
+//        try {
             int userId = getUserIdFromToken(token);
             int check = 0;
             User broker = userRepository.findById(userId).orElseThrow(() -> new ResourceNotFoundException("Broker", "id", userId));
-            contactService.deleteContact(contactId);
+
             if (userCareDTO.getPostId() != null) {
                 UserCare userCareWithUserCaredIdAndPostId = userCareRepository.findUserCareByUserCaredIdAndPostId(userCareDTO.getUserCaredId(), userCareDTO.getPostId());
                 if (userCareWithUserCaredIdAndPostId == null) {
@@ -84,28 +84,33 @@ public class UserCareController {
                     }
                     if (broker.getRoles().size() == 2) {
                         UserCareDTO newUserCareDTO = userCareService.createUserCare(userCareDTO, broker, userCareWithOnlyUserCaredId, check);
+                        contactService.deleteContact(contactId);
                         return new ResponseEntity<>(newUserCareDTO, HttpStatus.CREATED);
                     } else {
-                        return new ResponseEntity<>("User is not broker", HttpStatus.BAD_REQUEST);
+                        return new ResponseEntity<>("Người dùng không phải người môi giới", HttpStatus.BAD_REQUEST);
                     }
                 } else {
-                    return new ResponseEntity<>("Duplicate User Cared Id and Post", HttpStatus.OK);
+                    contactService.deleteContact(contactId);
+                    return new ResponseEntity<>("Đã chăm sóc người dùng này và bài đăng này", HttpStatus.OK);
                 }
             } else {
                 UserCare userCareWithOnlyUserCaredId = userCareRepository.findUserCareByUserCaredId(userCareDTO.getUserCaredId());
                 if (userCareWithOnlyUserCaredId != null) {
-                    return new ResponseEntity<>("Duplicate UserCaredId", HttpStatus.OK);
+                    contactService.deleteContact(contactId);
+                    return new ResponseEntity<>("Đã chăm sóc người dùng này ", HttpStatus.OK);
                 } else {
                     check = 3;
                     UserCareDTO newUserCareDTO = userCareService.createUserCare(userCareDTO, broker, null, check);
+                    contactService.deleteContact(contactId);
                     return new ResponseEntity<>(newUserCareDTO, HttpStatus.CREATED);
                 }
             }
-        } catch (Exception e) {
+//        }
+//        catch (Exception e) {
+//
+//        }
 
-        }
-
-        return new ResponseEntity<>("Insert user care fail", HttpStatus.BAD_REQUEST);
+//        return new ResponseEntity<>("Insert user care fail", HttpStatus.BAD_REQUEST);
 
     }
 
@@ -121,7 +126,7 @@ public class UserCareController {
             String appointmentDate = null;
             SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
             if (user.getCurrentRole() == 3) {
-                if (userCareDetailDTO.getDateAppointment() != null && userCareDetailDTO.getTimeAppointment() != null && userCareDetailDTO.getAlertTime() != null) {
+                if (userCareDetailDTO.getDateAppointment() != null && userCareDetailDTO.getTimeAppointment() != null ) {
                     appointmentDate = userCareDetailDTO.getDateAppointment() + " " + userCareDetailDTO.getTimeAppointment() + ":00";
                     Date date = new Date();
                     Date date1 = sdf.parse(appointmentDate);
@@ -129,7 +134,13 @@ public class UserCareController {
                         return new ResponseEntity<>("you need change your appointmentTime !", HttpStatus.BAD_REQUEST);
                     } else {
                         UserCareDetailDTO userCareDetailDTO1 = userCareDetailService.createUserCareDetail(careId, userCareDetailDTO, date1);
-                        sendRemindMessage(user.getPhone(), userCareDetailDTO.getDateAppointment(), userCareDetailDTO.getTimeAppointment(), userCareDetailDTO.getAlertTime());
+                        if(userCareDetailDTO.getAlertTime()!=null){
+                            sendRemindMessage(user.getPhone(), userCareDetailDTO.getDateAppointment(), userCareDetailDTO.getTimeAppointment(), userCareDetailDTO.getAlertTime());
+
+                        }else{
+                            sendRemindMessage(user.getPhone(), userCareDetailDTO.getDateAppointment(), userCareDetailDTO.getTimeAppointment(), 0);
+
+                        }
                         return new ResponseEntity<>(userCareDetailDTO1, HttpStatus.CREATED);
                     }
                 }
@@ -188,7 +199,6 @@ public class UserCareController {
         User user = userRepository.findById(userId).orElseThrow(() -> new ResourceNotFoundException("User", "id", userId));
 
         if (user.getCurrentRole() == 3) {
-
             CareResponse careResponse = userCareService.getUserCareByUserId(userId, keyword, pageNumber, pageSize);
             return new ResponseEntity<>(careResponse, HttpStatus.OK);
         } else {

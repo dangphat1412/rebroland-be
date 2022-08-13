@@ -20,7 +20,7 @@ public class Contact {
 
     private Date startDate;
 
-    @Column(length = 200,nullable = false)
+    @Column(length = 200)
     private String content;
 
     private boolean unread;

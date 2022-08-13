@@ -22,9 +22,9 @@ public class AvgRate {
 
     private float avgRate;
 
-    public AvgRate(int userId, int roleId, float avgRate) {
-        this.userId = userId;
-        this.roleId = roleId;
-        this.avgRate = avgRate;
-    }
+//    public AvgRate(int userId, int roleId, float avgRate) {
+//        this.userId = userId;
+//        this.roleId = roleId;
+//        this.avgRate = avgRate;
+//    }
 }

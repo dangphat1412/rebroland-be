@@ -118,7 +118,7 @@ public class UserCareServiceImpl implements UserCareService {
             int userCaredId = userCareDTO.getUserCaredId();
             User userCared =  userRepository.findById(userCaredId).orElseThrow(
                     () -> new UsernameNotFoundException("User not found with id: " + userCaredId));
-            userCareDTO.setUserCared(modelMapper.map(userCared, UserDTO.class));
+            userCareDTO.setUser(modelMapper.map(userCared, UserDTO.class));
             userCareDTOList.add(userCareDTO);
         }
 
@@ -143,7 +143,7 @@ public class UserCareServiceImpl implements UserCareService {
         UserCareDTO userCareDTO = mapToDTO(userCare);
 
         User userCared = userRepository.findById(userCare.getUserCaredId()).orElseThrow(() -> new ResourceNotFoundException("User", "id", userCare.getUserCaredId()));
-        userCareDTO.setUserCared(modelMapper.map(userCared, UserDTO.class));
+        userCareDTO.setUser(modelMapper.map(userCared, UserDTO.class));
         return userCareDTO;
 
     }

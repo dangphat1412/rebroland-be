@@ -7,30 +7,30 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 
 public interface PaymentRepository extends JpaRepository<Transactions, Integer> {
-    @Query(value = " SELECT SUM(amount) FROM payments ", nativeQuery = true)
+    @Query(value = " SELECT SUM(amount) FROM transactions ", nativeQuery = true)
     Long getTotalRevenue();
 
-    @Query(value = " SELECT SUM(amount) FROM payments " +
+    @Query(value = " SELECT SUM(amount) FROM transactions " +
             "WHERE type_id = 1 ", nativeQuery = true)
     Long getTotalMoneyFromPost();
 
-    @Query(value = " SELECT SUM(amount) FROM payments " +
+    @Query(value = " SELECT SUM(amount) FROM transactions " +
             "WHERE type_id = 2 ", nativeQuery = true)
     Long getTotalMoneyFromBroker();
 
-    @Query(value = " SELECT p.* FROM `payments` p " +
+    @Query(value = " SELECT p.* FROM `transactions` p " +
             " JOIN `users` u on p.user_id = u.id" +
             " WHERE p.type_id = 1 " +
             " AND ((u.phone LIKE CONCAT('%',:keyword,'%')) OR (u.full_name LIKE CONCAT('%',:keyword,'%')) OR p.user_id = :keyword) ", nativeQuery = true)
     Page<Transactions> findAllPostPayment(Pageable pageable, String keyword);
 
-    @Query(value = " SELECT p.* FROM `payments` p " +
+    @Query(value = " SELECT p.* FROM `transactions` p " +
             " JOIN `users` u on p.user_id = u.id" +
             " WHERE p.type_id = 2 " +
             " AND ((u.phone LIKE CONCAT('%',:keyword,'%')) OR (u.full_name LIKE CONCAT('%',:keyword,'%')) OR p.user_id = :keyword) ", nativeQuery = true)
     Page<Transactions> findAllBrokerPayment(Pageable pageable, String keyword);
 
-    @Query(value = " SELECT p.* FROM `payments` p " +
+    @Query(value = " SELECT p.* FROM `transactions` p " +
             " JOIN `users` u on p.user_id = u.id" +
             " WHERE ((u.phone LIKE CONCAT('%',:keyword,'%')) OR (u.full_name LIKE CONCAT('%',:keyword,'%')) OR p.user_id = :keyword) ", nativeQuery = true)
     Page<Transactions> findAll(Pageable pageable, String keyword);

@@ -117,7 +117,7 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
-    public List<UserDTO> getAllBroker(String fullName, String ward, String district, String province, List<String> propertyType) {
+    public List<UserDTO> getAllBroker(String fullName, String ward, String district, String province, List<String> propertyType, int userId) {
         String check = null;
         List<Integer> listType = new ArrayList<>();
         if(propertyType != null){
@@ -127,14 +127,14 @@ public class UserServiceImpl implements UserService {
             check = "";
         }
 
-        List<User> listBroker = userRepository.searchBroker(fullName, ward, district, province, check, listType);
+        List<User> listBroker = userRepository.searchBroker(fullName, ward, district, province, check, listType, userId);
         List<UserDTO> list = listBroker.stream().map(user -> mapToDTO(user)).collect(Collectors.toList());
 
         return list;
     }
 
     @Override
-    public List<UserDTO> searchBroker(String fullName, String ward, String district, String province, List<String> propertyType, int pageNo, int pageSize, String option) {
+    public List<UserDTO> searchBroker(String fullName, String ward, String district, String province, List<String> propertyType, int pageNo, int pageSize, String option, int userId) {
         int sortOption = Integer.parseInt(option);
         Pageable pageable = PageRequest.of(pageNo, pageSize);
 
@@ -151,7 +151,7 @@ public class UserServiceImpl implements UserService {
         Page<User> userPage = null;
         //star rate desc
         if(sortOption == 0){
-            userPage = userRepository.searchBrokerByStarRateDesc(fullName, ward, district, province, check, listType, pageable);
+            userPage = userRepository.searchBrokerByStarRateDesc(fullName, ward, district, province, check, listType, pageable, userId);
         }
         //giao dich thanh cong desc
 //        if(sortOption == 1){
@@ -256,6 +256,17 @@ public class UserServiceImpl implements UserService {
             if(user.isBlock()){
                 user.setBlock(false);
                 userRepository.save(user);
+                List<Post> listPost = postRepository.getAllPostActiveByUserId(user.getId());
+                List<Post> listDerivative = new ArrayList<>();
+                for(Post post: listPost) {
+                    post.setBlock(false);
+                    postRepository.save(post);
+                    listDerivative = postRepository.getDerivativePostOfOriginalPost(post.getPostId());
+                    for (Post p : listDerivative) {
+                        p.setBlock(false);
+                        postRepository.save(p);
+                    }
+                }
                 return true;
             }else{
                 user.setBlock(true);
@@ -263,11 +274,12 @@ public class UserServiceImpl implements UserService {
                 List<Post> listPost = postRepository.getAllPostActiveByUserId(user.getId());
                 List<Post> listDerivative = new ArrayList<>();
                 for(Post post: listPost){
-                    post.setStatus(new Status(4));
+                    post.setBlock(true);
                     postRepository.save(post);
                     listDerivative = postRepository.getDerivativePostOfOriginalPost(post.getPostId());
                     for(Post p: listDerivative){
-//                        p.setStatus();
+                        p.setBlock(true);
+                        postRepository.save(p);
                     }
 
                 }

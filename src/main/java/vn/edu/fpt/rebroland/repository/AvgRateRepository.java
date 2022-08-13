@@ -7,7 +7,7 @@ import org.springframework.data.jpa.repository.Query;
 public interface AvgRateRepository extends JpaRepository<AvgRate, Integer> {
     @Query(value = " SELECT * FROM average_rates " +
             " WHERE user_id = :userId " +
-            " AND role_id = :roleId ", nativeQuery = true)
+            " AND role_id = :roleId " , nativeQuery = true)
     AvgRate getAvgRateByUserIdAndRoleId(int userId, int roleId);
 
 }

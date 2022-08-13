@@ -1,5 +1,6 @@
 package vn.edu.fpt.rebroland.service;
 
+import vn.edu.fpt.rebroland.entity.Post;
 import vn.edu.fpt.rebroland.payload.*;
 import vn.edu.fpt.rebroland.payload.PostDTO;
 import vn.edu.fpt.rebroland.payload.SearchResponse;
@@ -27,25 +28,25 @@ public interface PostService {
     List<BrokerInfoOfPostDTO> getDerivativePostOfOriginalPost(int originalPostId);
 
     SearchResponse searchPosts(String ward, String district, String province, String minPrice, String maxPrice,
-                           String minArea, String maxArea, List<String> propertyType, String keyword,
-                           List<String> direction, int bedroom, int pageNo, int pageSize, String sortValue);
+                               String minArea, String maxArea, List<String> propertyType, String keyword,
+                               List<String> direction, int bedroom, int pageNo, int pageSize, String sortValue);
 
     SearchResponse searchOriginalPosts(String ward, String district, String province, String minPrice, String maxPrice,
-                               String minArea, String maxArea, List<String> propertyType, String keyword,
-                               List<String> direction, int bedroom, int pageNo, int pageSize, String sortValue, int userId);
+                                       String minArea, String maxArea, List<String> propertyType, String keyword,
+                                       List<String> direction, int bedroom, int pageNo, int pageSize, String sortValue, int userId);
 
 
     List<PostDTO> getPostByPropertyTypeId(int propertyTypeId);
 
     PostDTO getPostByPostId(int postId);
 
-    PostDTO updatePost(PostDTO postDTO, int postId, int userId,
-                       Integer directionId, int propertyTypeId,
-                       int unitId, Integer longevityId,List<String> imageLink);
 
     void deletePost(int postId);
+
     SearchResponse getAllPost(int pageNo, int pageSize);
+
     SearchResponse getAllPost(int pageNo, int pageSize, String keyword, String sortValue);
+
     SearchResponse getExpiredPostByUserId(int userId, int pageNo, int pageSize);
 
     Map<String, List> getRealEstateHistory(int postId);
@@ -63,7 +64,8 @@ public interface PostService {
 
     PostDTO setDataToPostDTO(GeneralPostDTO generalPostDTO, int userId, Date date, boolean check);
 
-    PostDTO setDataToUpdatePost(GeneralPostDTO generalPostDTO,int userId, Date date);
+    PostDTO updatePost(GeneralPostDTO generalPostDTO, Post post, int userId,
+                          List<String> imageLink);
 
     ResidentialHouseDTO setDataToResidentialHouse(GeneralPostDTO generalPostDTO);
 
@@ -87,9 +89,9 @@ public interface PostService {
 
     void extendPost(int postId, int numberOfPostedDay, Long totalPayment);
 
-    void changeStatus(int postId,int statusId);
+    void changeStatus(int postId, int statusId);
 
     void changeStatusOfDerivativePostOfPost(int postId);
 
-
+    SearchResponse getAllOriginalPostByUserId(int userId, int pageNo, int pageSize, String sortValue);
 }

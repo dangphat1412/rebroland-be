@@ -8,8 +8,8 @@ import java.util.Date;
 public class UserRateDTO {
     private int id;
 
-    private int roleId;
     private int userId;
+
     private String description;
 
     private float starRate;

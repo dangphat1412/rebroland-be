@@ -39,6 +39,20 @@ public class PriceServiceImpl implements PriceService {
         return listPrice.stream().map(price -> mapToDTO(price)).collect(Collectors.toList());
     }
 
+    @Override
+    public PriceDTO createPrice(PriceDTO priceDTO) {
+        Price p = priceRepository.getPrice(priceDTO.getTypeId(), priceDTO.getUnitDate());
+
+
+        priceDTO.setStatus(true);
+        Price price = priceRepository.save(mapToEntity(priceDTO));
+
+
+        p.setStatus(false);
+        priceRepository.save(p);
+        return mapToDTO(price);
+    }
+
     private PriceDTO mapToDTO(Price price) {
         return mapper.map(price, PriceDTO.class);
     }

@@ -14,9 +14,9 @@ public interface UserService {
     UserDTO createBroker(User user, Role role);
     int updateUser(String phone, UserDTO userDTO);
     List<UserDTO> getAllBrokerPaging(int pageNo, int pageSize, int userId);
-    List<UserDTO> getAllBroker(String fullName, String ward, String district, String province, List<String> listPropertyType);
+    List<UserDTO> getAllBroker(String fullName, String ward, String district, String province, List<String> listPropertyType, int userId);
     List<UserDTO> searchBroker(String fullName, String ward, String district, String province,
-                               List<String> listPropertyType, int pageNo, int pageSize, String sortValue);
+                               List<String> listPropertyType, int pageNo, int pageSize, String sortValue, int userId);
     boolean changePassword(User user, ChangePasswordDTO changePasswordDTO);
     List<UserDTO> getAllUserForAdminPaging(int userId, int pageNo, int pageSize, String keyword, String sortValue);
 

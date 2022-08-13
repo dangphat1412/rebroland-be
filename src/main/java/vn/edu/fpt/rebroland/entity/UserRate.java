@@ -18,7 +18,7 @@ public class UserRate {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private int id;
-    private int userRoleId;
+
     private String description;
     private float starRate;
     private Date startDate;

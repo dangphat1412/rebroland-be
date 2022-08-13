@@ -50,10 +50,11 @@ public interface UserRepository extends JpaRepository<User, Integer> {
             "AND IF(:province IS NULL, 1 = 1, u.province LIKE CONCAT('%',:province,'%')) " +
             "AND IF(:check IS NULL, 1 = 1, u.id IN (SELECT user_id FROM `posts` " +
             "                                       WHERE property_id IN :propertyType)) " +
-            "AND (r.role_id = 3 OR r.role_id IS NULL)"  +
+            "AND (r.role_id = 3 OR r.role_id IS NULL) " +
+            "AND u.id != :userId "  +
             "ORDER BY r.avg_rate DESC ", nativeQuery = true)
     Page<User> searchBrokerByStarRateDesc(String fullName, String ward, String district, String province,
-                                          String check, List<Integer> propertyType, Pageable pageable);
+                                          String check, List<Integer> propertyType, Pageable pageable, int userId);
 
     @Query(value = " SELECT u.* FROM `users` u " +
             " LEFT JOIN average_rates r on u.id = r.user_id " +
@@ -65,9 +66,10 @@ public interface UserRepository extends JpaRepository<User, Integer> {
             "AND IF(:province IS NULL, 1 = 1, u.province LIKE CONCAT('%',:province,'%')) " +
             "AND IF(:check IS NULL, 1 = 1, u.id IN (SELECT user_id FROM `posts` " +
             "                                       WHERE property_id IN :propertyType)) " +
-            "AND (r.role_id = 3 OR r.role_id IS NULL) ", nativeQuery = true)
+            "AND (r.role_id = 3 OR r.role_id IS NULL) " +
+            "AND u.id != :userId ", nativeQuery = true)
     List<User> searchBroker(String fullName, String ward, String district, String province,
-                                          String check, List<Integer> propertyType);
+                                          String check, List<Integer> propertyType, int userId);
 
 
     @Query(value = " SELECT * FROM `users` u " +

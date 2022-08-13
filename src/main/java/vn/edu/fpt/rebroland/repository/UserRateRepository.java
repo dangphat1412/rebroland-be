@@ -9,8 +9,12 @@ import java.util.List;
 
 public interface UserRateRepository extends JpaRepository<UserRate, Integer> {
 
-    @Query(value = " SELECT * FROM user_rates " +
+    @Query(value = " SELECT * FROM `user_rates` " +
             " WHERE user_rated = :userRatedId " +
-            " AND user_role_rated = :roleRatedId ", nativeQuery = true)
+            " AND user_role_rated = :roleRatedId " +
+            " AND start_date IN (SELECT MAX(start_date) FROM `user_rates` " +
+            "                    WHERE user_rated = 11 " +
+            "                    AND user_role_rated = 3 " +
+            "                    GROUP BY user_id) ", nativeQuery = true)
     List<UserRate> getStarRateOfUserRated(int userRatedId, int roleRatedId);
 }

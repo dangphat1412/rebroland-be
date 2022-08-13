@@ -282,8 +282,9 @@ public class ReportServiceImpl implements ReportService {
             reportedPost.setStatus(2);
             reportRepository.save(reportedPost);
             Post post = reportedPost.getPost();
-            Status status = new Status(2);
-            post.setStatus(status);
+//            Status status = new Status(2);
+//            post.setStatus(status);
+            post.setBlock(true);
             postRepository.save(post);
 
             TextMessageDTO messageDTO = new TextMessageDTO();

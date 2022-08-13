@@ -34,7 +34,7 @@ public class NotificationServiceImpl implements NotificationService {
         java.sql.Date date = new java.sql.Date(millis);
         notificationDTO.setDate(date);
 
-        notificationDTO.setUnRead(false);
+        notificationDTO.setUnRead(true);
 
         Notification notification = mapToEntity(notificationDTO);
         Notification newDto = notificationRepository.save(notification);
@@ -59,7 +59,7 @@ public class NotificationServiceImpl implements NotificationService {
     @Override
     public NotificationDTO getDetailNotificationById(int id) {
         Notification notification = notificationRepository.findById(id).orElseThrow(() -> new ResourceNotFoundException("Notification", "id", id));
-        notification.setUnRead(true);
+        notification.setUnRead(false);
         notificationRepository.save(notification);
         return mapToDTO(notification);
     }

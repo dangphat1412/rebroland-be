@@ -26,6 +26,16 @@ public interface ContactRepository extends JpaRepository<Contact,Integer> {
     @Query(value = "select * from `contacts` where user_id =:userId", nativeQuery = true)
     List<Contact> getContactsByUserId(int userId);
 
+    @Query(value = "select * from `contacts` where user_id =:userId " +
+            " AND user_request_id = :userRequestId " +
+            "AND post_id = :postId", nativeQuery = true)
+    Contact getContactByUserIdAndPostId(int userRequestId, int userId, int postId);
+
+    @Query(value = "select * from `contacts` where user_id =:userId " +
+            " AND user_request_id = :userRequestId " +
+            " AND post_id IS NULL", nativeQuery = true)
+    Contact getContactByUserIdAndPostIdNull(int userRequestId, int userId);
+
     @Query(value = "delete from contacts  where post_id =:postId", nativeQuery = true)
     @Modifying
     void deleteContactByPostId(int postId);

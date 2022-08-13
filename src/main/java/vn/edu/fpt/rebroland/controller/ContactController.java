@@ -77,6 +77,17 @@ public class ContactController {
         if(userRequest.getId() == userId){
             return new ResponseEntity<>("Không thể gửi liên lạc!", HttpStatus.BAD_REQUEST);
         }
+        if(postId == 0){
+            ContactDTO dto2 = contactService.getContactByUserIdAndPostIdNull(userRequest.getId(), userId);
+            if(dto2 != null){
+                return new ResponseEntity<>("Bạn đã gửi liên hệ rồi! Hãy đợi nhà môi giới liên hệ lại nhé!", HttpStatus.BAD_REQUEST);
+            }
+        }
+        ContactDTO dto = contactService.getContactByUserIdAndPostId(userRequest.getId(), userId, postId);
+        if(dto != null){
+            return new ResponseEntity<>("Bạn đã gửi liên hệ rồi! Hãy đợi nhà môi giới liên hệ lại nhé!", HttpStatus.BAD_REQUEST);
+        }
+
         ContactDTO newContact = contactService.createContact(contactDTO, userId, postId, userRequest.getId());
         TextMessageDTO messageDTO = new TextMessageDTO();
         String message = "Tin nhắn từ SĐT " + userRequest.getPhone() + ": " + contactDTO.getContent();
@@ -86,7 +97,11 @@ public class ContactController {
         //save notification table
         NotificationDTO notificationDTO = new NotificationDTO();
         notificationDTO.setUserId(userId);
-        notificationDTO.setContent(contactDTO.getContent());
+        if(contactDTO.getContent() == null){
+            notificationDTO.setContent("");
+        }else{
+            notificationDTO.setContent(contactDTO.getContent());
+        }
         notificationDTO.setPhone(userRequest.getPhone());
         notificationDTO.setType("Contact");
         notificationService.createContactNotification(notificationDTO);
