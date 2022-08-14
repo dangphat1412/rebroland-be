@@ -17,6 +17,8 @@ public interface UserCareService {
 
     void deleteRequiredWithUserCare(int careId);
 
+    void deleteUserCareDetailById(int detailId);
+
     UserCareDTO finishTransactionUserCare(int careId);
 
 

@@ -279,7 +279,7 @@ public class UserCareController {
     }
 
 
-    @PutMapping("/finish/{careId}")
+    @PutMapping("/")
     @Transactional
     public ResponseEntity<String> finishTransaction(@PathVariable int careId,
                                                     @RequestHeader(name = "Authorization") String token) {
@@ -303,6 +303,21 @@ public class UserCareController {
                 .orElseThrow(() -> new ResourceNotFoundException("User", "id", userId));
         if (user.getCurrentRole() == 3) {
             userCareService.deleteRequiredWithUserCare(careId);
+            return new ResponseEntity<>("Delete successfully !!!", HttpStatus.NO_CONTENT);
+        } else {
+            return new ResponseEntity<>("You need to change customer role!", HttpStatus.BAD_REQUEST);
+        }
+    }
+
+    @DeleteMapping("/detail/{detailId}")
+    @Transactional
+    public ResponseEntity<String> deleteUserCareDetail(@PathVariable(name = "detailId") int detailId,
+                                                 @RequestHeader(name = "Authorization") String token) {
+        int userId = getUserIdFromToken(token);
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new ResourceNotFoundException("User", "id", userId));
+        if (user.getCurrentRole() == 3) {
+            userCareService.deleteUserCareDetailById(detailId);
             return new ResponseEntity<>("Delete successfully !!!", HttpStatus.NO_CONTENT);
         } else {
             return new ResponseEntity<>("You need to change customer role!", HttpStatus.BAD_REQUEST);

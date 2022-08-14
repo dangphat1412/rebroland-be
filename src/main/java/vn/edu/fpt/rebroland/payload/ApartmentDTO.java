@@ -42,8 +42,8 @@ public class ApartmentDTO extends  RealEstatePostDTO{
     @Pattern(regexp = "(84|0[3|5|7|8|9])+([0-9]{8})\\b", message = "Số điện thoại không hợp lệ.")
     private String ownerPhone;
 
-    @Min(value = 0)
-    @Max(value = 10000)
-    private int plotNumber;
+    @Min(value = 1,message = "Số thửa tối thiểu là 1")
+    @Max(value = 99999, message = "Số thửa tối đa là 99999")
+    private Integer plotNumber;
 
 }

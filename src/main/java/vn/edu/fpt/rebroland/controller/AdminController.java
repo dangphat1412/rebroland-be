@@ -2,7 +2,6 @@ package vn.edu.fpt.rebroland.controller;
 
 import vn.edu.fpt.rebroland.entity.Role;
 import vn.edu.fpt.rebroland.entity.User;
-import vn.edu.fpt.rebroland.exception.ResourceNotFoundException;
 import vn.edu.fpt.rebroland.payload.*;
 import vn.edu.fpt.rebroland.repository.RoleRepository;
 import vn.edu.fpt.rebroland.repository.UserRepository;
@@ -140,37 +139,11 @@ public class AdminController {
     @PutMapping("/post/status/{postId}")
     public ResponseEntity<?> changeLockStatusOfPost(@PathVariable(name = "postId") int postId){
         boolean status = postService.changeStatusOfPost(postId);
-        PostDTO post = postService.getPostByPostId(postId);
-        if(post == null){
-            return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
-        }
+//        PostDTO post = postService.getPostByPostId(postId);
+//        if(post == null){
+//            return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
+//        }
         if(status){
-            TextMessageDTO messageDTO = new TextMessageDTO();
-            String message = "";
-            if(post.isBlock()){
-                message = "Chúng tôi đã ẩn bài viết của bạn. Nếu có thắc mắc xin liên hệ số 0397975445.";
-            }
-            if(!post.isBlock()){
-                message = "Chúng tôi đã hiển thị lại bài viết của bạn !";
-            }
-            messageDTO.setMessage(message);
-            int userId = post.getUser().getId();
-            template.convertAndSend("/topic/message/" + userId, messageDTO);
-
-            //save notification table
-            NotificationDTO notificationDTO = new NotificationDTO();
-            notificationDTO.setUserId(userId);
-            notificationDTO.setContent(message);
-            notificationDTO.setPhone(post.getUser().getPhone());
-            notificationDTO.setType("Post Status");
-            notificationService.createContactNotification(notificationDTO);
-
-            User user = userRepository.findById(userId)
-                    .orElseThrow(() -> new ResourceNotFoundException("User", "id", userId));
-            int numberUnread = user.getUnreadNotification();
-            numberUnread++;
-            user.setUnreadNotification(numberUnread);
-            userRepository.save(user);
             return new ResponseEntity<>(HttpStatus.OK);
         }else{
             return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
@@ -222,6 +195,27 @@ public class AdminController {
         if(user.getRoles().contains(role)){
             ReportResponse listReportPost = reportService.getListReportUser(pageNumber, pageSize, keyword, sortValue);
             return new ResponseEntity<>(listReportPost, HttpStatus.OK);
+        }else{
+            return new ResponseEntity<>("Người dùng không phải admin!", HttpStatus.BAD_REQUEST);
+        }
+    }
+
+    @GetMapping("/list-reports")
+    public ResponseEntity<?> getListReport(@RequestHeader(name = "Authorization") String token,
+                                              @RequestParam(name = "pageNo", defaultValue = "0") String pageNo,
+                                              @RequestParam(name = "sortValue", defaultValue = "0") String sortValue,
+                                              @RequestParam(name = "keyword", defaultValue = "") String keyword){
+        User user = getUserFromToken(token);
+        Role role = roleRepository.findByName("ADMIN").get();
+        int pageNumber = Integer.parseInt(pageNo);
+        int pageSize = 5;
+        if(user.getRoles().contains(role)){
+            ReportResponse listReportUser = reportService.getListReportUser(pageNumber, pageSize, keyword, sortValue);
+            SearchResponse reportResponse = reportService.getListReportPost(pageNumber, pageSize, keyword, sortValue);
+            Map<String, Object> map = new HashMap<>();
+            map.put("listPost", reportResponse);
+            map.put("listUser", listReportUser);
+            return new ResponseEntity<>(map, HttpStatus.OK);
         }else{
             return new ResponseEntity<>("Người dùng không phải admin!", HttpStatus.BAD_REQUEST);
         }
@@ -418,6 +412,27 @@ public class AdminController {
         }
     }
 
+    @GetMapping("/list-cashout")
+    public ResponseEntity<?> getListCashOut(@RequestHeader(name = "Authorization") String token,
+                                                          @RequestParam(name = "pageNo", defaultValue = "0") String pageNo,
+                                                          @RequestParam(name = "sortValue", defaultValue = "0") String sortValue,
+                                                          @RequestParam(name = "keyword", defaultValue = "") String keyword){
+        User user = getUserFromToken(token);
+        Role role = roleRepository.findByName("ADMIN").get();
+        int pageNumber = Integer.parseInt(pageNo);
+        int pageSize = 5;
+        if(user.getRoles().contains(role)){
+            WithdrawResponse listDirect = withdrawService.getAllDirectWithdraw(pageNumber, pageSize, keyword, sortValue);
+            WithdrawResponse listTransfer = withdrawService.getAllTransferWithdraw(pageNumber, pageSize, keyword, sortValue);
+            Map<String, Object> map = new HashMap<>();
+            map.put("direct", listDirect);
+            map.put("transfer", listTransfer);
+            return new ResponseEntity<>(map, HttpStatus.OK);
+        }else{
+            return new ResponseEntity<>("Người dùng không phải admin!", HttpStatus.BAD_REQUEST);
+        }
+    }
+
     @PutMapping("/add-price")
     public ResponseEntity<?> fixPrice(@RequestHeader(name = "Authorization") String token,
                                       @Valid @RequestBody PriceDTO priceDTO){
@@ -426,10 +441,20 @@ public class AdminController {
 
         if(user.getRoles().contains(role)){
             PriceDTO dto = priceService.createPrice(priceDTO);
+            if(dto == null){
+                return new ResponseEntity<>("Giá đã tồn tại trong hệ thống!", HttpStatus.BAD_REQUEST);
+            }
             return new ResponseEntity<>(dto, HttpStatus.OK);
         }else{
             return new ResponseEntity<>("Người dùng không phải admin!", HttpStatus.BAD_REQUEST);
         }
+    }
+
+    @PutMapping("/active-price/{withdrawId}")
+    public ResponseEntity<?> activePrice(@RequestHeader(name = "Authorization") String token,
+                                         @PathVariable(name = "withdrawId") int withdrawId){
+//        WithdrawDTO withdrawDTO = withdrawService.
+        return new ResponseEntity<>(null, HttpStatus.OK);
     }
 
 

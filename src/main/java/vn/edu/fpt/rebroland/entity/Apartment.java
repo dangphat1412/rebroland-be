@@ -24,7 +24,7 @@ public class Apartment {
     private String buildingName;
     private String owner;
     private String ownerPhone;
-    private int plotNumber;
+    private Integer plotNumber;
 
 
     @OneToOne(cascade = CascadeType.ALL)

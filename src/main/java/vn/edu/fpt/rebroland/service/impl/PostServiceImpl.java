@@ -1259,7 +1259,15 @@ public class PostServiceImpl implements PostService {
         searchDTO.setThumbnail(postDTO.getThumbnail());
         searchDTO.setOriginalPost(postDTO.getOriginalPost());
         searchDTO.setAllowDerivative(postDTO.isAllowDerivative());
-        searchDTO.setUser(postDTO.getUser());
+        UserDTO userDTO = postDTO.getUser();
+        AvgRate avgRate = rateRepository.getAvgRateByUserIdAndRoleId(userDTO.getId(), userDTO.getCurrentRole());
+        if (avgRate != null) {
+            userDTO.setAvgRate(avgRate.getAvgRate());
+        } else {
+            userDTO.setAvgRate(0);
+        }
+        searchDTO.setUser(userDTO);
+        searchDTO.setBlock(postDTO.isBlock());
 
     }
 
@@ -1478,34 +1486,59 @@ public class PostServiceImpl implements PostService {
     @Override
     public boolean changeStatusOfPost(int postId) {
         Post post = postRepository.findPostByPostId(postId);
-
+        long millis = System.currentTimeMillis();
+        Date date = new Date(millis);
         if (post != null) {
 //            Status status = new Status();
             //khong phai bai da hoan thanh giao dich
             if (post.getStatus().getId() != 3) {
-//                if (post.getStatus().getId() == 1) {
-//                    status.setId(2);
-//                } else {
-//                    status.setId(1);
-//                }
-//                post.setStatus(status);
                 if(post.isBlock()){
                     post.setBlock(false);
+                    java.util.Date blockDate = post.getBlockDate();
+                    post.setBlockDate(null);
                     postRepository.save(post);
+
+                    TextMessageDTO messageDTO = new TextMessageDTO();
+                    String message = "Chúng tôi đã hiển thị lại bài viết của bạn !!";
+                    messageDTO.setMessage(message);
+                    template.convertAndSend("/topic/message/" + post.getUser().getId(), messageDTO);
+                    saveNotificationAndUpdateUser(message, post.getUser().getId());
 
                     List<Post> listPost = postRepository.getDerivativePostOfOriginalPost(postId);
                     for(Post p: listPost){
-                        p.setBlock(false);
-                        postRepository.save(p);
+                        if(p.getBlockDate().compareTo(blockDate) == 0){
+                            p.setBlock(false);
+                            post.setBlockDate(null);
+                            postRepository.save(p);
+
+                            String message1 = "Chúng tôi đã hiển thị lại bài viết của bạn !!";
+                            messageDTO.setMessage(message1);
+                            template.convertAndSend("/topic/message/" + p.getUser().getId(), messageDTO);
+                            saveNotificationAndUpdateUser(message1, p.getUser().getId());
+                        }
                     }
                 }else{
                     post.setBlock(true);
+                    post.setBlockDate(date);
                     postRepository.save(post);
+
+                    TextMessageDTO messageDTO = new TextMessageDTO();
+                    String message = "Chúng tôi đã ẩn bài viết của bạn. Nếu có thắc mắc xin liên hệ số 0397975445.";
+                    messageDTO.setMessage(message);
+                    template.convertAndSend("/topic/message/" + post.getUser().getId(), messageDTO);
+                    saveNotificationAndUpdateUser(message, post.getUser().getId());
 
                     List<Post> listPost = postRepository.getDerivativePostOfOriginalPost(postId);
                     for(Post p: listPost){
-                        p.setBlock(true);
-                        postRepository.save(p);
+                        if(!p.isBlock()){
+                            p.setBlock(true);
+                            p.setBlockDate(date);
+                            postRepository.save(p);
+                            String message1 = "Chúng tôi đã ẩn bài viết của bạn. Nếu có thắc mắc xin liên hệ số 0397975445.";
+                            messageDTO.setMessage(message1);
+                            template.convertAndSend("/topic/message/" + p.getUser().getId(), messageDTO);
+                            saveNotificationAndUpdateUser(message1, p.getUser().getId());
+                        }
                     }
                 }
 
@@ -1557,6 +1590,23 @@ public class PostServiceImpl implements PostService {
         Status status = statusRepository.findById(1).orElseThrow(() -> new ResourceNotFoundException("Post", "id", postId));
         post.setStatus(status);
         postRepository.save(post);
+
+        List<Post> listPost = postRepository.getDerivativePostOfOriginalPost(postId);
+        if(listPost.size() != 0){
+            for (Post p: listPost) {
+                if(status.getId() == 1){
+                    p.setBlock(false);
+                    postRepository.save(p);
+
+                    TextMessageDTO messageDTO = new TextMessageDTO();
+                    String message = "Bài viết gốc đã được gia hạn, chúng tôi hiển thị lại bài phái sinh của bạn!";
+                    messageDTO.setMessage(message);
+                    template.convertAndSend("/topic/message/" + p.getUser().getId(), messageDTO);
+                    saveNotificationAndUpdateUser(message, p.getUser().getId());
+                }
+
+            }
+        }
     }
 
     @Autowired

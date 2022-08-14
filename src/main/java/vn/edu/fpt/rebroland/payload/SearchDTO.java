@@ -65,6 +65,8 @@ public class SearchDTO {
     @JsonFormat(pattern = "dd-MM-yyyy HH:mm:ss")
     private Date endDate;
 
+    private boolean block;
+
     private int numberOfUserReport;
 
     private int reportStatus;

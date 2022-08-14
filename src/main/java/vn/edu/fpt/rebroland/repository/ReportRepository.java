@@ -30,20 +30,20 @@ public interface ReportRepository extends JpaRepository<Report, Integer> {
             " AND ((p.title LIKE CONCAT('%',:keyword,'%')) OR (p.description LIKE CONCAT('%',:keyword,'%')) OR r.post_id = :keyword) ", nativeQuery = true)
     Page<Report> getListReportPostProcessed(Pageable pageable, String keyword);
 
-    @Query(value = " SELECT * FROM `reports` r " +
+    @Query(value = " SELECT r.* FROM `reports` r " +
             " LEFT JOIN users u on r.user_id = u.id " +
             " WHERE r.user_id IS NOT NULL " +
             " AND ((u.phone LIKE CONCAT('%',:keyword,'%')) OR (u.full_name LIKE CONCAT('%',:keyword,'%')) OR r.user_id = :keyword) ", nativeQuery = true)
     Page<Report> getListReportUser(Pageable pageable, String keyword);
 
-    @Query(value = " SELECT * FROM `reports` r " +
+    @Query(value = " SELECT r.* FROM `reports` r " +
             " LEFT JOIN users u on r.user_id = u.id " +
             " WHERE r.user_id IS NOT NULL AND r.status = 1" +
             " AND ((u.phone LIKE CONCAT('%',:keyword,'%')) OR (u.full_name LIKE CONCAT('%',:keyword,'%')) OR r.user_id = :keyword) ", nativeQuery = true)
     Page<Report> getListReportUserNotProcess(Pageable pageable, String keyword);
 
-    @Query(value = " SELECT * FROM `reports` r " +
-            " LEFT JOIN users u on r.user_id = u.id " +
+    @Query(value = " SELECT r.* FROM `reports` r " +
+            " LEFT JOIN `users` u on r.user_id = u.id " +
             " WHERE r.user_id IS NOT NULL AND (r.status = 2 OR r.status = 3)" +
             " AND ((u.phone LIKE CONCAT('%',:keyword,'%')) OR (u.full_name LIKE CONCAT('%',:keyword,'%')) OR r.user_id = :keyword) ", nativeQuery = true)
     Page<Report> getListReportUserProcessed(Pageable pageable, String keyword);

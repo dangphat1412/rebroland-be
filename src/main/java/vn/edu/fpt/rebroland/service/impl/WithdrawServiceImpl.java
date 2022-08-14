@@ -136,6 +136,11 @@ public class WithdrawServiceImpl implements WithdrawService {
             withdrawRepository.save(withdraw);
             User user = withdraw.getUser();
 
+            long money = withdraw.getMoney();
+            long accountBalance = user.getAccountBalance();
+            user.setAccountBalance(money + accountBalance);
+            userRepository.save(user);
+
             TextMessageDTO messageDTO = new TextMessageDTO();
             messageDTO.setMessage("Yêu cầu rút tiền của bạn bị từ chối!");
             template.convertAndSend("/topic/message/" + user.getId(), messageDTO);

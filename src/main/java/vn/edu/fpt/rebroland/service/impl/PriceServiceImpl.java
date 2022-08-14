@@ -42,7 +42,12 @@ public class PriceServiceImpl implements PriceService {
     @Override
     public PriceDTO createPrice(PriceDTO priceDTO) {
         Price p = priceRepository.getPrice(priceDTO.getTypeId(), priceDTO.getUnitDate());
-
+        if(priceDTO.getPrice() == p.getPrice()){
+            return null;
+        }
+        long millis = System.currentTimeMillis();
+        java.sql.Date date = new java.sql.Date(millis);
+        priceDTO.setStartDate(date);
 
         priceDTO.setStatus(true);
         Price price = priceRepository.save(mapToEntity(priceDTO));

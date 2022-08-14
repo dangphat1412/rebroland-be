@@ -14,8 +14,9 @@ public class ResidentialLandDTO extends RealEstatePostDTO {
 
     @Pattern(regexp = "(^\\d{13}$)|(^\\d{15}$)", message = "Mã vạch chỉ nhập số 13 hoặc 15 kí tự")
     private String barcode;
-    @Size(max = 20)
-    private String plotNumber;
+    @Min(value = 1,message = "Số thửa tối thiểu là 1")
+    @Max(value = 99999, message = "Số thửa tối đa là 99999")
+    private Integer plotNumber;
 
 
     @Min(value = 0)

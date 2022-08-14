@@ -28,7 +28,7 @@ public class UserRateController {
         this.reportService = reportService;
     }
 
-    @PostMapping("/{userId}")
+    @PostMapping("/user/{userId}")
     public ResponseEntity<?> rateUser(@RequestHeader(name = "Authorization") String token,
                                       @Valid @RequestBody UserRateDTO userRateDTO,
                                       @PathVariable(name = "userId") String id){
@@ -76,4 +76,40 @@ public class UserRateController {
         }
         return new ResponseEntity<>(map, HttpStatus.OK);
     }
+
+//    @PostMapping("/broker/{userId}")
+//    public ResponseEntity<?> rateBroker(@RequestHeader(name = "Authorization") String token,
+//                                        @RequestBody List<UserRateDTO> listDto,
+//                                        @PathVariable(name = "userId") String id){
+//        if(listDto == null || listDto.size() == 0){
+//            return new ResponseEntity<>("Đã xảy ra lỗi !", HttpStatus.BAD_REQUEST);
+//        }
+//        for (UserRateDTO userRateDTO: listDto) {
+//            User user = reportService.getUserByToken(token);
+//            userRateDTO.setUserId(user.getId());
+//
+//            int userRatedId = Integer.parseInt(id);
+//            User userRated = reportService.getUserById(userRatedId);
+//            if(userRated.getRoles().size() != 2){
+//                return new ResponseEntity<>("Người được đánh giá không phải là broker!", HttpStatus.BAD_REQUEST);
+//            }
+//            userRateDTO.setUserRated(userRatedId);
+//            userRateDTO.setUserRoleRated(3);
+//
+//            UserRateDTO dto = userRateService.createUserRate(userRateDTO);
+//            if(dto == null){
+//                return new ResponseEntity<>("Đánh giá thất bại!", HttpStatus.BAD_REQUEST);
+//            }
+//
+//            AvgRate avgRate = rateRepository.getAvgRateByUserIdAndRoleId(userRatedId, 3);
+//            Map<String, Object> map = new HashMap<>();
+//            if (avgRate != null) {
+//                map.put("starRate", avgRate.getAvgRate());
+//            } else {
+//                map.put("starRate", 0);
+//            }
+//            return new ResponseEntity<>(map, HttpStatus.OK);
+//        }
+//        return new ResponseEntity<>("Đã xảy ra lỗi !", HttpStatus.BAD_REQUEST);
+//    }
 }

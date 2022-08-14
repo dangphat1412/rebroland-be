@@ -4,6 +4,7 @@ import lombok.Data;
 
 import javax.validation.constraints.Min;
 import javax.validation.constraints.NotEmpty;
+import javax.validation.constraints.NotNull;
 import javax.validation.constraints.Pattern;
 
 @Data
@@ -16,7 +17,8 @@ public class TransferDTO {
 //    @Min(value = 6, message = "OTP phải có 6 chữ số !")
     private String token;
 
-    @Min(value = 1)
+    @NotNull(message = "Số tiền không được để trống!")
+    @Min(value = 1, message = "Hãy nhập giá trị lớn hơn 1")
     private long amount;
 
     @NotEmpty(message = "Nội dung không được để trống!")

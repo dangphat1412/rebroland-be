@@ -89,6 +89,16 @@ public class UserCareServiceImpl implements UserCareService {
         try {
             userCareRepository.deletePostCareById(careId);
             userCareRepository.deleteUserCareById(careId);
+            userCareRepository.deleteUserCareDetailByCareId(careId);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
+    @Override
+    public void deleteUserCareDetailById(int detailId) {
+        try {
+            userCareRepository.deleteUserCareDetailById(detailId);
         } catch (Exception e) {
             e.printStackTrace();
         }

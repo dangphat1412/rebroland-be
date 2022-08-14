@@ -30,7 +30,7 @@ public class ResidentialHouseHistoryServiceImpl implements ResidentialHouseHisto
     }
 
     @Override
-    public ResidentialHouseHistoryDTO getResidentialHouseHistoryByBarcodeAndPlotNumberAndDate(String barcode, String plotNumber, String date) {
+    public ResidentialHouseHistoryDTO getResidentialHouseHistoryByBarcodeAndPlotNumberAndDate(String barcode, int plotNumber, String date) {
         ResidentialHouseHistory residentialHouseHistory = residentialHouseHistoryRepository.getResidentialLandHistoryByBarcodeAndPlotNumber(barcode, plotNumber,date);
         return mapToDTO(residentialHouseHistory);
     }
@@ -59,7 +59,7 @@ public class ResidentialHouseHistoryServiceImpl implements ResidentialHouseHisto
         residentialHouseHistoryDTO.setBarcode(historyDTO.getBarcode());
         residentialHouseHistoryDTO.setOwner(historyDTO.getOwner());
         residentialHouseHistoryDTO.setPhone(historyDTO.getPhone());
-        residentialHouseHistoryDTO.setPlotNumber(historyDTO.getPlotNumber()+"");
+        residentialHouseHistoryDTO.setPlotNumber(historyDTO.getPlotNumber());
 
         String startDate = "";
         if (historyDTO.getBarcode().length() == 13) {

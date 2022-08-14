@@ -287,6 +287,8 @@ public class ReportServiceImpl implements ReportService {
             post.setBlock(true);
             postRepository.save(post);
 
+            //block bài ăn theo
+
             TextMessageDTO messageDTO = new TextMessageDTO();
             messageDTO.setMessage("Bài viết của bạn: '" + post.getTitle() + "' đã bị chặn vì có người tố cáo !");
             template.convertAndSend("/topic/message/" + post.getUser().getId(), messageDTO);
@@ -352,6 +354,8 @@ public class ReportServiceImpl implements ReportService {
             User user = report.getUser();
             user.setBlock(true);
             userRepository.save(user);
+
+            //block bài viết của user
 
             TextMessageDTO messageDTO = new TextMessageDTO();
             List<Integer> listUserReportId = detailRepository.getDetailReportByReportId(report.getReportId());

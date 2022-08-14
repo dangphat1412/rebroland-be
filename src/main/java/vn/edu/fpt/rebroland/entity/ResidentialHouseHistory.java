@@ -17,7 +17,7 @@ public class ResidentialHouseHistory {
     @Column(name = "id", nullable = false)
     private int id;
     private String barcode;
-    private String plotNumber;
+    private int plotNumber;
     private String owner;
     private String startDate;
     private String phone;

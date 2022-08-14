@@ -38,6 +38,8 @@ public class User {
 
     private Date startDate;
 
+    private Date blockDate;
+
     private long accountBalance;
 
     @ManyToMany(fetch = FetchType.EAGER, cascade = CascadeType.ALL)

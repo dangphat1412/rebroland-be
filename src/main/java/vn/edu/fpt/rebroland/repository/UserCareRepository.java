@@ -19,6 +19,14 @@ public interface UserCareRepository extends JpaRepository<UserCare, Integer> {
     @Modifying
     void deletePostCareById(int careId);
 
+    @Query(value = "delete from user_care_details where care_id =:careId", nativeQuery = true)
+    @Modifying
+    void deleteUserCareDetailByCareId(int careId);
+
+    @Query(value = "delete from user_care_details where detail_id =:detailId", nativeQuery = true)
+    @Modifying
+    void deleteUserCareDetailById(int detailId);
+
     @Query(value = "select * from user_cares u join post_cares p on u.care_id = p.care_id " +
             "where u.user_cared_id = :userCaredId and " +
             "p.post_id = :postId", nativeQuery = true)

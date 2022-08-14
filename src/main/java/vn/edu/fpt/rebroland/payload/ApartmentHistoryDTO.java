@@ -25,7 +25,7 @@ public class ApartmentHistoryDTO {
     @NotEmpty(message = "Cập nhập thông tin này.")
     @Size(max = 10)
     private String roomNumber;
-    @Min(value = 0)
-    @Max(value = 10000)
+    @Min(value = 1,message = "Số thửa tối thiểu là 1")
+    @Max(value = 99999, message = "Số thửa tối đa là 99999")
     private int plotNumber;
 }

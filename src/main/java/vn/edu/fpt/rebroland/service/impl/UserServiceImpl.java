@@ -1,19 +1,20 @@
 package vn.edu.fpt.rebroland.service.impl;
 
 import vn.edu.fpt.rebroland.entity.*;
-import vn.edu.fpt.rebroland.payload.ChangePasswordDTO;
-import vn.edu.fpt.rebroland.payload.RegisterDTO;
-import vn.edu.fpt.rebroland.payload.UserDTO;
+import vn.edu.fpt.rebroland.exception.ResourceNotFoundException;
+import vn.edu.fpt.rebroland.payload.*;
 import vn.edu.fpt.rebroland.repository.AvgRateRepository;
 import vn.edu.fpt.rebroland.repository.PostRepository;
 import vn.edu.fpt.rebroland.repository.RoleRepository;
 import vn.edu.fpt.rebroland.repository.UserRepository;
+import vn.edu.fpt.rebroland.service.NotificationService;
 import vn.edu.fpt.rebroland.service.UserService;
 import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
+import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -28,16 +29,21 @@ public class UserServiceImpl implements UserService {
 
     private AvgRateRepository rateRepository;
     private PostRepository postRepository;
-    public UserServiceImpl(UserRepository userRepository, ModelMapper mapper, AvgRateRepository rateRepository, PostRepository postRepository) {
+    private NotificationService notificationService;
+    public UserServiceImpl(UserRepository userRepository, ModelMapper mapper, AvgRateRepository rateRepository, PostRepository postRepository,
+                           NotificationService notificationService) {
         this.userRepository = userRepository;
         this.mapper = mapper;
         this.rateRepository = rateRepository;
         this.postRepository = postRepository;
+        this.notificationService = notificationService;
     }
     @Autowired
     private PasswordEncoder passwordEncoder;
     @Autowired
     private RoleRepository roleRepository;
+    @Autowired
+    SimpMessagingTemplate template;
 
 
     @Override
@@ -179,13 +185,19 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
-    public boolean changePassword(User user, ChangePasswordDTO changePasswordDTO) {
+    public int changePassword(User user, ChangePasswordDTO changePasswordDTO) {
+        if(!passwordEncoder.matches(changePasswordDTO.getOldPassword(), user.getPassword())){
+            return 2;
+        }
+        if(changePasswordDTO.getNewPassword().equals(changePasswordDTO.getOldPassword())){
+            return 0;
+        }
         if(passwordEncoder.matches(changePasswordDTO.getOldPassword(), user.getPassword())){
             user.setPassword(passwordEncoder.encode(changePasswordDTO.getNewPassword()));
             userRepository.save(user);
-            return true;
+            return 1;
         }else {
-            return false;
+            return 2;
         }
 
     }
@@ -252,44 +264,82 @@ public class UserServiceImpl implements UserService {
         if(user.getRoles().contains(role)){
             return false;
         }
+        long millis = System.currentTimeMillis();
+        java.sql.Date date = new java.sql.Date(millis);
         if(user != null){
             if(user.isBlock()){
                 user.setBlock(false);
+                Date blockDate = user.getBlockDate();
                 userRepository.save(user);
-                List<Post> listPost = postRepository.getAllPostActiveByUserId(user.getId());
+
+                List<Post> listPost = postRepository.getAllPostBlockByUserId(user.getId());
                 List<Post> listDerivative = new ArrayList<>();
-                for(Post post: listPost) {
-                    post.setBlock(false);
-                    postRepository.save(post);
-                    listDerivative = postRepository.getDerivativePostOfOriginalPost(post.getPostId());
-                    for (Post p : listDerivative) {
-                        p.setBlock(false);
-                        postRepository.save(p);
+                for (Post post : listPost) {
+                    if (post.getBlockDate().compareTo(blockDate) == 0) {
+                        post.setBlock(false);
+                        post.setBlockDate(null);
+                        postRepository.save(post);
+                        TextMessageDTO messageDTO = new TextMessageDTO();
+                        String message = "Chúng tôi đã hiển thị lại bài viết của bạn !!";
+                        messageDTO.setMessage(message);
+                        template.convertAndSend("/topic/message/" + post.getUser().getId(), messageDTO);
+                        saveNotificationAndUpdateUser(message, post.getUser().getId());
+
+                        listDerivative = postRepository.getDerivativePostOfOriginalPost(post.getPostId());
+                        for (Post p : listDerivative) {
+                            if (p.getBlockDate().compareTo(blockDate) == 0) {
+                                p.setBlock(false);
+                                post.setBlockDate(null);
+                                postRepository.save(p);
+
+                                String message1 = "Chúng tôi đã hiển thị lại bài viết của bạn !!";
+                                messageDTO.setMessage(message1);
+                                template.convertAndSend("/topic/message/" + p.getUser().getId(), messageDTO);
+                                saveNotificationAndUpdateUser(message1, p.getUser().getId());
+                            }
+                        }
+
+
                     }
+
                 }
                 return true;
             }else{
                 user.setBlock(true);
+                user.setBlockDate(date);
                 userRepository.save(user);
-                List<Post> listPost = postRepository.getAllPostActiveByUserId(user.getId());
+                List<Post> listPost = postRepository.getAllPostUnBlockByUserId(user.getId());
                 List<Post> listDerivative = new ArrayList<>();
+
                 for(Post post: listPost){
                     post.setBlock(true);
+                    post.setBlockDate(date);
                     postRepository.save(post);
+
+                    TextMessageDTO messageDTO = new TextMessageDTO();
+                    String message = "Chúng tôi đã ẩn bài viết của bạn. Nếu có thắc mắc xin liên hệ số 0397975445.";
+                    messageDTO.setMessage(message);
+                    template.convertAndSend("/topic/message/" + post.getUser().getId(), messageDTO);
+                    saveNotificationAndUpdateUser(message, post.getUser().getId());
+
                     listDerivative = postRepository.getDerivativePostOfOriginalPost(post.getPostId());
                     for(Post p: listDerivative){
-                        p.setBlock(true);
-                        postRepository.save(p);
+                        if(!p.isBlock()){
+                            p.setBlock(true);
+                            p.setBlockDate(date);
+                            postRepository.save(p);
+                            String message1 = "Chúng tôi đã ẩn bài viết của bạn. Nếu có thắc mắc xin liên hệ số 0397975445.";
+                            messageDTO.setMessage(message1);
+                            template.convertAndSend("/topic/message/" + p.getUser().getId(), messageDTO);
+                            saveNotificationAndUpdateUser(message1, p.getUser().getId());
+                        }
                     }
-
                 }
-
                 return true;
             }
         }else {
             return false;
         }
-
     }
 
     @Override
@@ -305,7 +355,32 @@ public class UserServiceImpl implements UserService {
 
     @Override
     public void updatePassword(User user, String newPassword) {
+//        if(passwordEncoder.matches(newPassword, user.getPassword())){
+//            return false;
+//        }else{
         user.setPassword(passwordEncoder.encode(newPassword));
+        userRepository.save(user);
+//        }
+    }
+
+    private void saveNotificationAndUpdateUser(String message, int userId){
+        NotificationDTO notificationDTO = new NotificationDTO();
+        notificationDTO.setUserId(userId);
+        if(message == null){
+            notificationDTO.setContent("");
+        }else{
+            notificationDTO.setContent(message);
+        }
+//        notificationDTO.setPhone(userRequest.getPhone());
+        notificationDTO.setType("Post Status");
+        notificationService.createContactNotification(notificationDTO);
+
+        //update unread notification user
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new ResourceNotFoundException("User", "id", userId));
+        int numberUnread = user.getUnreadNotification();
+        numberUnread++;
+        user.setUnreadNotification(numberUnread);
         userRepository.save(user);
     }
 

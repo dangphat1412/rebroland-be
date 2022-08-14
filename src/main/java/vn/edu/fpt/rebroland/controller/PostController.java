@@ -409,7 +409,8 @@ public class PostController {
 
     }
 
-    @PutMapping("/display-post/{postId}")
+    //hiển thị lại bài viết
+    @PutMapping("/repost/{postId}")
     @Transactional
     public ResponseEntity<String> displayPost(@PathVariable int postId,
                                            @RequestHeader(name = "Authorization") String token) {
@@ -419,6 +420,7 @@ public class PostController {
         if(post != null){
             if(userId == post.getUser().getId()){
                 postService.changeStatus(postId,1);
+
                 return new ResponseEntity<>("Cập nhập bài đăng thành công", HttpStatus.CREATED);
 
             }else{
@@ -440,7 +442,7 @@ public class PostController {
         if(post != null){
             if(userId == post.getUser().getId()){
                 postService.changeStatus(postId,6);
-                return new ResponseEntity<>("Cập nhập bài đăng thành công", HttpStatus.BAD_REQUEST);
+                return new ResponseEntity<>("Cập nhập bài đăng thành công", HttpStatus.CREATED);
 
             }else{
                 return new ResponseEntity<>("Bạn không có quyền sửa bài đăng này", HttpStatus.BAD_REQUEST);
@@ -468,37 +470,44 @@ public class PostController {
             if (user.getAccountBalance() < totalPayment) {
                 return new ResponseEntity<>("Số tiền trong tài khoản không đủ để gia hạn!", HttpStatus.BAD_REQUEST);
             } else {
-                if (post.getUser().getId() == userId && user.getCurrentRole() == 2) {
-                    SimpleDateFormat dateFormat = new SimpleDateFormat("dd/MM/yyyy");
-                    Date date = new Date();
-                    Date end_date = dateFormat.parse(dateFormat.format(post.getTransactionEndDate()));
-                    Date today = dateFormat.parse(dateFormat.format(date));
-                    if (!post.isBlock() && post.getOriginalPost() == null) {
-                        if (today.compareTo(end_date) > 0) {
-                            long newBalanceAccount = user.getAccountBalance() - totalPayment;
-                            user.setAccountBalance(newBalanceAccount);
-                            userRepository.save(user);
 
-                            postService.extendPost(postId, numberOfPostedDayDTO.getNumberOfPostedDay(), totalPayment);
-                            TransactionDTO transactionDTO = new TransactionDTO();
-                            transactionDTO.setAmount(totalPayment);
-                            transactionDTO.setDescription("Gia hạn bài đăng");
-                            transactionDTO.setTypeId(1);
-                            transactionDTO.setUser(mapper.map(user, UserDTO.class));
-                            transactionDTO.setDiscount(priceDTO.getDiscount());
-                            paymentService.createTransaction(transactionDTO);
-                            return new ResponseEntity<>("Gia hạn bài đăng thành công!", HttpStatus.CREATED);
+                if(post.getStatus().getId() == 2 || post.getStatus().getId() == 5){
+                    if (post.getUser().getId() == userId && user.getCurrentRole() == 2) {
+                        SimpleDateFormat dateFormat = new SimpleDateFormat("dd/MM/yyyy");
+                        Date date = new Date();
+                        Date end_date = dateFormat.parse(dateFormat.format(post.getTransactionEndDate()));
+                        Date today = dateFormat.parse(dateFormat.format(date));
+                        if (!post.isBlock() && post.getOriginalPost() == null) {
+                            if (today.compareTo(end_date) > 0) {
+                                long newBalanceAccount = user.getAccountBalance() - totalPayment;
+                                user.setAccountBalance(newBalanceAccount);
+                                userRepository.save(user);
+
+                                postService.extendPost(postId, numberOfPostedDayDTO.getNumberOfPostedDay(), totalPayment);
+                                TransactionDTO transactionDTO = new TransactionDTO();
+                                transactionDTO.setAmount(totalPayment);
+                                transactionDTO.setDescription("Gia hạn bài đăng");
+                                transactionDTO.setTypeId(1);
+                                transactionDTO.setUser(mapper.map(user, UserDTO.class));
+                                transactionDTO.setDiscount(priceDTO.getDiscount());
+                                paymentService.createTransaction(transactionDTO);
+                                return new ResponseEntity<>("Gia hạn bài đăng thành công!", HttpStatus.CREATED);
+                            } else {
+                                return new ResponseEntity<>("Bài viết chưa hết hạn", HttpStatus.BAD_REQUEST);
+
+                            }
                         } else {
-                            return new ResponseEntity<>("Bài viết chưa hết hạn", HttpStatus.BAD_REQUEST);
-
+                            return new ResponseEntity<>("Bài viết bị khóa", HttpStatus.BAD_REQUEST);
                         }
-                    } else {
-                        return new ResponseEntity<>("Bài viết bị khóa", HttpStatus.BAD_REQUEST);
-                    }
 
-                } else {
-                    return new ResponseEntity<>("Tài khoản phải là chủ bài đăng và khách hàng", HttpStatus.BAD_REQUEST);
+                    } else {
+                        return new ResponseEntity<>("Tài khoản phải là chủ bài đăng và khách hàng", HttpStatus.BAD_REQUEST);
+                    }
+                }else{
+                    return new ResponseEntity<>("Bài viết không thể gia hạn", HttpStatus.OK);
+
                 }
+
 
             }
 
@@ -722,7 +731,7 @@ public class PostController {
         }
         UserDTO userDTO = mapper.map(user, UserDTO.class);
         userDTO.setBroker(isBroker);
-        AvgRate avgRate = rateRepository.getAvgRateByUserIdAndRoleId(user.getId(), user.getCurrentRole());
+        AvgRate avgRate = rateRepository.getAvgRateByUserIdAndRoleId(user.getId(), 3);
         if (avgRate != null) {
             userDTO.setAvgRate(avgRate.getAvgRate());
         } else {

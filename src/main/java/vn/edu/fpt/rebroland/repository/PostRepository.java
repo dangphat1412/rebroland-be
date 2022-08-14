@@ -134,7 +134,8 @@ public interface PostRepository extends JpaRepository<Post, Integer> {
             " WHERE user_id = :userId " +
             " AND original_post IS NULL " +
             " AND IF(:check IS NULL OR :propertyId = 0, 1 = 1, property_id = :propertyId)" +
-            " AND IF(:status = 0, 1 = 1, status_id = :status)", nativeQuery = true)
+            " AND IF(:status = 0, 1 = 1, status_id = :status)" +
+            " AND status_id != 6 ", nativeQuery = true)
     Page<Post> getPostByUserId(int userId, int propertyId, String check, int status, Pageable pageable);
 
     @Query(value = " SELECT * FROM `posts` " +
@@ -174,6 +175,7 @@ public interface PostRepository extends JpaRepository<Post, Integer> {
             " AND original_post IS NULL " +
             " AND IF(:check IS NULL OR :propertyId = 0, 1 = 1, property_id = :propertyId)" +
             " AND IF(:status = 0, 1 = 1, status_id = :status)" +
+            " AND status_id != 6 " +
             " ORDER BY Total ASC", nativeQuery = true)
     Page<Post> getPostByUserIdOrderByPriceAsc(int userId, int propertyId, String check, int status, Pageable pageable);
 
@@ -198,7 +200,8 @@ public interface PostRepository extends JpaRepository<Post, Integer> {
             " WHERE user_id = :userId " +
             " AND original_post IS NULL " +
             " AND IF(:check IS NULL OR :propertyId = 0, 1 = 1, property_id = :propertyId)" +
-            " AND IF(:status = 0, 1 = 1, status_id = :status)" +
+            " AND IF(:status = 0, 1 = 1, status_id = :status) " +
+            " AND status_id != 6 " +
             " ORDER BY Total DESC", nativeQuery = true)
     Page<Post> getPostByUserIdOrderByPriceDesc(int userId, int propertyId, String check, int status, Pageable pageable);
 
@@ -224,6 +227,7 @@ public interface PostRepository extends JpaRepository<Post, Integer> {
             " AND original_post IS NULL " +
             " AND IF(:check IS NULL OR :propertyId = 0, 1 = 1, property_id = :propertyId)" +
             " AND IF(:status = 0, 1 = 1, status_id = :status)" +
+            " AND status_id != 6 " +
             " ORDER BY per_m2 ASC", nativeQuery = true)
     Page<Post> getPostByUserIdOrderByPricePerSquareAsc(int userId, int propertyId, String check, int status, Pageable pageable);
 
@@ -248,6 +252,7 @@ public interface PostRepository extends JpaRepository<Post, Integer> {
             " AND original_post IS NULL " +
             " AND IF(:check IS NULL OR :propertyId = 0, 1 = 1, property_id = :propertyId)" +
             " AND IF(:status = 0, 1 = 1, status_id = :status) " +
+            " AND status_id != 6 " +
             " ORDER BY per_m2 DESC", nativeQuery = true)
     Page<Post> getPostByUserIdOrderByPricePerSquareDesc(int userId, int propertyId, String check, int status, Pageable pageable);
 
@@ -348,6 +353,7 @@ public interface PostRepository extends JpaRepository<Post, Integer> {
             "AND IF(:typePost = 0, 1 = 1, p.original_post is null AND p.allow_derivative = true) " +
             "AND IF(:userId = 0, 1 = 1, p.user_id != :userId) " +
             "AND p.status_id = 1 " +
+            "AND p.block = false " +
             "HAVING IF(:minPrice = 0 AND :maxPrice = 0, p.unit_id = 3, IF(:minPrice is null, 1 = 1, Total BETWEEN :minPrice AND :maxPrice)) ", nativeQuery = true)
     Page<Post> searchPosts(String ward, String district, String province,
                            Long minPrice, Long maxPrice, float minArea, float maxArea,
@@ -388,6 +394,7 @@ public interface PostRepository extends JpaRepository<Post, Integer> {
             "AND IF(:typePost = 0, 1 = 1, p.original_post is null AND p.allow_derivative = true) " +
             "AND IF(:userId = 0, 1 = 1, p.user_id != :userId) " +
             "AND p.status_id = 1 " +
+            "AND p.block = false " +
             "HAVING IF(:minPrice = 0 AND :maxPrice = 0, p.unit_id = 3, IF(:minPrice is null, 1 = 1, Total BETWEEN :minPrice AND :maxPrice)) " +
             "ORDER BY Total ASC", nativeQuery = true)
     Page<Post> searchPostOrderByPriceAsc(String ward, String district, String province,
@@ -414,6 +421,7 @@ public interface PostRepository extends JpaRepository<Post, Integer> {
             "AND IF(:typePost = 0, 1 = 1, p.original_post is null AND p.allow_derivative = true) " +
             "AND IF(:userId = 0, 1 = 1, p.user_id != :userId) " +
             "AND p.status_id = 1 " +
+            "AND p.block = false " +
             "HAVING IF(:minPrice = 0 AND :maxPrice = 0, p.unit_id = 3, IF(:minPrice is null, 1 = 1, Total BETWEEN :minPrice AND :maxPrice)) " +
             "ORDER BY Total DESC", nativeQuery = true)
     Page<Post> searchPostOrderByPriceDesc(String ward, String district, String province,
@@ -440,6 +448,7 @@ public interface PostRepository extends JpaRepository<Post, Integer> {
             "AND IF(:typePost = 0, 1 = 1, p.original_post is null AND p.allow_derivative = true) " +
             "AND IF(:userId = 0, 1 = 1, p.user_id != :userId) " +
             "AND p.status_id = 1 " +
+            "AND p.block = false " +
             "HAVING IF(:minPrice = 0 AND :maxPrice = 0, p.unit_id = 3, IF(:minPrice is null, 1 = 1, Total BETWEEN :minPrice AND :maxPrice)) " +
             "ORDER BY per_m2 ASC", nativeQuery = true)
     Page<Post> searchPostOrderByPricePerSquareAsc(String ward, String district, String province,
@@ -466,6 +475,7 @@ public interface PostRepository extends JpaRepository<Post, Integer> {
             "AND IF(:typePost = 0, 1 = 1, p.original_post is null AND p.allow_derivative = true) " +
             "AND IF(:userId = 0, 1 = 1, p.user_id != :userId) " +
             "AND p.status_id = 1 " +
+            "AND p.block = false " +
             "HAVING IF(:minPrice = 0 AND :maxPrice = 0, p.unit_id = 3, IF(:minPrice is null, 1 = 1, Total BETWEEN :minPrice AND :maxPrice)) " +
             "ORDER BY per_m2 DESC", nativeQuery = true)
     Page<Post> searchPostOrderByPricePerSquareDesc(String ward, String district, String province,
@@ -487,9 +497,10 @@ public interface PostRepository extends JpaRepository<Post, Integer> {
             " AND ((p.title LIKE CONCAT('%',:keyword,'%')) OR (p.description LIKE CONCAT('%',:keyword,'%'))) ", nativeQuery = true)
     Page<Post> getListReportedPost(Pageable pageable, String keyword);
 
-    @Query(value = " SELECT COUNT(property_id) FROM posts " +
+    @Query(value = " SELECT COUNT(property_id) FROM `posts` " +
             " WHERE property_id = :propertyId " +
-            " AND status_id = 1 ", nativeQuery = true)
+            " AND status_id = 1 " +
+            " AND block = false ", nativeQuery = true)
     int getNumberOfPropertyType(int propertyId);
 
     @Query(value = " SELECT COUNT(property_id) FROM posts " +
@@ -512,6 +523,18 @@ public interface PostRepository extends JpaRepository<Post, Integer> {
             " WHERE user_id = :userId " +
             " AND status_id = 1 ", nativeQuery = true)
     List<Post> getAllPostActiveByUserId(int userId);
+
+    @Query(value = " SELECT * FROM `posts` " +
+            " WHERE user_id = :userId " +
+            " AND block = true " +
+            " AND status_id != 3 ", nativeQuery = true)
+    List<Post> getAllPostBlockByUserId(int userId);
+
+    @Query(value = " SELECT * FROM `posts` " +
+            " WHERE user_id = :userId " +
+            " AND block = false " +
+            " AND status_id != 3 ", nativeQuery = true)
+    List<Post> getAllPostUnBlockByUserId(int userId);
 
     @Query(value = " SELECT SUM(amount * (100 - discount) / 100) FROM `transactions` " +
             " WHERE start_date < :currentDate " +

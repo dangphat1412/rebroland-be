@@ -18,7 +18,7 @@ public class ResidentialHouse {
     @Column(name = "house_id", nullable = false)
     private int id;
     private String barcode;
-    private String plotNumber;
+    private Integer plotNumber;
     private int numberOfBedroom;
     private int numberOfBathroom;
     private int numberOfFloor;

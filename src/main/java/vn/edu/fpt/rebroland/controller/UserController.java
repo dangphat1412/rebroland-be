@@ -188,7 +188,7 @@ public class UserController {
 //            sendSMS(resetPasswordDTO.getPhone(), token);
             Map<String, Object> map = new HashMap<>();
             map.put("user", resetPasswordDTO);
-            map.put("tokenTime", otpService.EXPIRE_MINUTES + token);
+            map.put("tokenTime", otpService.EXPIRE_MINUTES);
             map.put("otp", token);
             return new ResponseEntity<>(map, HttpStatus.OK);
         }
@@ -219,7 +219,10 @@ public class UserController {
         }else {
 
             userService.updatePassword(user, resetPasswordDTO.getPassword());
+
             return new ResponseEntity<>("Đổi mật khẩu thành công!", HttpStatus.OK);
+
+
         }
 
     }
@@ -236,7 +239,7 @@ public class UserController {
         PriceDTO newPriceDTO = priceService.getPriceBroker(priceId);
         long accountBalance = user.getAccountBalance();
         long price = newPriceDTO.getPrice() * (100 - newPriceDTO.getDiscount()) / 100;
-        if(accountBalance > price){
+        if(accountBalance >= price){
             Role role = roleRepository.findByName("BROKER").get();
             //ko co role broker
             if(!user.getRoles().contains(role)){
@@ -424,11 +427,14 @@ public class UserController {
         String phone = payload.getString("sub");
         User user = userRepository.findByPhone(phone).
                 orElseThrow(() -> new UsernameNotFoundException("User not found with phone: " + phone));
-        if(userService.changePassword(user, changePasswordDTO)){
-            return new ResponseEntity<>("Đổi mật khẩu thành công!", HttpStatus.CREATED);
-        }else{
-            return new ResponseEntity<>("Mật khẩu cũ không đúng!", HttpStatus.BAD_REQUEST);
+        int change = userService.changePassword(user, changePasswordDTO);
+        if(change == 0){
+            return new ResponseEntity<>("Mật khẩu mới không được trùng với mật khẩu cũ!", HttpStatus.BAD_REQUEST);
         }
+        if(change == 2){
+            return new ResponseEntity<>("Mật khẩu cũ không đúng !", HttpStatus.BAD_REQUEST);
+        }
+        return new ResponseEntity<>("Đổi mật khẩu thành công!", HttpStatus.CREATED);
 
     }
 

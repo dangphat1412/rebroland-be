@@ -17,7 +17,7 @@ public class ResidentialLand {
     @Column(name = "land_id", nullable = false)
     private int id;
     private String barcode;
-    private String plotNumber;
+    private Integer plotNumber;
     private float frontispiece;
     private String owner;
 
