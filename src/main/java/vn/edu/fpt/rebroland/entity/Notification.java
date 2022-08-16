@@ -25,6 +25,7 @@ public class Notification {
     private Date date;
     private String type;
     private boolean unRead;
+    private int postId;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id", nullable = false)

@@ -16,4 +16,7 @@ public interface ResidentialLandHistoryRepository extends JpaRepository<Resident
             " AND plot_number =:plotNumber AND start_date =:startDate",nativeQuery = true)
     ResidentialLandHistory getResidentialLandHistoryByBarcodeAndPlotNumberAndDate(String barcode, int plotNumber, String startDate);
 
+    @Query(value = "SELECT * FROM residential_land_history WHERE barcode = :barcode", nativeQuery = true)
+    ResidentialLandHistory getResidentialLandHistoryByBarcode(String barcode);
+
 }

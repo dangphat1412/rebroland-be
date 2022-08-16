@@ -9,10 +9,12 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 @RestController
-@CrossOrigin(origins = "https://rebroland-frontend.vercel.app")
+@CrossOrigin(origins = "https://rebroland.vercel.app")
 @RequestMapping("/api/notification")
 public class NotificationController {
 
@@ -44,11 +46,14 @@ public class NotificationController {
 
     }
 
-    @GetMapping("/{id}")
+    @PutMapping("/read/{id}")
     public ResponseEntity<?> getNotificationById(@PathVariable(name = "id") String id){
         int notificationId = Integer.parseInt(id);
         NotificationDTO notificationDTO = notificationService.getDetailNotificationById(notificationId);
-        return new ResponseEntity<>(notificationDTO, HttpStatus.OK);
+        Map<String, Object> map = new HashMap<>();
+        map.put("postId", notificationDTO.getPostId());
+        map.put("type", notificationDTO.getType());
+        return new ResponseEntity<>(map, HttpStatus.OK);
     }
 
 }

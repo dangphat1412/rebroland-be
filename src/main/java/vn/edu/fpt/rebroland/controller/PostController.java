@@ -22,9 +22,10 @@ import org.springframework.web.bind.annotation.*;
 import javax.validation.Valid;
 import java.text.SimpleDateFormat;
 import java.util.*;
+import java.util.regex.Pattern;
 
 @RestController
-@CrossOrigin(origins = "https://rebroland-frontend.vercel.app")
+@CrossOrigin(origins = "https://rebroland.vercel.app")
 @RequestMapping("/api/posts")
 public class PostController {
 
@@ -40,25 +41,17 @@ public class PostController {
     private PostRepository postRepository;
     private UserRepository userRepository;
     private AvgRateRepository rateRepository;
-
     private ModelMapper mapper;
     private UserFollowPostService userFollowPostService;
-
     private ReportService reportService;
-
     private ContactService contactService;
-
     private UserCareService userCareService;
-
     private PriceService priceService;
-
     private HistoryImageService historyImageService;
-
     private PaymentService paymentService;
-
     private RoleRepository roleRepository;
-
     private NotificationService notificationService;
+    private RefundPercentService refundPercentService;
 
     public PostController(PostService postService, CoordinateService coordinateService, ImageService imageService,
                           ApartmentService apartmentService, ResidentialLandService residentialLandService,
@@ -67,7 +60,8 @@ public class PostController {
                           PostRepository postRepository, UserRepository userRepository, ModelMapper mapper,
                           UserFollowPostService userFollowPostService, ReportService reportService, ContactService contactService,
                           UserCareService userCareService, AvgRateRepository rateRepository, PriceService priceService, HistoryImageService historyImageService,
-                          PaymentService paymentService, RoleRepository roleRepository, NotificationService notificationService) {
+                          PaymentService paymentService, RoleRepository roleRepository, NotificationService notificationService,
+                          RefundPercentService refundPercentService) {
         this.postService = postService;
         this.coordinateService = coordinateService;
         this.imageService = imageService;
@@ -90,6 +84,7 @@ public class PostController {
         this.paymentService = paymentService;
         this.roleRepository = roleRepository;
         this.notificationService = notificationService;
+        this.refundPercentService = refundPercentService;
     }
 
     //view detail real estate post from post id
@@ -130,14 +125,38 @@ public class PostController {
         java.sql.Date date = new java.sql.Date(millis);
         User user = userRepository.findById(userId).orElseThrow(() -> new ResourceNotFoundException("User", "id", userId));
         Post post = postRepository.findPostByPostId(postId);
+        Post checkPost = postRepository.getPostByUserIdAndOriginalId(postId, userId);
+        if (checkPost != null) {
+            return new ResponseEntity<>("Bạn đã tạo bài phái sinh cho bài viết này", HttpStatus.BAD_REQUEST);
+        }
 
         if (post.isAllowDerivative() && post.getOriginalPost() == null) {
             if (user.getCurrentRole() == 3) {
                 if (user.getId() != post.getUser().getId()) {
                     PostDTO postDTO = postService.setDataToPostDTO(generalPostDTO, userId, date, false);
                     postDTO.setOriginalPost(postId);
+                    postDTO.setTransactionStartDate(post.getTransactionStartDate());
+                    postDTO.setTransactionEndDate(post.getTransactionEndDate());
+                    if(generalPostDTO.getUnitPriceId() ==3 ){
+                        postDTO.setPrice(null);
+                    }else {
+                        if(generalPostDTO.getPrice()==null){
+                            return new ResponseEntity<>("Giá cả không được để trống", HttpStatus.BAD_REQUEST);
+                        }else{
+                            postDTO.setPrice(generalPostDTO.getPrice());
+                        }
+                    }
                     PostDTO newPostDTO = postService.createPost(postDTO, userId, generalPostDTO.getDirectionId(), generalPostDTO.getPropertyTypeId(),
                             generalPostDTO.getUnitPriceId(), 1, generalPostDTO.getLongevityId());
+                    Pattern pattern = Pattern.compile("[$&+,:;=\\\\?@#|/'<>.^*()%!-1234567890]");
+                    if (pattern.matcher(generalPostDTO.getContactName()).find()) {
+                        return new ResponseEntity<>("Tên liên lạc không chứa ký tự đặc biệt và số", HttpStatus.BAD_REQUEST);
+                    }
+                    if (generalPostDTO.getOwner() != null) {
+                        if (pattern.matcher(generalPostDTO.getOwner()).find()) {
+                            return new ResponseEntity<>("Tên chủ hộ không chứa ký tự đặc biệt và số", HttpStatus.BAD_REQUEST);
+                        }
+                    }
                     if (generalPostDTO.getImages() != null) {
                         imageService.createImage(generalPostDTO.getImages(), newPostDTO.getPostId());
                     }
@@ -160,17 +179,17 @@ public class PostController {
                             break;
                     }
                 } else {
-                    return new ResponseEntity<>("You can not create derivative post with your original post", HttpStatus.BAD_REQUEST);
+                    return new ResponseEntity<>("Bạn không thể tạo bài phái sinh từ bài viết của bạn", HttpStatus.BAD_REQUEST);
                 }
             } else {
-                return new ResponseEntity<>("You need change to be broker", HttpStatus.BAD_REQUEST);
+                return new ResponseEntity<>("Bạn phải chuyển trạng thái sang nhà môi giới", HttpStatus.BAD_REQUEST);
             }
         } else {
             return new ResponseEntity<>("Bài viết này không cho phép tạo bài phái sinh! ", HttpStatus.CREATED);
         }
 
 
-        return new ResponseEntity<>(" Derivative Post success", HttpStatus.CREATED);
+        return new ResponseEntity<>("Tạo bài phái sinh thành công.", HttpStatus.CREATED);
     }
 
     //switch mode of post
@@ -223,6 +242,15 @@ public class PostController {
                 long newBalanceAccount = user.getAccountBalance() - totalPayment;
                 user.setAccountBalance(newBalanceAccount);
                 userRepository.save(user);
+                Pattern pattern = Pattern.compile("[$&+,:;=\\\\?@#|/'<>.^*()%!-1234567890]");
+                if (pattern.matcher(generalPostDTO.getContactName()).find()) {
+                    return new ResponseEntity<>("Tên liên lạc không chứa ký tự đặc biệt và số", HttpStatus.BAD_REQUEST);
+                }
+                if (generalPostDTO.getOwner() != null) {
+                    if (pattern.matcher(generalPostDTO.getOwner()).find()) {
+                        return new ResponseEntity<>("Tên chủ hộ không chứa ký tự đặc biệt và số", HttpStatus.BAD_REQUEST);
+                    }
+                }
 
                 TransactionDTO transactionDTO = new TransactionDTO();
                 transactionDTO.setAmount(totalPayment);
@@ -232,6 +260,13 @@ public class PostController {
                 transactionDTO.setDiscount(priceDTO.getDiscount());
                 paymentService.createTransaction(transactionDTO);
                 PostDTO postDTO = postService.setDataToPostDTO(generalPostDTO, userId, date, true);
+                if(generalPostDTO.getUnitPriceId() ==3 ){
+                    postDTO.setPrice(null);
+                }else {
+                    if(generalPostDTO.getPrice()==null){
+                        return new ResponseEntity<>("Giá cả không được để trống", HttpStatus.BAD_REQUEST);
+                    }
+                }
                 postDTO.setSpendMoney(totalPayment);
                 PostDTO newPostDTO = postService.createPost(postDTO, userId, generalPostDTO.getDirectionId(), generalPostDTO.getPropertyTypeId(),
                         generalPostDTO.getUnitPriceId(), 1, generalPostDTO.getLongevityId());
@@ -391,19 +426,19 @@ public class PostController {
     @PutMapping("/drop-post/{postId}")
     @Transactional
     public ResponseEntity<String> dropPost(@PathVariable int postId,
-                                             @RequestHeader(name = "Authorization") String token) {
+                                           @RequestHeader(name = "Authorization") String token) {
         int userId = getUserIdFromToken(token);
         Post post = postRepository.findPostByPostId(postId);
-        if(post != null){
-            if(userId == post.getUser().getId()){
-                postService.changeStatus(postId,2);
+        if (post != null) {
+            if (userId == post.getUser().getId()) {
+                postService.changeStatus(postId, 2);
                 return new ResponseEntity<>("Cập nhập bài đăng thành công", HttpStatus.CREATED);
 
-            }else{
+            } else {
                 return new ResponseEntity<>("Bạn không có quyền ẩn bài đăng này", HttpStatus.BAD_REQUEST);
 
             }
-        }else{
+        } else {
             return new ResponseEntity<>("Bài viết không tồn tại!", HttpStatus.BAD_REQUEST);
         }
 
@@ -413,20 +448,18 @@ public class PostController {
     @PutMapping("/repost/{postId}")
     @Transactional
     public ResponseEntity<String> displayPost(@PathVariable int postId,
-                                           @RequestHeader(name = "Authorization") String token) {
+                                              @RequestHeader(name = "Authorization") String token) {
         int userId = getUserIdFromToken(token);
 
         Post post = postRepository.findPostByPostId(postId);
-        if(post != null){
-            if(userId == post.getUser().getId()){
-                postService.changeStatus(postId,1);
-
+        if (post != null) {
+            if (userId == post.getUser().getId()) {
+                postService.changeStatus(postId, 1);
                 return new ResponseEntity<>("Cập nhập bài đăng thành công", HttpStatus.CREATED);
-
-            }else{
+            } else {
                 return new ResponseEntity<>("Bạn không có quyền sửa bài đăng này", HttpStatus.BAD_REQUEST);
             }
-        }else{
+        } else {
             return new ResponseEntity<>("Bài viết không tồn tại!", HttpStatus.BAD_REQUEST);
         }
 
@@ -436,19 +469,19 @@ public class PostController {
     @PutMapping("/delete-post/{postId}")
     @Transactional
     public ResponseEntity<String> deleteStatusPost(@PathVariable int postId,
-                                             @RequestHeader(name = "Authorization") String token) {
+                                                   @RequestHeader(name = "Authorization") String token) {
         int userId = getUserIdFromToken(token);
         Post post = postRepository.findPostByPostId(postId);
-        if(post != null){
-            if(userId == post.getUser().getId()){
-                postService.changeStatus(postId,6);
+        if (post != null) {
+            if (userId == post.getUser().getId()) {
+                postService.changeStatus(postId, 6);
                 return new ResponseEntity<>("Cập nhập bài đăng thành công", HttpStatus.CREATED);
 
-            }else{
+            } else {
                 return new ResponseEntity<>("Bạn không có quyền sửa bài đăng này", HttpStatus.BAD_REQUEST);
 
             }
-        }else {
+        } else {
             return new ResponseEntity<>("Bài viết không tồn tại!", HttpStatus.BAD_REQUEST);
         }
 
@@ -466,36 +499,30 @@ public class PostController {
         PriceDTO priceDTO = priceService.getPriceByTypeIdAndStatus(1);
         Post post = postRepository.findPostByPostId(postId);
         long totalPayment = numberOfPostedDayDTO.getNumberOfPostedDay() * (priceDTO.getPrice() * (100 - priceDTO.getDiscount()) / 100);
-        try{
+        try {
             if (user.getAccountBalance() < totalPayment) {
                 return new ResponseEntity<>("Số tiền trong tài khoản không đủ để gia hạn!", HttpStatus.BAD_REQUEST);
             } else {
 
-                if(post.getStatus().getId() == 2 || post.getStatus().getId() == 5){
+                if (post.getStatus().getId() == 2 || post.getStatus().getId() == 5) {
                     if (post.getUser().getId() == userId && user.getCurrentRole() == 2) {
                         SimpleDateFormat dateFormat = new SimpleDateFormat("dd/MM/yyyy");
-                        Date date = new Date();
-                        Date end_date = dateFormat.parse(dateFormat.format(post.getTransactionEndDate()));
-                        Date today = dateFormat.parse(dateFormat.format(date));
+
                         if (!post.isBlock() && post.getOriginalPost() == null) {
-                            if (today.compareTo(end_date) > 0) {
-                                long newBalanceAccount = user.getAccountBalance() - totalPayment;
-                                user.setAccountBalance(newBalanceAccount);
-                                userRepository.save(user);
 
-                                postService.extendPost(postId, numberOfPostedDayDTO.getNumberOfPostedDay(), totalPayment);
-                                TransactionDTO transactionDTO = new TransactionDTO();
-                                transactionDTO.setAmount(totalPayment);
-                                transactionDTO.setDescription("Gia hạn bài đăng");
-                                transactionDTO.setTypeId(1);
-                                transactionDTO.setUser(mapper.map(user, UserDTO.class));
-                                transactionDTO.setDiscount(priceDTO.getDiscount());
-                                paymentService.createTransaction(transactionDTO);
-                                return new ResponseEntity<>("Gia hạn bài đăng thành công!", HttpStatus.CREATED);
-                            } else {
-                                return new ResponseEntity<>("Bài viết chưa hết hạn", HttpStatus.BAD_REQUEST);
+                            long newBalanceAccount = user.getAccountBalance() - totalPayment;
+                            user.setAccountBalance(newBalanceAccount);
+                            userRepository.save(user);
 
-                            }
+                            postService.extendPost(postId, numberOfPostedDayDTO.getNumberOfPostedDay(), totalPayment);
+                            TransactionDTO transactionDTO = new TransactionDTO();
+                            transactionDTO.setAmount(totalPayment);
+                            transactionDTO.setDescription("Gia hạn bài đăng");
+                            transactionDTO.setTypeId(1);
+                            transactionDTO.setUser(mapper.map(user, UserDTO.class));
+                            transactionDTO.setDiscount(priceDTO.getDiscount());
+                            paymentService.createTransaction(transactionDTO);
+                            return new ResponseEntity<>("Gia hạn bài đăng thành công!", HttpStatus.CREATED);
                         } else {
                             return new ResponseEntity<>("Bài viết bị khóa", HttpStatus.BAD_REQUEST);
                         }
@@ -503,7 +530,7 @@ public class PostController {
                     } else {
                         return new ResponseEntity<>("Tài khoản phải là chủ bài đăng và khách hàng", HttpStatus.BAD_REQUEST);
                     }
-                }else{
+                } else {
                     return new ResponseEntity<>("Bài viết không thể gia hạn", HttpStatus.OK);
 
                 }
@@ -512,7 +539,7 @@ public class PostController {
             }
 
 
-        }catch (Exception e){
+        } catch (Exception e) {
 
         }
         return new ResponseEntity<>("Không gia hạn thành công", HttpStatus.BAD_REQUEST);
@@ -532,6 +559,24 @@ public class PostController {
 
         int propertyId = post.getPropertyType().getId();
         if (userId == post.getUser().getId()) {
+            Pattern pattern = Pattern.compile("[$&+,:;=\\\\?@#|/'<>.^*()%!-1234567890]");
+            if (pattern.matcher(generalPostDTO.getContactName()).find()) {
+                return new ResponseEntity<>("Tên liên lạc không chứa ký tự đặc biệt và số", HttpStatus.BAD_REQUEST);
+            }
+            if (generalPostDTO.getOwner() != null) {
+                if (pattern.matcher(generalPostDTO.getOwner()).find()) {
+                    return new ResponseEntity<>("Tên chủ hộ không chứa ký tự đặc biệt và số", HttpStatus.BAD_REQUEST);
+                }
+            }
+            if(generalPostDTO.getUnitPriceId() ==3 ){
+                generalPostDTO.setPrice(null);
+            }else {
+                if(generalPostDTO.getPrice()==null){
+                    return new ResponseEntity<>("Giá cả không được để trống", HttpStatus.BAD_REQUEST);
+                }else{
+                    generalPostDTO.setPrice(generalPostDTO.getPrice());
+                }
+            }
             PostDTO newPostDTO = postService.updatePost(generalPostDTO, post, userId, generalPostDTO.getImages());
             switch (propertyId) {
                 case 1:
@@ -690,7 +735,8 @@ public class PostController {
     public ResponseEntity<?> getListDerivativePostOfBroker(@RequestHeader(name = "Authorization") String token,
                                                            @RequestParam(name = "pageNo", defaultValue = "0") String pageNo,
                                                            @RequestParam(name = "propertyType", required = false) String propertyTypeId,
-                                                           @RequestParam(name = "sortValue", defaultValue = "0") String sortValue
+                                                           @RequestParam(name = "sortValue", defaultValue = "0") String sortValue,
+                                                           @RequestParam(name = "status", defaultValue = "0") String status
     ) {
         try {
             int userId = getUserIdFromToken(token);
@@ -701,7 +747,7 @@ public class PostController {
             int pageNumber = Integer.parseInt(pageNo);
             int pageSize = 8;
 
-            SearchResponse lists = postService.getDerivativePostOfBrokerPaging(userId, propertyTypeId, pageNumber, pageSize, sortValue);
+            SearchResponse lists = postService.getDerivativePostOfBrokerPaging(userId, propertyTypeId, pageNumber, pageSize, sortValue, status);
 
             return new ResponseEntity<>(lists, HttpStatus.OK);
         } catch (Exception e) {
@@ -726,7 +772,7 @@ public class PostController {
         Boolean isBroker = false;
         Set<Role> setRole = user.getRoles();
         Role role = roleRepository.findByName("BROKER").get();
-        if(setRole.contains(role)){
+        if (setRole.contains(role)) {
             isBroker = true;
         }
         UserDTO userDTO = mapper.map(user, UserDTO.class);
@@ -794,8 +840,9 @@ public class PostController {
     }
 
     @GetMapping("/broker/categories")
-    public ResponseEntity<?> getNumberOfPropertyTypeForBroker() {
-        Map<String, Integer> map = postService.getNumberOfPropertyTypeForBroker();
+    public ResponseEntity<?> getNumberOfPropertyTypeForBroker(@RequestHeader(name = "Authorization") String token) {
+        int userId = getUserIdFromToken(token);
+        Map<String, Integer> map = postService.getNumberOfPropertyTypeForBroker(userId);
         return new ResponseEntity<>(map, HttpStatus.OK);
     }
 
@@ -803,33 +850,45 @@ public class PostController {
     SimpMessagingTemplate template;
 
     @PostMapping("/history/{postId}")
-    @Transactional
+//    @Transactional
     public ResponseEntity<?> createRealEstateHistory(@PathVariable(name = "postId") int postId,
                                                      @RequestBody HistoryDTO historyDTO) {
         Post post = postRepository.findPostByPostId(postId);
-        if (post != null) {
+        if (post != null && post.getStatus().getId() == 1) {
+            long spendMoney = post.getSpendMoney();
+            long refundMoney = 0;
+            RefundPercentDTO refundPercentDTO = new RefundPercentDTO();
+            refundPercentDTO = refundPercentService.getActiveRefundPercent(1);
+            refundMoney = spendMoney * (100 - refundPercentDTO.getPercent()) / 100;
             if (historyDTO.isProvideInfo()) {
                 switch (historyDTO.getTypeId()) {
                     case 1:
                         ResidentialHouseHistoryDTO houseHistoryDTO = new ResidentialHouseHistoryDTO();
                         residentialHouseHistoryService.setDataToResidentialHouseHistoryDTO(houseHistoryDTO, historyDTO);
                         ResidentialHouseHistoryDTO houseDto = residentialHouseHistoryService.createResidentialHouseHistory(houseHistoryDTO);
-//                        return new ResponseEntity<>(houseDto, HttpStatus.CREATED);
+                        if (houseDto == null) {
+                            return new ResponseEntity<>("Mã vạch đã bị trùng!", HttpStatus.BAD_REQUEST);
+                        }
                         break;
                     case 2:
                         ApartmentHistoryDTO apartmentHistoryDTO = new ApartmentHistoryDTO();
                         apartmentHistoryService.setDataToApartmentHistoryDTO(apartmentHistoryDTO, historyDTO);
                         ApartmentHistoryDTO dto = apartmentHistoryService.createApartmentHistory(apartmentHistoryDTO);
-                        //               historyImageService.createHistoryImage(historyDTO.getImages(), dto.getId(), 1);
-//                        return new ResponseEntity<>(dto, HttpStatus.CREATED);
+                        if (dto == null) {
+                            return new ResponseEntity<>("Mã vạch đã bị trùng!", HttpStatus.BAD_REQUEST);
+                        }
                         break;
                     case 3:
                         ResidentialLandHistoryDTO landHistoryDTO = new ResidentialLandHistoryDTO();
                         residentialLandHistoryService.setDataToResidentialLandHistoryDTO(landHistoryDTO, historyDTO);
                         ResidentialLandHistoryDTO landDto = residentialLandHistoryService.createResidentialLandHistory(landHistoryDTO);
+                        if (landDto == null) {
+                            return new ResponseEntity<>("Mã vạch đã bị trùng!", HttpStatus.BAD_REQUEST);
+                        }
                         break;
-//                        return new ResponseEntity<>(landDto, HttpStatus.CREATED);
                 }
+                refundPercentDTO = refundPercentService.getActiveRefundPercent(2);
+                refundMoney = spendMoney * (100 - refundPercentDTO.getPercent()) / 100;
             }
             post.setStatus(new Status(3));
             postRepository.save(post);
@@ -837,10 +896,10 @@ public class PostController {
 
             //tinh tien hoan tra cho nguoi dung dang bai
 
-            long spendMoney = post.getSpendMoney();
+
             int userId = post.getUser().getId();
             TextMessageDTO messageDTO = new TextMessageDTO();
-            String message = "Bạn được hoàn lại " + spendMoney / 2 + " VNĐ";
+            String message = "Bạn được hoàn lại " + refundMoney + " VNĐ";
             messageDTO.setMessage(message);
             template.convertAndSend("/topic/message/" + userId, messageDTO);
 
@@ -849,7 +908,7 @@ public class PostController {
             notificationDTO.setUserId(userId);
             notificationDTO.setContent(message);
 //            notificationDTO.setPhone(userRequest.getPhone());
-            notificationDTO.setType("Notification");
+            notificationDTO.setType("Refund");
             notificationService.createContactNotification(notificationDTO);
 
             //update unread notification user
@@ -859,19 +918,19 @@ public class PostController {
             numberUnread++;
             user.setUnreadNotification(numberUnread);
             long accountBalance = user.getAccountBalance();
-            user.setAccountBalance(accountBalance + spendMoney / 2);
+            user.setAccountBalance(accountBalance + refundMoney);
             userRepository.save(user);
 
             return new ResponseEntity<>("Hoàn thành giao dịch!", HttpStatus.OK);
         } else {
-            return new ResponseEntity<>("Bài viết không tồn tại!", HttpStatus.BAD_REQUEST);
+            return new ResponseEntity<>("Bài viết không tồn tại hoặc không hoạt động!", HttpStatus.BAD_REQUEST);
         }
     }
 
     @GetMapping("/original/{userId}")
     public ResponseEntity<?> getAllOriginalPostOfUser(@PathVariable(name = "userId") int userId,
                                                       @RequestParam(name = "pageNo", defaultValue = "0") String pageNo,
-                                                      @RequestParam(name = "sortValue", defaultValue = "0") String sortValue){
+                                                      @RequestParam(name = "sortValue", defaultValue = "0") String sortValue) {
         int pageNumber = Integer.parseInt(pageNo);
         int pageSize = 6;
 
@@ -882,7 +941,7 @@ public class PostController {
         Boolean isBroker = false;
         Set<Role> setRole = user.getRoles();
         Role role = roleRepository.findByName("BROKER").get();
-        if(setRole.contains(role)){
+        if (setRole.contains(role)) {
             isBroker = true;
         }
         UserDTO userDTO = mapper.map(user, UserDTO.class);

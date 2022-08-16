@@ -88,8 +88,8 @@ public class UserCareServiceImpl implements UserCareService {
     public void deleteRequiredWithUserCare(int careId) {
         try {
             userCareRepository.deletePostCareById(careId);
-            userCareRepository.deleteUserCareById(careId);
             userCareRepository.deleteUserCareDetailByCareId(careId);
+            userCareRepository.deleteUserCareById(careId);
         } catch (Exception e) {
             e.printStackTrace();
         }

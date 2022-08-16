@@ -14,6 +14,7 @@ public class UserDTO {
     private int id;
 
     //    @NotEmpty(message = "Vui lòng điền đầy đủ họ tên")
+ //   @Pattern(regexp = ("^[a-zA-Z]+(([^\\s][a-zA-Z ])?[a-zA-Z]*)*$"), message = "Tên không đúng định dạng!")
     private String fullName;
 
     @JsonFormat(pattern = "yyyy-MM-dd")

@@ -1,8 +1,10 @@
 package vn.edu.fpt.rebroland.service;
 
+import vn.edu.fpt.rebroland.payload.ListPrice;
 import vn.edu.fpt.rebroland.payload.PriceDTO;
 
 import java.util.List;
+import java.util.Map;
 
 public interface PriceService {
     PriceDTO getPriceByTypeIdAndStatus(int typeId);
@@ -10,5 +12,8 @@ public interface PriceService {
 
     PriceDTO getPriceBroker(int priceId);
     List<PriceDTO> getListPriceBroker(int typeId);
-    PriceDTO createPrice(PriceDTO priceDTO);
+    Map<String, Object> getListPostPrice();
+    void createPrice(ListPrice priceDTO);
+    PriceDTO createPostPrice(PriceDTO priceDTO);
+    PriceDTO getPriceByTypeIdAndUnitDate(int typeId, int unitDate);
 }

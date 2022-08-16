@@ -282,14 +282,28 @@ public class ReportServiceImpl implements ReportService {
             reportedPost.setStatus(2);
             reportRepository.save(reportedPost);
             Post post = reportedPost.getPost();
-//            Status status = new Status(2);
-//            post.setStatus(status);
+
             post.setBlock(true);
             postRepository.save(post);
 
+            long millis = System.currentTimeMillis();
+            Date date = new Date(millis);
+            TextMessageDTO messageDTO = new TextMessageDTO();
+            List<Post> listPost = postRepository.getDerivativePostOfOriginalPost(post.getPostId());
+            for(Post p: listPost){
+                if(!p.isBlock()){
+                    p.setBlock(true);
+                    p.setBlockDate(date);
+                    postRepository.save(p);
+                    String message1 = "Chúng tôi đã ẩn bài viết của bạn. Nếu có thắc mắc xin liên hệ số 0397975445.";
+                    messageDTO.setMessage(message1);
+                    template.convertAndSend("/topic/message/" + p.getUser().getId(), messageDTO);
+                    saveNotificationAndUpdateUser(message1, p.getUser());
+                }
+            }
             //block bài ăn theo
 
-            TextMessageDTO messageDTO = new TextMessageDTO();
+
             messageDTO.setMessage("Bài viết của bạn: '" + post.getTitle() + "' đã bị chặn vì có người tố cáo !");
             template.convertAndSend("/topic/message/" + post.getUser().getId(), messageDTO);
             saveNotificationAndUpdateUser("Bài viết của bạn: '" + post.getTitle() + "' đã bị chặn vì có người tố cáo !", post.getUser());
@@ -348,14 +362,44 @@ public class ReportServiceImpl implements ReportService {
     @Override
     public boolean acceptReportUser(int reportId) {
         Report report = reportRepository.getReportById(reportId);
+        long millis = System.currentTimeMillis();
+        Date date = new Date(millis);
         if(report != null && report.getStatus() == 1){
             report.setStatus(2);
             reportRepository.save(report);
             User user = report.getUser();
             user.setBlock(true);
+            user.setBlockDate(date);
             userRepository.save(user);
 
             //block bài viết của user
+            List<Post> listPost = postRepository.getAllPostUnBlockByUserId(user.getId());
+            List<Post> listDerivative = new ArrayList<>();
+
+            for(Post post: listPost){
+                post.setBlock(true);
+                post.setBlockDate(date);
+                postRepository.save(post);
+
+                TextMessageDTO messageDTO = new TextMessageDTO();
+                String message = "Chúng tôi đã ẩn bài viết của bạn. Nếu có thắc mắc xin liên hệ số 0397975445.";
+                messageDTO.setMessage(message);
+                template.convertAndSend("/topic/message/" + post.getUser().getId(), messageDTO);
+                saveNotificationAndUpdateUser(message, post.getUser());
+
+                listDerivative = postRepository.getDerivativePostOfOriginalPost(post.getPostId());
+                for(Post p: listDerivative){
+                    if(!p.isBlock()){
+                        p.setBlock(true);
+                        p.setBlockDate(date);
+                        postRepository.save(p);
+                        String message1 = "Chúng tôi đã ẩn bài viết của bạn. Nếu có thắc mắc xin liên hệ số 0397975445.";
+                        messageDTO.setMessage(message1);
+                        template.convertAndSend("/topic/message/" + p.getUser().getId(), messageDTO);
+                        saveNotificationAndUpdateUser(message1, p.getUser());
+                    }
+                }
+            }
 
             TextMessageDTO messageDTO = new TextMessageDTO();
             List<Integer> listUserReportId = detailRepository.getDetailReportByReportId(report.getReportId());

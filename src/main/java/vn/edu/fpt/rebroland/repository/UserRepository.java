@@ -14,8 +14,12 @@ public interface UserRepository extends JpaRepository<User, Integer> {
     Boolean existsByPhone(String phone);
 
     @Query(value = " SELECT * FROM `users` " +
-            " WHERE phone = :phone ", nativeQuery = true)
+            " WHERE phone = :phone AND block = false ", nativeQuery = true)
     User getUserByPhone(String phone);
+
+    @Query(value = " SELECT * FROM `users` " +
+            " WHERE id = :userId", nativeQuery = true)
+    User getUserById(int userId);
 
     @Query(value = " SELECT * FROM `users` u " +
             " WHERE u.id IN (SELECT user_id FROM user_roles " +

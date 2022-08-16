@@ -1,6 +1,5 @@
 package vn.edu.fpt.rebroland.payload;
 
-import vn.edu.fpt.rebroland.entity.Coordinate;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -47,7 +46,7 @@ public class GeneralPostDTO {
     @NotNull(message = "số ngày đăng không trống")
     private int numberOfPostedDay;
 
-    @NotNull(message = "Cập nhập giá cả.")
+
     @Min(value = 0,message = "Giá không âm")
     @Max(value = 1000000000000L,message = "giá không quá 1000 tỷ")
     private Long price;
@@ -88,7 +87,7 @@ public class GeneralPostDTO {
     private List<String> images;
 
     // Coordinate DTO
-    private List<Coordinate> coordinates;
+    private List<CoordinateDTO> coordinates;
 
     //Apartment & Residential House
 

@@ -16,7 +16,6 @@ public interface NotificationRepository extends JpaRepository<Notification, Inte
 
     @Query(value = " SELECT * FROM `notifications` " +
             " WHERE user_id = :userId" +
-            " AND un_read = true " +
             " ORDER BY date DESC ", nativeQuery = true)
     Page<Notification> getUnreadNotificationPaging(int userId, Pageable pageable);
 }

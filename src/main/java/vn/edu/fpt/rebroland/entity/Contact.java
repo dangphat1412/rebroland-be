@@ -20,6 +20,8 @@ public class Contact {
 
     private Date startDate;
 
+    private int roleId;
+
     @Column(length = 200)
     private String content;
 

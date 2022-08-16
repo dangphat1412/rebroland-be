@@ -20,4 +20,5 @@ public class NotificationDTO {
     private Date date;
     private String type;
     private boolean unRead;
+    private int postId;
 }

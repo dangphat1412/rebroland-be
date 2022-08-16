@@ -2,19 +2,18 @@ package vn.edu.fpt.rebroland.payload;
 
 import lombok.Data;
 
-import javax.validation.constraints.NotNull;
 import javax.validation.constraints.Size;
 import java.sql.Date;
 
 @Data
 public class UserCareDTO {
     private int careId;
-    @NotNull(message = "Người quan tâm không để trống")
+
     private Integer userCaredId;
 
     private Date startDate;
 
-    @Size(max = 200)
+    @Size(max = 200,message = "Phần mô tả không quá 200 ký tự")
     private String summarize;
 
 

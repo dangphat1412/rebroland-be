@@ -26,11 +26,12 @@ import org.springframework.web.bind.annotation.*;
 
 import javax.validation.Valid;
 import java.util.*;
+import java.util.regex.Pattern;
 
 
 @RestController
 @RequestMapping("/api/users")
-@CrossOrigin(origins = "https://rebroland-frontend.vercel.app")
+@CrossOrigin(origins = "https://rebroland.vercel.app")
 public class UserController {
     private UserService userService;
 
@@ -160,8 +161,9 @@ public class UserController {
         if(userRepository.existsByPhone(registerDTO.getPhone())) {
             return new ResponseEntity<>("Số điên thoại đã được sử dụng!", HttpStatus.BAD_REQUEST);
         }
-//        String token = otpService.generateOtp(registerDTO.getPhone()) + "";
-//        sendSMS(registerDTO.getPhone(), token);
+        if(otpService.getOtp(registerDTO.getPhone()) == null){
+            return new ResponseEntity<>("Mã OTP đã hết hạn!", HttpStatus.BAD_REQUEST);
+        }
 
         int otp = Integer.parseInt(registerDTO.getToken());
 
@@ -207,8 +209,12 @@ public class UserController {
 
     @PutMapping("/forgot-password")
     public ResponseEntity<?> processResetPassword(@Valid @RequestBody ResetPasswordDTO resetPasswordDTO) {
-        User user = userRepository.findByPhone(resetPasswordDTO.getPhone()).
-                orElseThrow(() -> new UsernameNotFoundException("User not found with phone: " + resetPasswordDTO.getPhone()));
+//        User user = userRepository.findByPhone(resetPasswordDTO.getPhone()).
+//                orElseThrow(() -> new UsernameNotFoundException("Số điện thoại chưa được đăng kí " + resetPasswordDTO.getPhone()));
+        User user = userRepository.getUserByPhone(resetPasswordDTO.getPhone());
+        if(user == null){
+            return new ResponseEntity<>("Số điện thoại chưa được đăng kí!", HttpStatus.BAD_REQUEST);
+        }
 
         if(otpService.getOtp(resetPasswordDTO.getPhone()) == null){
             return new ResponseEntity<>("Mã OTP đã hết hạn!", HttpStatus.BAD_REQUEST);
@@ -394,6 +400,10 @@ public class UserController {
         String[] parts = token.split("\\.");
         JSONObject payload = new JSONObject(decode(parts[1]));
         String phone = payload.getString("sub");
+        Pattern pattern = Pattern.compile("[$&+,:;=\\\\?@#|/'<>.^*()%!-1234567890]");
+        if (pattern.matcher(userDTO.getFullName()).find()) {
+            return new ResponseEntity<>("Tên không chứa ký tự đặc biệt và số", HttpStatus.BAD_REQUEST);
+        }
         int updateStatus = userService.updateUser(phone, userDTO);
         if(updateStatus == 1){
             return new ResponseEntity<>("Chỉnh sửa thông tin cá nhân thành công!", HttpStatus.OK);

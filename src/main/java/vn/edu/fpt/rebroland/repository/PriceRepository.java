@@ -12,6 +12,10 @@ public interface PriceRepository extends JpaRepository<Price,Integer> {
 
     @Query(value = "select * from prices where type_id =:typeId and status = true " +
             " AND unit_date = :unitDate", nativeQuery = true)
+    Price getPriceByTypeIdAndUnitDate(int typeId, int unitDate);
+
+    @Query(value = "select * from prices where type_id =:typeId and status = true " +
+            " AND unit_date = :unitDate", nativeQuery = true)
     Price getPrice(int typeId, int unitDate);
 
     @Query(value = "select * from prices where id =:priceId", nativeQuery = true)
@@ -19,4 +23,10 @@ public interface PriceRepository extends JpaRepository<Price,Integer> {
 
     @Query(value = "select * from prices where type_id =:typeId and status = true", nativeQuery = true)
     List<Price> getListPriceBroker(int typeId);
+
+    @Query(value = "select * from prices where type_id = 1 and status = true", nativeQuery = true)
+    Price getCurrentPostPrice();
+
+    @Query(value = "select Distinct price from prices where type_id = 1", nativeQuery = true)
+    List<Integer> getListPostPrice();
 }

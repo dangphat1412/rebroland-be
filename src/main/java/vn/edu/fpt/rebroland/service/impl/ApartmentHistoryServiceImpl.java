@@ -22,6 +22,11 @@ public class ApartmentHistoryServiceImpl implements ApartmentHistoryService {
 
     @Override
     public ApartmentHistoryDTO createApartmentHistory(ApartmentHistoryDTO apartmentHistoryDTO) {
+        ApartmentHistory history = apartmentHistoryRepository.getApartmentHistoryByBarcode(apartmentHistoryDTO.getBarcode());
+        if(history != null){
+            return null;
+        }
+
         ApartmentHistory apartmentHistory = mapToEntity(apartmentHistoryDTO);
         ApartmentHistory newApartmentHistory = apartmentHistoryRepository.save(apartmentHistory);
         return mapToDTO(newApartmentHistory);

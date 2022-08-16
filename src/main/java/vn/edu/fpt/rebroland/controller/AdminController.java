@@ -21,7 +21,7 @@ import java.util.List;
 import java.util.Map;
 
 @RestController
-@CrossOrigin(origins = "https://rebroland-frontend.vercel.app")
+@CrossOrigin(origins = "https://rebroland.vercel.app")
 @RequestMapping("/api/admin")
 public class AdminController {
 
@@ -433,14 +433,31 @@ public class AdminController {
         }
     }
 
-    @PutMapping("/add-price")
+    @PutMapping("/update-price")
     public ResponseEntity<?> fixPrice(@RequestHeader(name = "Authorization") String token,
+                                      @Valid @RequestBody ListPrice listPrice){
+        User user = getUserFromToken(token);
+        Role role = roleRepository.findByName("ADMIN").get();
+
+        if(user.getRoles().contains(role)){
+            priceService.createPrice(listPrice);
+//            if(dto == null){
+//                return new ResponseEntity<>("Giá đã tồn tại trong hệ thống!", HttpStatus.BAD_REQUEST);
+//            }
+            return new ResponseEntity<>("Cập nhật giá thành công!", HttpStatus.OK);
+        }else{
+            return new ResponseEntity<>("Người dùng không phải admin!", HttpStatus.BAD_REQUEST);
+        }
+    }
+
+    @PutMapping("/list-price/price-post")
+    public ResponseEntity<?> fixPricePost(@RequestHeader(name = "Authorization") String token,
                                       @Valid @RequestBody PriceDTO priceDTO){
         User user = getUserFromToken(token);
         Role role = roleRepository.findByName("ADMIN").get();
 
         if(user.getRoles().contains(role)){
-            PriceDTO dto = priceService.createPrice(priceDTO);
+            PriceDTO dto = priceService.createPostPrice(priceDTO);
             if(dto == null){
                 return new ResponseEntity<>("Giá đã tồn tại trong hệ thống!", HttpStatus.BAD_REQUEST);
             }
@@ -450,12 +467,43 @@ public class AdminController {
         }
     }
 
-    @PutMapping("/active-price/{withdrawId}")
-    public ResponseEntity<?> activePrice(@RequestHeader(name = "Authorization") String token,
-                                         @PathVariable(name = "withdrawId") int withdrawId){
-//        WithdrawDTO withdrawDTO = withdrawService.
-        return new ResponseEntity<>(null, HttpStatus.OK);
+
+    @GetMapping("/list-price/price-post")
+    public ResponseEntity<?> getListPostPrice(@RequestHeader(name = "Authorization") String token){
+        User user = getUserFromToken(token);
+        Role role = roleRepository.findByName("ADMIN").get();
+
+        if(user.getRoles().contains(role)){
+            Map<String, Object> map = priceService.getListPostPrice();
+            return new ResponseEntity<>(map, HttpStatus.OK);
+        }else{
+            return new ResponseEntity<>("Người dùng không phải admin!", HttpStatus.BAD_REQUEST);
+        }
     }
+
+//    @PutMapping("/active-price/{priceId}")
+//    public ResponseEntity<?> activePrice(@RequestHeader(name = "Authorization") String token,
+//                                         @PathVariable(name = "priceId") int priceId){
+//        User user = getUserFromToken(token);
+//        Role role = roleRepository.findByName("ADMIN").get();
+//
+//        if(user.getRoles().contains(role)){
+//            PriceDTO priceDTO = priceService.getPriceBroker(priceId);
+//            PriceDTO dto = priceService.getPriceByTypeIdAndUnitDate(priceDTO.getTypeId(), priceDTO.getUnitDate());
+//
+//            priceDTO.setStatus(true);
+//            priceService.createPrice(priceDTO);
+//
+//            dto.setStatus(false);
+//            priceService.createPrice(dto);
+//            if(dto == null){
+//                return new ResponseEntity<>("Giá đã tồn tại trong hệ thống!", HttpStatus.BAD_REQUEST);
+//            }
+//            return new ResponseEntity<>(dto, HttpStatus.OK);
+//        }else{
+//            return new ResponseEntity<>("Người dùng không phải admin!", HttpStatus.BAD_REQUEST);
+//        }
+//    }
 
 
 

@@ -935,44 +935,61 @@ public class PostServiceImpl implements PostService {
         if (propertyType == 1) {
             ResidentialHouse house = houseRepository.findByPostId(postId);
             String barcode = house.getBarcode();
-            String historyBarcode = "";
-            if (barcode.length() == 13) {
-                historyBarcode = barcode.substring(0, 5);
+            if(barcode != null){
+                String historyBarcode = "";
+                if (barcode.length() == 13) {
+                    historyBarcode = barcode.substring(0, 5);
+                }
+                if (barcode.length() == 15) {
+                    historyBarcode = barcode.substring(0, 7);
+                }
+                List<ResidentialHouseHistory> houseHistories = houseHistoryRepository.getHouseHistoryByBarcodeAndPlotNumber(historyBarcode, house.getPlotNumber());
+                histories.remove("houseHistories");
+                histories.put("houseHistories", houseHistories);
+            }else{
+                histories.remove("houseHistories");
+                histories.put("houseHistories", null);
             }
-            if (barcode.length() == 15) {
-                historyBarcode = barcode.substring(0, 7);
-            }
-            List<ResidentialHouseHistory> houseHistories = houseHistoryRepository.getHouseHistoryByBarcodeAndPlotNumber(historyBarcode, house.getPlotNumber());
-            histories.remove("houseHistories");
-            histories.put("houseHistories", houseHistories);
+
         }
         if (propertyType == 2) {
             Apartment apartment = apartmentRepository.findByPostId(postId);
             String barcode = apartment.getBarcode();
-            String historyBarcode = "";
-            if (barcode.length() == 13) {
-                historyBarcode = barcode.substring(0, 5);
+            if(barcode != null){
+                String historyBarcode = "";
+                if (barcode.length() == 13) {
+                    historyBarcode = barcode.substring(0, 5);
+                }
+                if (barcode.length() == 15) {
+                    historyBarcode = barcode.substring(0, 7);
+                }
+                List<ApartmentHistory> apartmentHistories = apartmentHistoryRepository.getApartmentHistoryByBarcode(historyBarcode, apartment.getPlotNumber(), apartment.getBuildingName(), apartment.getRoomNumber());
+                histories.remove("apartmentHistories");
+                histories.put("apartmentHistories", apartmentHistories);
+            }else{
+                histories.remove("apartmentHistories");
+                histories.put("apartmentHistories", null);
             }
-            if (barcode.length() == 15) {
-                historyBarcode = barcode.substring(0, 7);
-            }
-            List<ApartmentHistory> apartmentHistories = apartmentHistoryRepository.getApartmentHistoryByBarcode(historyBarcode, apartment.getPlotNumber(), apartment.getBuildingName(), apartment.getRoomNumber());
-            histories.remove("apartmentHistories");
-            histories.put("apartmentHistories", apartmentHistories);
         }
         if (propertyType == 3) {
             ResidentialLand land = landRepository.findByPostId(postId);
             String barcode = land.getBarcode();
-            String historyBarcode = "";
-            if (barcode.length() == 13) {
-                historyBarcode = barcode.substring(0, 5);
+            if(barcode != null){
+                String historyBarcode = "";
+                if (barcode.length() == 13) {
+                    historyBarcode = barcode.substring(0, 5);
+                }
+                if (barcode.length() == 15) {
+                    historyBarcode = barcode.substring(0, 7);
+                }
+                List<ResidentialLandHistory> landHistories = landHistoryRepository.getLandHistoryByBarcodeAndPlotNumber(historyBarcode, land.getPlotNumber());
+                histories.remove("landHistories");
+                histories.put("landHistories", landHistories);
+            }else {
+                histories.remove("landHistories");
+                histories.put("landHistories", null);
             }
-            if (barcode.length() == 15) {
-                historyBarcode = barcode.substring(0, 7);
-            }
-            List<ResidentialLandHistory> landHistories = landHistoryRepository.getLandHistoryByBarcodeAndPlotNumber(historyBarcode, land.getPlotNumber());
-            histories.remove("landHistories");
-            histories.put("landHistories", landHistories);
+
         }
         return histories;
     }
@@ -1110,7 +1127,7 @@ public class PostServiceImpl implements PostService {
     }
 
     @Override
-    public SearchResponse getDerivativePostOfBrokerPaging(int userId, String propertyId, int pageNo, int pageSize, String option) {
+    public SearchResponse getDerivativePostOfBrokerPaging(int userId, String propertyId, int pageNo, int pageSize, String option, String status) {
         String check = null;
         int typeId = 0;
         if (propertyId != null) {
@@ -1118,6 +1135,7 @@ public class PostServiceImpl implements PostService {
             typeId = Integer.parseInt(propertyId);
         }
 
+        int statusId = Integer.parseInt(status);
         int sortOption = Integer.parseInt(option);
         String sortOpt = "";
         String sortDir = "";
@@ -1133,33 +1151,33 @@ public class PostServiceImpl implements PostService {
                 sort = sortDir.equalsIgnoreCase(Sort.Direction.ASC.name()) ?
                         Sort.by(sortOpt).ascending() : Sort.by(sortOpt).descending();
                 pageable = PageRequest.of(pageNo, pageSize, sort);
-                listPosts = postRepository.findDerivativePostOfBroker(userId, typeId, check, pageable);
+                listPosts = postRepository.findDerivativePostOfBroker(userId, typeId, check, statusId, pageable);
                 list = listPosts.getContent();
                 listDto = list.stream().map(post -> mapToDTO(post)).collect(Collectors.toList());
                 break;
             case 1:
                 pageable = PageRequest.of(pageNo, pageSize);
-                listPosts = postRepository.findDerivativePostOfBrokerOrderByPriceAsc(userId, typeId, check, pageable);
+                listPosts = postRepository.findDerivativePostOfBrokerOrderByPriceAsc(userId, typeId, check, statusId, pageable);
                 list = listPosts.getContent();
                 listDto = list.stream().map(post -> mapToDTO(post)).collect(Collectors.toList());
 
                 break;
             case 2:
                 pageable = PageRequest.of(pageNo, pageSize);
-                listPosts = postRepository.findDerivativePostOfBrokerOrderByPriceDesc(userId, typeId, check, pageable);
+                listPosts = postRepository.findDerivativePostOfBrokerOrderByPriceDesc(userId, typeId, check, statusId, pageable);
                 list = listPosts.getContent();
                 listDto = list.stream().map(post -> mapToDTO(post)).collect(Collectors.toList());
                 break;
             case 3:
                 //giá trên m2 từ thấp đến cao
                 pageable = PageRequest.of(pageNo, pageSize);
-                listPosts = postRepository.findDerivativePostOfBrokerOrderByPricePerSquareAsc(userId, typeId, check, pageable);
+                listPosts = postRepository.findDerivativePostOfBrokerOrderByPricePerSquareAsc(userId, typeId, check, statusId, pageable);
                 list = listPosts.getContent();
                 listDto = list.stream().map(post -> mapToDTO(post)).collect(Collectors.toList());
                 break;
             case 4:
                 pageable = PageRequest.of(pageNo, pageSize);
-                listPosts = postRepository.findDerivativePostOfBrokerOrderByPricePerSquareDesc(userId, typeId, check, pageable);
+                listPosts = postRepository.findDerivativePostOfBrokerOrderByPricePerSquareDesc(userId, typeId, check, statusId, pageable);
                 list = listPosts.getContent();
                 listDto = list.stream().map(post -> mapToDTO(post)).collect(Collectors.toList());
                 break;
@@ -1169,7 +1187,7 @@ public class PostServiceImpl implements PostService {
                 sort = sortDir.equalsIgnoreCase(Sort.Direction.ASC.name()) ?
                         Sort.by(sortOpt).ascending() : Sort.by(sortOpt).descending();
                 pageable = PageRequest.of(pageNo, pageSize, sort);
-                listPosts = postRepository.findDerivativePostOfBroker(userId, typeId, check, pageable);
+                listPosts = postRepository.findDerivativePostOfBroker(userId, typeId, check, statusId, pageable);
                 list = listPosts.getContent();
                 listDto = list.stream().map(post -> mapToDTO(post)).collect(Collectors.toList());
                 break;
@@ -1179,7 +1197,7 @@ public class PostServiceImpl implements PostService {
                 sort = sortDir.equalsIgnoreCase(Sort.Direction.ASC.name()) ?
                         Sort.by(sortOpt).ascending() : Sort.by(sortOpt).descending();
                 pageable = PageRequest.of(pageNo, pageSize, sort);
-                listPosts = postRepository.findDerivativePostOfBroker(userId, typeId, check, pageable);
+                listPosts = postRepository.findDerivativePostOfBroker(userId, typeId, check, statusId, pageable);
                 list = listPosts.getContent();
                 listDto = list.stream().map(post -> mapToDTO(post)).collect(Collectors.toList());
                 break;
@@ -1194,6 +1212,7 @@ public class PostServiceImpl implements PostService {
                 dto.setDirectionId(0);
             }
             setDataToSearchDTO(dto, postDto);
+            dto.setEndDate(postDto.getTransactionEndDate());
             int postId = postDto.getPostId();
             switch (postDto.getPropertyType().getId()) {
                 case 1: // view residential house
@@ -1305,11 +1324,11 @@ public class PostServiceImpl implements PostService {
         postDTO.setAllowDerivative(true);
 
         // unit name "thoa thuan" price null
-        if (generalPostDTO.getUnitPriceId() == 3 || generalPostDTO.getPrice() < 0) {
-            postDTO.setPrice(null);
-        } else {
-            postDTO.setPrice(generalPostDTO.getPrice());
-        }
+//        if (generalPostDTO.getUnitPriceId() == 3 || generalPostDTO.getPrice() < 0) {
+//            postDTO.setPrice(null);
+//        } else {
+//            postDTO.setPrice(generalPostDTO.getPrice());
+//        }
         postDTO.setAdditionalDescription(generalPostDTO.getAdditionalDescription());
         postDTO.setContactName(generalPostDTO.getContactName());
         postDTO.setContactPhone(generalPostDTO.getContactPhone());
@@ -1564,10 +1583,10 @@ public class PostServiceImpl implements PostService {
     }
 
     @Override
-    public Map<String, Integer> getNumberOfPropertyTypeForBroker() {
-        int numberOfHouse = postRepository.getNumberOfPropertyTypeForBroker(1);
-        int numberOfApartment = postRepository.getNumberOfPropertyTypeForBroker(2);
-        int numberOfLand = postRepository.getNumberOfPropertyTypeForBroker(3);
+    public Map<String, Integer> getNumberOfPropertyTypeForBroker(int userId) {
+        int numberOfHouse = postRepository.getNumberOfPropertyTypeForBroker(1, userId);
+        int numberOfApartment = postRepository.getNumberOfPropertyTypeForBroker(2, userId);
+        int numberOfLand = postRepository.getNumberOfPropertyTypeForBroker(3, userId);
         Map<String, Integer> map = new HashMap<>();
         map.put("house", numberOfHouse);
         map.put("apartment", numberOfApartment);

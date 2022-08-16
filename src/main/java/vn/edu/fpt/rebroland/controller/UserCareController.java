@@ -1,9 +1,11 @@
 package vn.edu.fpt.rebroland.controller;
 
+import vn.edu.fpt.rebroland.entity.Contact;
 import vn.edu.fpt.rebroland.entity.User;
 import vn.edu.fpt.rebroland.entity.UserCare;
 import vn.edu.fpt.rebroland.exception.ResourceNotFoundException;
 import vn.edu.fpt.rebroland.payload.*;
+import vn.edu.fpt.rebroland.repository.ContactRepository;
 import vn.edu.fpt.rebroland.repository.UserCareRepository;
 import vn.edu.fpt.rebroland.repository.UserRepository;
 import vn.edu.fpt.rebroland.service.ContactService;
@@ -25,7 +27,7 @@ import java.util.*;
 
 @RestController
 @RequestMapping("/api/user-care")
-@CrossOrigin(origins = "https://rebroland-frontend.vercel.app")
+@CrossOrigin(origins = "https://rebroland.vercel.app")
 public class UserCareController {
     private UserCareService userCareService;
 
@@ -37,15 +39,17 @@ public class UserCareController {
 
     private ContactService contactService;
 
+    private ContactRepository contactRepository;
 
     public UserCareController(UserCareService userCareService, UserRepository userRepository,
                               UserCareRepository userCareRepository, UserCareDetailService userCareDetailService,
-                              ContactService contactService) {
+                              ContactService contactService,ContactRepository contactRepository) {
         this.userCareService = userCareService;
         this.userRepository = userRepository;
         this.userCareRepository = userCareRepository;
         this.userCareDetailService = userCareDetailService;
         this.contactService = contactService;
+        this.contactRepository = contactRepository;
     }
 
     private static String decode(String encodedString) {
@@ -65,46 +69,52 @@ public class UserCareController {
 
     @PostMapping("/add-customer/{contactId}")
     @Transactional
-    public ResponseEntity<?> createUserCareForBroker(@Valid @RequestBody UserCareDTO userCareDTO,
-                                                     @PathVariable int contactId,
+    public ResponseEntity<?> createUserCareForBroker(@PathVariable int contactId,
                                                      @RequestHeader(name = "Authorization") String token) {
 //        try {
-            int userId = getUserIdFromToken(token);
-            int check = 0;
-            User broker = userRepository.findById(userId).orElseThrow(() -> new ResourceNotFoundException("Broker", "id", userId));
-
-            if (userCareDTO.getPostId() != null) {
-                UserCare userCareWithUserCaredIdAndPostId = userCareRepository.findUserCareByUserCaredIdAndPostId(userCareDTO.getUserCaredId(), userCareDTO.getPostId());
-                if (userCareWithUserCaredIdAndPostId == null) {
-                    UserCare userCareWithOnlyUserCaredId = userCareRepository.findUserCareByUserCaredId(userCareDTO.getUserCaredId());
-                    if (userCareWithOnlyUserCaredId != null) {
-                        check = 1;
-                    } else {
-                        check = 2;
-                    }
-                    if (broker.getRoles().size() == 2) {
-                        UserCareDTO newUserCareDTO = userCareService.createUserCare(userCareDTO, broker, userCareWithOnlyUserCaredId, check);
-                        contactService.deleteContact(contactId);
-                        return new ResponseEntity<>(newUserCareDTO, HttpStatus.CREATED);
-                    } else {
-                        return new ResponseEntity<>("Người dùng không phải người môi giới", HttpStatus.BAD_REQUEST);
-                    }
-                } else {
-                    contactService.deleteContact(contactId);
-                    return new ResponseEntity<>("Đã chăm sóc người dùng này và bài đăng này", HttpStatus.OK);
-                }
-            } else {
-                UserCare userCareWithOnlyUserCaredId = userCareRepository.findUserCareByUserCaredId(userCareDTO.getUserCaredId());
+        int userId = getUserIdFromToken(token);
+        int check = 0;
+        User broker = userRepository.findById(userId).orElseThrow(() -> new ResourceNotFoundException("Broker", "id", userId));
+        Contact contact = contactRepository.findById(contactId).orElseThrow(() -> new ResourceNotFoundException("Contact", "id", contactId));
+        UserCareDTO userCareDTO = new UserCareDTO();
+        userCareDTO.setUserCaredId(contact.getUserRequestId());
+        if(contact.getPost() == null){
+            userCareDTO.setPostId(null);
+        }else {
+            userCareDTO.setPostId(contact.getPost().getPostId());
+        }
+        if (userCareDTO.getPostId() != null) {
+            UserCare userCareWithUserCaredIdAndPostId = userCareRepository.findUserCareByUserCaredIdAndPostId(userCareDTO.getUserCaredId(), userCareDTO.getPostId(), userId);
+            if (userCareWithUserCaredIdAndPostId == null) {
+                UserCare userCareWithOnlyUserCaredId = userCareRepository.findUserCareByUserCaredId(userCareDTO.getUserCaredId(), userId);
                 if (userCareWithOnlyUserCaredId != null) {
-                    contactService.deleteContact(contactId);
-                    return new ResponseEntity<>("Đã chăm sóc người dùng này ", HttpStatus.OK);
+                    check = 1;
                 } else {
-                    check = 3;
-                    UserCareDTO newUserCareDTO = userCareService.createUserCare(userCareDTO, broker, null, check);
+                    check = 2;
+                }
+                if (broker.getRoles().size() == 2) {
+                    UserCareDTO newUserCareDTO = userCareService.createUserCare(userCareDTO, broker, userCareWithOnlyUserCaredId, check);
                     contactService.deleteContact(contactId);
                     return new ResponseEntity<>(newUserCareDTO, HttpStatus.CREATED);
+                } else {
+                    return new ResponseEntity<>("Người dùng không phải người môi giới", HttpStatus.BAD_REQUEST);
                 }
+            } else {
+                contactService.deleteContact(contactId);
+                return new ResponseEntity<>("Đã chăm sóc người dùng này và bài đăng này", HttpStatus.CREATED);
             }
+        } else {
+            UserCare userCareWithOnlyUserCaredId = userCareRepository.findUserCareByUserCaredId(userCareDTO.getUserCaredId(), userId);
+            if (userCareWithOnlyUserCaredId != null) {
+                contactService.deleteContact(contactId);
+                return new ResponseEntity<>("Đã chăm sóc người dùng này ", HttpStatus.CREATED);
+            } else {
+                check = 3;
+                UserCareDTO newUserCareDTO = userCareService.createUserCare(userCareDTO, broker, null, check);
+                contactService.deleteContact(contactId);
+                return new ResponseEntity<>(newUserCareDTO, HttpStatus.CREATED);
+            }
+        }
 //        }
 //        catch (Exception e) {
 //
@@ -126,18 +136,25 @@ public class UserCareController {
             String appointmentDate = null;
             SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
             if (user.getCurrentRole() == 3) {
-                if (userCareDetailDTO.getDateAppointment() != null && userCareDetailDTO.getTimeAppointment() != null ) {
+                if (userCareDetailDTO.getDateAppointment() != null && userCareDetailDTO.getTimeAppointment() != null) {
                     appointmentDate = userCareDetailDTO.getDateAppointment() + " " + userCareDetailDTO.getTimeAppointment() + ":00";
                     Date date = new Date();
                     Date date1 = sdf.parse(appointmentDate);
                     if (date.compareTo(date1) > 0) {
-                        return new ResponseEntity<>("you need change your appointmentTime !", HttpStatus.BAD_REQUEST);
+                        return new ResponseEntity<>("Thời gian hẹn trước không đúng !", HttpStatus.BAD_REQUEST);
                     } else {
                         UserCareDetailDTO userCareDetailDTO1 = userCareDetailService.createUserCareDetail(careId, userCareDetailDTO, date1);
                         if(userCareDetailDTO.getAlertTime()!=null){
+                            Calendar cal = Calendar.getInstance();
+                            cal.setTime(date1);
+                            cal.add(Calendar.SECOND, - userCareDetailDTO.getAlertTime());
+                            Date dateAlert = cal.getTime();
+                            if (date.compareTo(dateAlert) > 0) {
+                                return new ResponseEntity<>("Thời gian hẹn trước không đúng !", HttpStatus.BAD_REQUEST);
+                            }
                             sendRemindMessage(user.getPhone(), userCareDetailDTO.getDateAppointment(), userCareDetailDTO.getTimeAppointment(), userCareDetailDTO.getAlertTime());
 
-                        }else{
+                        } else {
                             sendRemindMessage(user.getPhone(), userCareDetailDTO.getDateAppointment(), userCareDetailDTO.getTimeAppointment(), 0);
 
                         }
@@ -301,6 +318,7 @@ public class UserCareController {
         int userId = getUserIdFromToken(token);
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new ResourceNotFoundException("User", "id", userId));
+        UserCare care = userCareRepository.findById(careId)  .orElseThrow(() -> new ResourceNotFoundException("UserCare", "id", careId));
         if (user.getCurrentRole() == 3) {
             userCareService.deleteRequiredWithUserCare(careId);
             return new ResponseEntity<>("Delete successfully !!!", HttpStatus.NO_CONTENT);

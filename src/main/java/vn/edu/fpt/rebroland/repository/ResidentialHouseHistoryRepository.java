@@ -13,6 +13,10 @@ public interface ResidentialHouseHistoryRepository extends JpaRepository<Residen
             " AND plot_number =:plotNumber AND start_date =:startDate",nativeQuery = true)
     ResidentialHouseHistory getResidentialLandHistoryByBarcodeAndPlotNumber(String barcode, int plotNumber, String startDate);
 
+    @Query(value = "SELECT * FROM residential_house_history WHERE barcode = :barcode", nativeQuery = true)
+    ResidentialHouseHistory getResidentialLandHistoryByBarcode(String barcode);
+
+
     @Query(value = "SELECT * FROM residential_house_history WHERE barcode LIKE CONCAT(:barcode,'%') " +
             " AND plot_number =:plotNumber " +
             " ORDER BY start_date ASC ",nativeQuery = true)

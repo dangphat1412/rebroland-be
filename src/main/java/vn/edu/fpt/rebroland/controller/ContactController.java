@@ -3,6 +3,7 @@ package vn.edu.fpt.rebroland.controller;
 import vn.edu.fpt.rebroland.entity.User;
 import vn.edu.fpt.rebroland.exception.ResourceNotFoundException;
 import vn.edu.fpt.rebroland.payload.*;
+import vn.edu.fpt.rebroland.repository.ContactRepository;
 import vn.edu.fpt.rebroland.repository.PostRepository;
 import vn.edu.fpt.rebroland.repository.UserRepository;
 import vn.edu.fpt.rebroland.service.ContactService;
@@ -24,7 +25,7 @@ import javax.validation.Valid;
 import java.util.Base64;
 
 @RestController
-@CrossOrigin(origins = "https://rebroland-frontend.vercel.app")
+@CrossOrigin(origins = "https://rebroland.vercel.app")
 @RequestMapping("/api/contact")
 public class ContactController {
     private ContactService contactService;
@@ -37,30 +38,62 @@ public class ContactController {
 
     private NotificationService notificationService;
 
+    private ContactRepository contactRepository;
+
     public ContactController(ContactService contactService, PostRepository postRepository,
                              UserRepository userRepository, UserCareService userCareService,
-                             NotificationService notificationService) {
+                             NotificationService notificationService, ContactRepository contactRepository) {
         this.contactService = contactService;
         this.postRepository = postRepository;
         this.userRepository = userRepository;
         this.userCareService = userCareService;
         this.notificationService = notificationService;
+        this.contactRepository = contactRepository;
     }
 
-    @GetMapping
-    public ResponseEntity<?> getContactsByUserId(@RequestParam(name = "pageNo", defaultValue = "0") String pageNo,
+    @GetMapping("/broker")
+    public ResponseEntity<?> getContactsByBrokerId(@RequestParam(name = "pageNo", defaultValue = "0") String pageNo,
                                                  @RequestParam(name = "keyword", defaultValue = "") String keyword,
                                                  @RequestHeader(name = "Authorization") String token) {
 
         int userId = getUserIdFromToken(token);
         int pageSize = 5;
         int pageNumber = Integer.parseInt(pageNo);
-        ContactResponse contactList = contactService.getContactByUserId(userId, keyword, pageNumber, pageSize);
+        ContactResponse contactList = contactService.getContactByBrokerId(userId, keyword, pageNumber, pageSize);
 //        List<CareDTO> userCareDTOList = userCareService.getByUserId(userId);
 //        Map<String, Object> map = new HashMap<>();
 //        map.put("contactList", contactList);
 //        map.put("caringList",userCareDTOList);
         return new ResponseEntity<>(contactList, HttpStatus.OK);
+    }
+
+    @GetMapping("/user")
+    public ResponseEntity<?> getContactsByUserId(@RequestParam(name = "pageNo", defaultValue = "0") String pageNo,
+                                                   @RequestParam(name = "keyword", defaultValue = "") String keyword,
+                                                   @RequestHeader(name = "Authorization") String token) {
+
+        int userId = getUserIdFromToken(token);
+        int pageSize = 5;
+        int pageNumber = Integer.parseInt(pageNo);
+        ContactResponse contactList = contactService.getContactByUserId(userId, keyword, pageNumber, pageSize);
+        return new ResponseEntity<>(contactList, HttpStatus.OK);
+    }
+
+    @PostMapping("/user/confirm/{contactId}")
+    public ResponseEntity<?> confirmContact(@RequestHeader(name = "Authorization") String token,
+                                            @PathVariable(name = "contactId") int contactId){
+        User user = getUserFromToken(token);
+        if(user.getRoles().size() == 1){
+            contactService.deleteContact(contactId);
+            return new ResponseEntity<>("Đã xác nhận yêu cầu !", HttpStatus.OK);
+        }
+        if(user.getRoles().size() == 2){
+            ContactDTO contactDTO = contactService.getContactById(contactId);
+            contactDTO.setRoleId(3);
+            contactService.createBrokerContact(contactDTO);
+            return new ResponseEntity<>("Đã chuyển yêu cầu sang cho broker!", HttpStatus.OK);
+        }
+        return new ResponseEntity<>("Đã xảy ra lỗi !", HttpStatus.BAD_REQUEST);
     }
 
     @Autowired
@@ -78,12 +111,12 @@ public class ContactController {
             return new ResponseEntity<>("Không thể gửi liên lạc!", HttpStatus.BAD_REQUEST);
         }
         if(postId == 0){
-            ContactDTO dto2 = contactService.getContactByUserIdAndPostIdNull(userRequest.getId(), userId);
+            ContactDTO dto2 = contactService.getContactByUserIdAndPostIdNull(userRequest.getId(), userId, contactDTO.getRoleId());
             if(dto2 != null){
-                return new ResponseEntity<>("Bạn đã gửi liên hệ rồi! Hãy đợi nhà môi giới liên hệ lại nhé!", HttpStatus.BAD_REQUEST);
+                return new ResponseEntity<>("Bạn đã gửi liên hệ rồi! Hãy đợi liên hệ lại nhé!", HttpStatus.BAD_REQUEST);
             }
         }
-        ContactDTO dto = contactService.getContactByUserIdAndPostId(userRequest.getId(), userId, postId);
+        ContactDTO dto = contactService.getContactByUserIdAndPostId(userRequest.getId(), userId, postId, contactDTO.getRoleId());
         if(dto != null){
             return new ResponseEntity<>("Bạn đã gửi liên hệ rồi! Hãy đợi nhà môi giới liên hệ lại nhé!", HttpStatus.BAD_REQUEST);
         }
@@ -104,6 +137,7 @@ public class ContactController {
         }
         notificationDTO.setPhone(userRequest.getPhone());
         notificationDTO.setType("Contact");
+        notificationDTO.setPostId(postId);
         notificationService.createContactNotification(notificationDTO);
 
         //update unread notification user
@@ -117,8 +151,9 @@ public class ContactController {
         //send message to user or broker
 //        sendSMS(user.getPhone(), message);
         return new ResponseEntity<>("Create Contact Successfully !!!", HttpStatus.CREATED);
-
     }
+
+
 
 
     public void sendSMS(String phone, String token) {

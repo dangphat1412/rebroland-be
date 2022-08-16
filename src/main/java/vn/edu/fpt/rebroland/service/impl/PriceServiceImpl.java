@@ -2,13 +2,16 @@ package vn.edu.fpt.rebroland.service.impl;
 
 
 import vn.edu.fpt.rebroland.entity.Price;
+import vn.edu.fpt.rebroland.payload.ListPrice;
 import vn.edu.fpt.rebroland.payload.PriceDTO;
 import vn.edu.fpt.rebroland.repository.PriceRepository;
 import vn.edu.fpt.rebroland.service.PriceService;
 import org.modelmapper.ModelMapper;
 import org.springframework.stereotype.Service;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 @Service
@@ -40,21 +43,77 @@ public class PriceServiceImpl implements PriceService {
     }
 
     @Override
-    public PriceDTO createPrice(PriceDTO priceDTO) {
-        Price p = priceRepository.getPrice(priceDTO.getTypeId(), priceDTO.getUnitDate());
-        if(priceDTO.getPrice() == p.getPrice()){
-            return null;
+    public Map<String, Object> getListPostPrice() {
+        Price price = priceRepository.getCurrentPostPrice();
+        List<Integer> listPrice = priceRepository.getListPostPrice();
+        Map<String, Object> map = new HashMap<>();
+        map.put("currentPrice", price);
+        map.put("listPrice", listPrice);
+        return map;
+    }
+
+    @Override
+    public void createPrice(ListPrice list) {
+        for (PriceDTO priceDTO: list.getLists()) {
+            Price p = priceRepository.getPrice(priceDTO.getTypeId(), priceDTO.getUnitDate());
+            long millis = System.currentTimeMillis();
+            java.sql.Date date = new java.sql.Date(millis);
+            priceDTO.setStartDate(date);
+
+            if(priceDTO.getPrice() == p.getPrice()){
+                if(priceDTO.getDiscount() == p.getDiscount()){
+                    break;
+                }else{
+                    priceDTO.setStatus(true);
+                    Price price = priceRepository.save(mapToEntity(priceDTO));
+
+                    p.setStatus(false);
+                    priceRepository.save(p);
+//                    return mapToDTO(price);
+                }
+            }else{
+                priceDTO.setStatus(true);
+                Price price = priceRepository.save(mapToEntity(priceDTO));
+
+                p.setStatus(false);
+                priceRepository.save(p);
+//                return mapToDTO(price);
+            }
         }
+
+    }
+
+    @Override
+    public PriceDTO createPostPrice(PriceDTO priceDTO) {
+        Price p = priceRepository.getPrice(priceDTO.getTypeId(), priceDTO.getUnitDate());
         long millis = System.currentTimeMillis();
         java.sql.Date date = new java.sql.Date(millis);
         priceDTO.setStartDate(date);
 
-        priceDTO.setStatus(true);
-        Price price = priceRepository.save(mapToEntity(priceDTO));
+        if(priceDTO.getPrice() == p.getPrice()){
+            if(priceDTO.getDiscount() == p.getDiscount()){
+                return null;
+            }else{
+                priceDTO.setStatus(true);
+                Price price = priceRepository.save(mapToEntity(priceDTO));
 
+                p.setStatus(false);
+                priceRepository.save(p);
+                return mapToDTO(price);
+            }
+        }else{
+            priceDTO.setStatus(true);
+            Price price = priceRepository.save(mapToEntity(priceDTO));
 
-        p.setStatus(false);
-        priceRepository.save(p);
+            p.setStatus(false);
+            priceRepository.save(p);
+            return mapToDTO(price);
+        }
+    }
+
+    @Override
+    public PriceDTO getPriceByTypeIdAndUnitDate(int typeId, int unitDate) {
+        Price price = priceRepository.getPriceByTypeIdAndUnitDate(typeId, unitDate);
         return mapToDTO(price);
     }
 

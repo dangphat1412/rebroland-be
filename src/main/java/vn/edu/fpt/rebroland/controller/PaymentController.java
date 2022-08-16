@@ -26,7 +26,7 @@ import java.text.SimpleDateFormat;
 import java.util.*;
 
 @RestController
-@CrossOrigin(origins = "https://rebroland-frontend.vercel.app")
+@CrossOrigin(origins = "https://rebroland.vercel.app")
 @RequestMapping("/api/payment")
 public class PaymentController {
 
@@ -48,15 +48,18 @@ public class PaymentController {
     private OtpService otpService;
 
     @PostMapping("/create-payment")
-    public ResponseEntity<?> createPayment(@RequestBody TransactionDTO transactionDTO,
+    public ResponseEntity<?> createPayment(@Valid @RequestBody TransactionDTO transactionDTO,
                                            @RequestHeader(name = "Authorization") String token) throws UnsupportedEncodingException {
-//        int amount = 0;
-//        if(transactionDTO.getTypeId() == 1){
-//            amount = 55000 * 100;
-//        }else{
-//            amount = 100000 * 100;
+//        try{
+//            long amount = Long.parseLong(transactionDTO.getAmount()+"");
+//
+//        }catch (NumberFormatException e){
+//            return new ResponseEntity<>("Số tiền chỉ chứa chữ số!", HttpStatus.BAD_REQUEST);
 //        }
-//        User user = getUserFromToken(token);
+//        String amount = transactionDTO.getAmount() + "";
+//        if (!amount.matches("[0-9]+")){
+//            return new ResponseEntity<>("Số tiền chỉ chứa chữ số!", HttpStatus.BAD_REQUEST);
+//        }
 
         Map<String, String> vnp_Params = new HashMap<>();
         vnp_Params.put("vnp_Version", PaymentConfig.VERSIONVNPAY);
@@ -175,7 +178,7 @@ public class PaymentController {
                 long accountBalance = user.getAccountBalance();
                 user.setAccountBalance(accountBalance + transactionDTO.getAmount());
                 userRepository.save(user);
-                final String linkRedirect = "https://rebroland-frontend.vercel.app/thanh-toan-thanh-cong?amount=" + money +"&orderInfo="
+                final String linkRedirect = "https://rebroland.vercel.app/thanh-toan-thanh-cong?amount=" + money +"&orderInfo="
                         + orderInfo +"&bankCode=" + bankCode + "&cardType=" + cardType + "&payDate=" + payDate + "&transactionNo=" + transactionNo;
                 response.sendRedirect(linkRedirect);
             }
@@ -226,21 +229,20 @@ public class PaymentController {
     public ResponseEntity<?> processTransfer(@RequestHeader(name = "Authorization") String token,
                                                 @Valid @RequestBody TransferDTO transferDTO){
         User sender = getUserFromToken(token);
-        if(otpService.getOtp(transferDTO.getPhone()) == null){
+        if(otpService.getOtp(sender.getPhone()) == null){
             return new ResponseEntity<>("Mã OTP hết hạn!", HttpStatus.BAD_REQUEST);
         }
         if(transferDTO.getToken().isEmpty() || transferDTO.getToken() == null){
-            return new ResponseEntity<>("Mã OTP sai!", HttpStatus.BAD_REQUEST);
+            return new ResponseEntity<>("Mã OTP không tồn tại!", HttpStatus.BAD_REQUEST);
         }
         int otp = Integer.parseInt(transferDTO.getToken());
 
-        if (otp != otpService.getOtp(transferDTO.getPhone())) {
+        if (otp != otpService.getOtp(sender.getPhone())) {
             return new ResponseEntity<>("Mã OTP sai!", HttpStatus.BAD_REQUEST);
         }else{
-            UserDTO userDTO = userService.getUserByPhone(transferDTO.getPhone());
-            if(userDTO != null){
-                User receiver = userRepository.findByPhone(transferDTO.getPhone()).
-                        orElseThrow(() -> new UsernameNotFoundException("User not found with phone: " + transferDTO.getPhone()));
+            User receiver = userRepository.getUserByPhone(transferDTO.getPhone());
+            if(receiver != null){
+//                User receiver = userRepository.getUserByPhone(transferDTO.getPhone());
                 long amount = transferDTO.getAmount();
 
                 if(amount > sender.getAccountBalance()){

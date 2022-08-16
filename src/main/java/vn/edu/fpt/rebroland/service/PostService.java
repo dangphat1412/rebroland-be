@@ -57,7 +57,7 @@ public interface PostService {
 
     List<DerivativeDTO> getDerivativePostByUserIdPaging(int userId, String propertyTypeId, int pageNumber, int pageSize, String sortValue);
 
-    SearchResponse getDerivativePostOfBrokerPaging(int userId, String propertyTypeId, int pageNumber, int pageSize, String sortValue);
+    SearchResponse getDerivativePostOfBrokerPaging(int userId, String propertyTypeId, int pageNumber, int pageSize, String sortValue, String status);
 
 
     List<DerivativeDTO> getDerivativePostByUserId(int userId);
@@ -85,7 +85,7 @@ public interface PostService {
 
     Map<String, Integer> getNumberOfPropertyType();
 
-    Map<String, Integer> getNumberOfPropertyTypeForBroker();
+    Map<String, Integer> getNumberOfPropertyTypeForBroker(int userId);
 
     void extendPost(int postId, int numberOfPostedDay, Long totalPayment);
 

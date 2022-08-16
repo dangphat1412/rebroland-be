@@ -24,6 +24,11 @@ public class ResidentialHouseHistoryServiceImpl implements ResidentialHouseHisto
 
     @Override
     public ResidentialHouseHistoryDTO createResidentialHouseHistory(ResidentialHouseHistoryDTO residentialHouseHistoryDTO) {
+        ResidentialHouseHistory history = residentialHouseHistoryRepository.getResidentialLandHistoryByBarcode(residentialHouseHistoryDTO.getBarcode());
+        if(history != null){
+            return null;
+        }
+
         ResidentialHouseHistory residentialHouseHistory = mapToEntity(residentialHouseHistoryDTO);
         ResidentialHouseHistory newResidentialHouseHistory = residentialHouseHistoryRepository.save(residentialHouseHistory);
         return mapToDTO(newResidentialHouseHistory);

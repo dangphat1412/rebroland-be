@@ -23,7 +23,7 @@ public class Post {
     private int postId;
     @Column(length = 200)
     private String title;
-    @Column(length = 2000)
+    @Column(length = 3000)
     private String description;
     private float area;
     private boolean certification;
@@ -31,7 +31,7 @@ public class Post {
     private Date transactionStartDate;
     private Date transactionEndDate;
     private Long price;
-    @Column(length = 1000)
+    @Column(length = 200)
     private String additionalDescription;
     private String contactName;
     private String contactPhone;

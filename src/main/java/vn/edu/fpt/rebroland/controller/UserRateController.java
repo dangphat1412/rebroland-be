@@ -2,8 +2,10 @@ package vn.edu.fpt.rebroland.controller;
 
 import vn.edu.fpt.rebroland.entity.AvgRate;
 import vn.edu.fpt.rebroland.entity.User;
+import vn.edu.fpt.rebroland.payload.ListUserRate;
 import vn.edu.fpt.rebroland.payload.UserRateDTO;
 import vn.edu.fpt.rebroland.repository.AvgRateRepository;
+import vn.edu.fpt.rebroland.repository.UserRepository;
 import vn.edu.fpt.rebroland.service.ReportService;
 import vn.edu.fpt.rebroland.service.UserRateService;
 import org.springframework.http.HttpStatus;
@@ -15,17 +17,20 @@ import java.util.HashMap;
 import java.util.Map;
 
 @RestController
-@CrossOrigin(origins = "https://rebroland-frontend.vercel.app")
+@CrossOrigin(origins = "https://rebroland.vercel.app")
 @RequestMapping("/api/rating")
 public class UserRateController {
     private UserRateService userRateService;
     private AvgRateRepository rateRepository;
     private ReportService reportService;
+    private UserRepository userRepository;
 
-    public UserRateController(UserRateService userRateService, AvgRateRepository rateRepository, ReportService reportService) {
+    public UserRateController(UserRateService userRateService, AvgRateRepository rateRepository, ReportService reportService,
+                              UserRepository userRepository) {
         this.userRateService = userRateService;
         this.rateRepository = rateRepository;
         this.reportService = reportService;
+        this.userRepository = userRepository;
     }
 
     @PostMapping("/user/{userId}")
@@ -77,30 +82,32 @@ public class UserRateController {
         return new ResponseEntity<>(map, HttpStatus.OK);
     }
 
-//    @PostMapping("/broker/{userId}")
-//    public ResponseEntity<?> rateBroker(@RequestHeader(name = "Authorization") String token,
-//                                        @RequestBody List<UserRateDTO> listDto,
-//                                        @PathVariable(name = "userId") String id){
-//        if(listDto == null || listDto.size() == 0){
-//            return new ResponseEntity<>("Đã xảy ra lỗi !", HttpStatus.BAD_REQUEST);
-//        }
-//        for (UserRateDTO userRateDTO: listDto) {
-//            User user = reportService.getUserByToken(token);
-//            userRateDTO.setUserId(user.getId());
-//
-//            int userRatedId = Integer.parseInt(id);
-//            User userRated = reportService.getUserById(userRatedId);
-//            if(userRated.getRoles().size() != 2){
-//                return new ResponseEntity<>("Người được đánh giá không phải là broker!", HttpStatus.BAD_REQUEST);
-//            }
-//            userRateDTO.setUserRated(userRatedId);
-//            userRateDTO.setUserRoleRated(3);
-//
-//            UserRateDTO dto = userRateService.createUserRate(userRateDTO);
-//            if(dto == null){
-//                return new ResponseEntity<>("Đánh giá thất bại!", HttpStatus.BAD_REQUEST);
-//            }
-//
+    @PostMapping("/broker/list")
+    public ResponseEntity<?> rateListBroker(@RequestHeader(name = "Authorization") String token,
+                                        @RequestBody ListUserRate listDto){
+        if(listDto == null){
+            return new ResponseEntity<>("Đã xảy ra lỗi !", HttpStatus.BAD_REQUEST);
+        }
+        for (UserRateDTO userRateDTO: listDto.getLists()) {
+            if(userRateDTO.getStarRate() == 0){
+                break;
+            }
+            User user = reportService.getUserByToken(token);
+            userRateDTO.setUserId(user.getId());
+
+            int userRatedId = userRateDTO.getUserRated();
+            User userRated = userRepository.getUserById(userRatedId);
+            if(userRated.getRoles().size() != 2){
+                return new ResponseEntity<>("Người được đánh giá không phải là broker!", HttpStatus.BAD_REQUEST);
+            }
+            userRateDTO.setUserRated(userRatedId);
+            userRateDTO.setUserRoleRated(3);
+
+            UserRateDTO dto = userRateService.createUserRate(userRateDTO);
+            if(dto == null){
+                return new ResponseEntity<>("Đánh giá thất bại!", HttpStatus.BAD_REQUEST);
+            }
+
 //            AvgRate avgRate = rateRepository.getAvgRateByUserIdAndRoleId(userRatedId, 3);
 //            Map<String, Object> map = new HashMap<>();
 //            if (avgRate != null) {
@@ -108,8 +115,8 @@ public class UserRateController {
 //            } else {
 //                map.put("starRate", 0);
 //            }
-//            return new ResponseEntity<>(map, HttpStatus.OK);
-//        }
-//        return new ResponseEntity<>("Đã xảy ra lỗi !", HttpStatus.BAD_REQUEST);
-//    }
+
+        }
+        return new ResponseEntity<>(HttpStatus.OK);
+    }
 }

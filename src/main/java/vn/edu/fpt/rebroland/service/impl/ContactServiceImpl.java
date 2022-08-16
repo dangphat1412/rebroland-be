@@ -65,6 +65,13 @@ public class ContactServiceImpl implements ContactService {
     }
 
     @Override
+    public ContactDTO createBrokerContact(ContactDTO contactDTO) {
+        Contact contact = mapToEntity(contactDTO);
+        Contact newContact = contactRepository.save(contact);
+        return mapToDTO(newContact);
+    }
+
+    @Override
     public void deleteContact(int contactId) {
         try {
             contactRepository.deleteById(contactId);
@@ -80,13 +87,13 @@ public class ContactServiceImpl implements ContactService {
     }
 
     @Override
-    public ContactResponse getContactByUserId(int userId, String keyword, int pageNo, int pageSize) {
+    public ContactResponse getContactByBrokerId(int userId, String keyword, int pageNo, int pageSize) {
 //        String sortByStartDate = "start_date";
 //        String sortDir = "desc";
 //        Sort sortStartDate = sortDir.equalsIgnoreCase(Sort.Direction.ASC.name()) ?
 //                Sort.by(sortByStartDate).ascending() : Sort.by(sortByStartDate).descending();
         Pageable pageable = PageRequest.of(pageNo, pageSize);
-        Page<Contact> contacts = contactRepository.getContactByUserId(pageable, userId, keyword);
+        Page<Contact> contacts = contactRepository.getContactByBrokerId(pageable, userId, keyword);
         List<Contact> contactList = contacts.getContent();
         List<ContactDTO> contactDTOList = contactList.stream().map(contact -> mapToDTO(contact)).collect(Collectors.toList());
 //        int i = 0;
@@ -131,6 +138,38 @@ public class ContactServiceImpl implements ContactService {
     }
 
     @Override
+    public ContactResponse getContactByUserId(int userId, String keyword, int pageNo, int pageSize) {
+        Pageable pageable = PageRequest.of(pageNo, pageSize);
+        Page<Contact> contacts = contactRepository.getContactByUserId(pageable, userId, keyword);
+        List<Contact> contactList = contacts.getContent();
+        List<ContactDTO> contactDTOList = contactList.stream().map(contact -> mapToDTO(contact)).collect(Collectors.toList());
+
+        for (ContactDTO contactDTO: contactDTOList) {
+            if(contactDTO.getPost() == null){
+                contactDTO.setShortPost(null);
+            }else{
+                SearchDTO searchDTO = new SearchDTO();
+                setDataToSearchDTO(searchDTO, contactDTO.getPost());
+                contactDTO.setShortPost(searchDTO);
+                contactDTO.setPost(null);
+            }
+            int userRequest = contactDTO.getUserRequest().getId();
+            User user = userRepository.findById(userRequest)
+                    .orElseThrow(() -> new ResourceNotFoundException("User", "id", userRequest));
+            contactDTO.setUserRequest(modelMapper.map(user, UserDTO.class));
+            contactDTO.setUser(null);
+
+        }
+
+        ContactResponse contactResponse = new ContactResponse();
+        contactResponse.setTotalResult(contacts.getTotalElements());
+        contactResponse.setContacts(contactDTOList);
+        contactResponse.setPageNo(pageNo + 1);
+        contactResponse.setTotalPages(contacts.getTotalPages());
+        return contactResponse;
+    }
+
+    @Override
     public void deleteContactByPostId(int postId) {
         try {
             contactRepository.deleteContactByPostId(postId);
@@ -140,8 +179,8 @@ public class ContactServiceImpl implements ContactService {
     }
 
     @Override
-    public ContactDTO getContactByUserIdAndPostId(int userRequestId, int userId, int postId) {
-        Contact contact = contactRepository.getContactByUserIdAndPostId(userRequestId, userId, postId);
+    public ContactDTO getContactByUserIdAndPostId(int userRequestId, int userId, int postId, int roleId) {
+        Contact contact = contactRepository.getContactByUserIdAndPostId(userRequestId, userId, postId, roleId);
         if(contact != null){
             return mapToDTO(contact);
         }else {
@@ -151,8 +190,8 @@ public class ContactServiceImpl implements ContactService {
     }
 
     @Override
-    public ContactDTO getContactByUserIdAndPostIdNull(int userRequestId, int userId) {
-        Contact contact = contactRepository.getContactByUserIdAndPostIdNull(userRequestId, userId);
+    public ContactDTO getContactByUserIdAndPostIdNull(int userRequestId, int userId, int roleId) {
+        Contact contact = contactRepository.getContactByUserIdAndPostIdNull(userRequestId, userId, roleId);
         if(contact != null){
             return mapToDTO(contact);
         }else {

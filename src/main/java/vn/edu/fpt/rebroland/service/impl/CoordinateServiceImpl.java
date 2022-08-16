@@ -13,6 +13,7 @@ import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Collectors;
 
 @Service
 public class CoordinateServiceImpl implements CoordinateService {
@@ -40,10 +41,11 @@ public class CoordinateServiceImpl implements CoordinateService {
     }
 
     @Override
-    public String createCoordinate(List<Coordinate> coordinateList, int postId) {
+    public String createCoordinate(List<CoordinateDTO> coordinateList, int postId) {
         Post post = postRepository.findById(postId).orElseThrow(() -> new ResourceNotFoundException("Post", "ID", postId));
+        List<Coordinate> coordinates = coordinateList.stream().map(coordinateDTO -> mapToEntity(coordinateDTO)).collect(Collectors.toList());
         try {
-            for (Coordinate listCoordinate : coordinateList) {
+            for (Coordinate listCoordinate : coordinates) {
 //             Coordinate coordinate = new Coordinate();
 //                listCoordinate.setPost(post);
                 listCoordinate.setPost(post);
@@ -86,15 +88,16 @@ public class CoordinateServiceImpl implements CoordinateService {
     }
 
     @Override
-    public String updateCoordinate(List<Coordinate> coordinateList, int postId) {
+    public String updateCoordinate(List<CoordinateDTO> coordinateList, int postId) {
         Post post = postRepository.findById(postId).orElseThrow(() -> new ResourceNotFoundException("Post", "ID", postId));
         coordinateRepository.deleteByPost(postId);
+        List<Coordinate> coordinates = coordinateList.stream().map(coordinateDTO -> mapToEntity(coordinateDTO)).collect(Collectors.toList());
 
         if (coordinateList == null) {
             return "update success Coordinate";
         } else {
             try {
-                for (Coordinate listCoordinate : coordinateList) {
+                for (Coordinate listCoordinate : coordinates) {
                     listCoordinate.setPost(post);
                     listCoordinate.setLatitude(listCoordinate.getLatitude());
                     listCoordinate.setLongitude(listCoordinate.getLongitude());
