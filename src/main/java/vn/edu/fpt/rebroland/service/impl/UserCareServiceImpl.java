@@ -8,12 +8,15 @@ import vn.edu.fpt.rebroland.payload.*;
 import vn.edu.fpt.rebroland.repository.PostRepository;
 import vn.edu.fpt.rebroland.repository.UserCareRepository;
 import vn.edu.fpt.rebroland.repository.UserRepository;
+import vn.edu.fpt.rebroland.service.NotificationService;
 import vn.edu.fpt.rebroland.service.UserCareService;
 import org.modelmapper.ModelMapper;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
+import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
 
@@ -30,13 +33,16 @@ public class UserCareServiceImpl implements UserCareService {
     private UserRepository userRepository;
 
     private PostRepository postRepository;
+    private NotificationService notificationService;
 
     public UserCareServiceImpl(UserCareRepository userCareRepository, ModelMapper modelMapper,
-                               UserRepository userRepository, PostRepository postRepository) {
+                               UserRepository userRepository, PostRepository postRepository,
+                               NotificationService notificationService) {
         this.userCareRepository = userCareRepository;
         this.modelMapper = modelMapper;
         this.userRepository = userRepository;
         this.postRepository = postRepository;
+        this.notificationService = notificationService;
     }
 
     private UserCareDTO mapToDTO(UserCare userCare) {
@@ -77,6 +83,17 @@ public class UserCareServiceImpl implements UserCareService {
     }
 
     @Override
+    public UserCareDTO createNewUserCare(UserCareDTO userCareDTO) {
+        long millis = System.currentTimeMillis();
+        java.sql.Date date = new java.sql.Date(millis);
+        userCareDTO.setStartDate(date);
+        userCareDTO.setStatus(false);
+        UserCare userCare = mapToEntity(userCareDTO);
+        UserCare newUserCare = userCareRepository.save(userCare);
+        return mapToDTO(newUserCare);
+    }
+
+    @Override
     public UserCareDTO updateUserCare(UserCareDTO userCareDTO, int careId) {
         UserCare userCare = userCareRepository.findById(careId).orElseThrow(() -> new ResourceNotFoundException("UserCare", "id", careId));
         userCare.setSummarize(userCareDTO.getSummarize());
@@ -104,24 +121,69 @@ public class UserCareServiceImpl implements UserCareService {
         }
     }
 
+    @Autowired
+    SimpMessagingTemplate template;
+
     @Override
     public UserCareDTO finishTransactionUserCare(int careId) {
         UserCare userCare = userCareRepository.findById(careId).orElseThrow(() -> new ResourceNotFoundException("UserCare", "id", careId));
         userCare.setStatus(true);
-        return mapToDTO(userCareRepository.save(userCare));
+        UserCareDTO dto = mapToDTO(userCareRepository.save(userCare));
+
+        int userId = userCare.getUser().getId();
+        int userCaredId = userCare.getUserCaredId();
+        User userCared = userRepository.getUserById(userCaredId);
+
+        //send notification to user
+        TextMessageDTO messageDTO = new TextMessageDTO();
+        String message = "Việc chăm sóc khách hàng đã kết thúc. Vui lòng đánh giá broker!";
+        messageDTO.setMessage(message);
+//        messageDTO.setUserId(userId);
+//        messageDTO.setRoleId(3);
+        template.convertAndSend("/topic/message/" + userCaredId, messageDTO);
+
+        NotificationDTO notificationDTO = new NotificationDTO();
+        notificationDTO.setUserId(userCaredId);
+        notificationDTO.setContent(message);
+//        notificationDTO.setPhone(user.getPhone());
+        notificationDTO.setSender(userId);
+        notificationDTO.setType("FinishTakeCare");
+        notificationService.createContactNotification(notificationDTO);
+
+        int numberUnread = userCared.getUnreadNotification();
+        numberUnread++;
+        userCared.setUnreadNotification(numberUnread);
+        userRepository.save(userCared);
+
+        return dto;
     }
 
     @Override
-    public CareResponse getUserCareByUserId(int userId, String keyword, int pageNo, int pageSize) {
+    public CareResponse getUserCareByUserId(int userId, String keyword, String status, int pageNo, int pageSize) {
         String sortByStartDate = "start_date";
         String sortDir = "desc";
         Sort sortStartDate = sortDir.equalsIgnoreCase(Sort.Direction.ASC.name()) ?
                 Sort.by(sortByStartDate).ascending() : Sort.by(sortByStartDate).descending();
         Pageable pageable = PageRequest.of(pageNo, pageSize, sortStartDate);
-        Page<UserCare> userCares = userCareRepository.getUserCareByUserId(pageable, userId, keyword);
+        int statusId = Integer.parseInt(status);
+        Page<UserCare> userCares = null;
+        switch (statusId){
+            case 0:
+                userCares = userCareRepository.getUserCareByUserIdAndStatusFalse(pageable, userId, keyword);
+                break;
+            case 1:
+                userCares = userCareRepository.getUserCareByUserIdAndStatusTrue(pageable, userId, keyword);
+                break;
+            case 2:
+                userCares = userCareRepository.getUserCareByUserId(pageable, userId, keyword);
+                break;
+        }
+//        Page<UserCare> userCares = userCareRepository.getUserCareByUserId(pageable, userId, keyword);
 //        List<UserCare> userCareList = userCareRepository.getListUserCareByUserId(userId);
 //        List<UserCareDTO> userCareDTOList = userCares.getContent().stream().
 //                map(contact -> mapToDTO(contact)).collect(Collectors.toList());
+
+
         List<UserCareDTO> userCareDTOList = new ArrayList<>();
         for(UserCare userCare: userCares){
             UserCareDTO userCareDTO = mapToDTO(userCare);

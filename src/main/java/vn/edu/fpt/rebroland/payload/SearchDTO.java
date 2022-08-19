@@ -72,4 +72,6 @@ public class SearchDTO {
     private int reportStatus;
 
     private int reportId;
+
+    private String comment;
 }

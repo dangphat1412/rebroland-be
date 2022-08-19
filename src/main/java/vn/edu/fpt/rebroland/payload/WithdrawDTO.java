@@ -3,10 +3,7 @@ package vn.edu.fpt.rebroland.payload;
 import com.fasterxml.jackson.annotation.JsonFormat;
 import lombok.Data;
 
-import javax.validation.constraints.Min;
-import javax.validation.constraints.NotEmpty;
-import javax.validation.constraints.NotNull;
-import javax.validation.constraints.Size;
+import javax.validation.constraints.*;
 import java.util.Date;
 
 @Data
@@ -22,14 +19,17 @@ public class WithdrawDTO {
     @Size(max = 200)
     private String content;
 
+//    @NotEmpty(message = "Số tài khoản không được để trống!")
+    @Pattern(regexp = "^[0-9]+$", message = "Tài khoản ngân hàng chỉ chứa chữ số!")
     private String accountNumber;
 
+    @Pattern(regexp = "^[a-zA-Z ]*$", message = "Tên tài khoản chỉ chứa ký tự!")
     private String accountName;
 
     private String bankName;
 
     @NotNull(message = "Số tiền không được để trống!")
-    @Min(value = 0)
+    @Min(value = 1)
     private long money;
 
     private int status;

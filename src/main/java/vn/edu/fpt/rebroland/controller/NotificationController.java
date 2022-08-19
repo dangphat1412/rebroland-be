@@ -14,7 +14,7 @@ import java.util.List;
 import java.util.Map;
 
 @RestController
-@CrossOrigin(origins = "https://rebroland.vercel.app")
+@CrossOrigin(origins = "https://rebroland-frontend.vercel.app")
 @RequestMapping("/api/notification")
 public class NotificationController {
 
@@ -49,10 +49,13 @@ public class NotificationController {
     @PutMapping("/read/{id}")
     public ResponseEntity<?> getNotificationById(@PathVariable(name = "id") String id){
         int notificationId = Integer.parseInt(id);
+        NotificationDTO dto = notificationService.getNotificationById(notificationId);
         NotificationDTO notificationDTO = notificationService.getDetailNotificationById(notificationId);
         Map<String, Object> map = new HashMap<>();
         map.put("postId", notificationDTO.getPostId());
         map.put("type", notificationDTO.getType());
+        map.put("sender", notificationDTO.getSender());
+        map.put("unread", dto.isUnRead());
         return new ResponseEntity<>(map, HttpStatus.OK);
     }
 

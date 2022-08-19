@@ -25,4 +25,5 @@ public interface UserService {
     boolean changeStatusOfUser(int userId);
 
     UserDTO getUserByPhone(String phone);
+    UserDTO getUserById(int id);
 }

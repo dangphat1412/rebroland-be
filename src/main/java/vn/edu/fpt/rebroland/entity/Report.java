@@ -29,6 +29,8 @@ public class Report {
 
     private int status;
 
+    private String comment;
+
     @OneToMany(mappedBy = "report", cascade = CascadeType.ALL, orphanRemoval = true)
     private Set<ReportDetail> details = new HashSet<>();
 

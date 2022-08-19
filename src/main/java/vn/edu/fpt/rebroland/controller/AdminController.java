@@ -21,7 +21,7 @@ import java.util.List;
 import java.util.Map;
 
 @RestController
-@CrossOrigin(origins = "https://rebroland.vercel.app")
+@CrossOrigin(origins = "https://rebroland-frontend.vercel.app")
 @RequestMapping("/api/admin")
 public class AdminController {
 
@@ -56,7 +56,7 @@ public class AdminController {
                                         @RequestParam(name = "pageNo", defaultValue = "0") String pageNo){
         User user = getUserFromToken(token);
         int pageNumber = Integer.parseInt(pageNo);
-        int pageSize = 3;
+        int pageSize = 5;
         Role role = roleRepository.findByName("ADMIN").get();
         if(user.getRoles().contains(role)){
             List<UserDTO> listUser = userService.getAllUserForAdminPaging(user.getId(), pageNumber, pageSize, keyword, sortValue);
@@ -138,16 +138,24 @@ public class AdminController {
 
     @PutMapping("/post/status/{postId}")
     public ResponseEntity<?> changeLockStatusOfPost(@PathVariable(name = "postId") int postId){
-        boolean status = postService.changeStatusOfPost(postId);
+        int status = postService.changeStatusOfPost(postId);
 //        PostDTO post = postService.getPostByPostId(postId);
 //        if(post == null){
 //            return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
 //        }
-        if(status){
-            return new ResponseEntity<>(HttpStatus.OK);
-        }else{
-            return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
+        if(status == 1){
+            return new ResponseEntity<>("Thay đổi trạng thái thành công!", HttpStatus.OK);
         }
+        if(status == 0){
+            return new ResponseEntity<>("Người đăng bị block!",HttpStatus.BAD_REQUEST);
+        }
+        if(status == 2){
+            return new ResponseEntity<>("Bài viết đã bị xóa!",HttpStatus.BAD_REQUEST);
+        }
+        if(status == 3){
+            return new ResponseEntity<>("Bài viết không tồn tại",HttpStatus.BAD_REQUEST);
+        }
+        return new ResponseEntity<>("Đã xảy ra lỗi!",HttpStatus.BAD_REQUEST);
     }
 
     @GetMapping("/list-reports/posts")
@@ -237,14 +245,15 @@ public class AdminController {
         }
     }
 
-    @GetMapping("/list-reports/posts/accept/{reportId}")
+    @PutMapping("/list-reports/posts/accept/{reportId}")
     public ResponseEntity<?> acceptPostReport(@PathVariable(name = "reportId") int reportId,
-                                              @RequestHeader(name = "Authorization") String token){
+                                              @RequestHeader(name = "Authorization") String token,
+                                              @Valid @RequestBody ReportDTO reportDTO){
 
         User user = getUserFromToken(token);
         Role role = roleRepository.findByName("ADMIN").get();
         if(user.getRoles().contains(role)){
-            boolean result = reportService.acceptReportPost(reportId);
+            boolean result = reportService.acceptReportPost(reportId, reportDTO.getComment());
 
 
             if(result){
@@ -258,7 +267,7 @@ public class AdminController {
         }
     }
 
-    @GetMapping("/list-reports/posts/reject/{reportId}")
+    @PutMapping("/list-reports/posts/reject/{reportId}")
     public ResponseEntity<?> rejectPostReport(@PathVariable(name = "reportId") int reportId,
                                               @RequestHeader(name = "Authorization") String token){
         User user = getUserFromToken(token);
@@ -275,14 +284,15 @@ public class AdminController {
         }
     }
 
-    @GetMapping("/list-reports/users/accept/{reportId}")
+    @PutMapping("/list-reports/users/accept/{reportId}")
     public ResponseEntity<?> acceptUserReport(@PathVariable(name = "reportId") int reportId,
-                                              @RequestHeader(name = "Authorization") String token){
+                                              @RequestHeader(name = "Authorization") String token,
+                                              @Valid @RequestBody ReportDTO reportDTO){
 
         User user = getUserFromToken(token);
         Role role = roleRepository.findByName("ADMIN").get();
         if(user.getRoles().contains(role)){
-            boolean result = reportService.acceptReportUser(reportId);
+            boolean result = reportService.acceptReportUser(reportId, reportDTO.getComment());
             if(result){
                 return new ResponseEntity<>("Đã giải quyết báo cáo !", HttpStatus.OK);
             }else{
@@ -294,7 +304,7 @@ public class AdminController {
         }
     }
 
-    @GetMapping("/list-reports/users/reject/{reportId}")
+    @PutMapping("/list-reports/users/reject/{reportId}")
     public ResponseEntity<?> rejectUserReport(@PathVariable(name = "reportId") int reportId,
                                               @RequestHeader(name = "Authorization") String token){
         User user = getUserFromToken(token);
@@ -434,7 +444,7 @@ public class AdminController {
     }
 
     @PutMapping("/update-price")
-    public ResponseEntity<?> fixPrice(@RequestHeader(name = "Authorization") String token,
+    public ResponseEntity<?> updatePrice(@RequestHeader(name = "Authorization") String token,
                                       @Valid @RequestBody ListPrice listPrice){
         User user = getUserFromToken(token);
         Role role = roleRepository.findByName("ADMIN").get();
@@ -451,7 +461,7 @@ public class AdminController {
     }
 
     @PutMapping("/list-price/price-post")
-    public ResponseEntity<?> fixPricePost(@RequestHeader(name = "Authorization") String token,
+    public ResponseEntity<?> updatePricePost(@RequestHeader(name = "Authorization") String token,
                                       @Valid @RequestBody PriceDTO priceDTO){
         User user = getUserFromToken(token);
         Role role = roleRepository.findByName("ADMIN").get();

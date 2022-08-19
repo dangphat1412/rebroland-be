@@ -13,6 +13,8 @@ public interface UserCareService {
     UserCareDTO createUserCare(UserCareDTO userCareDTO, User user,
                              UserCare userCareWithOnlyUserCaredId, int check);
 
+    UserCareDTO createNewUserCare(UserCareDTO userCareDTO);
+
     UserCareDTO updateUserCare(UserCareDTO userCareDTO, int careId);
 
     void deleteRequiredWithUserCare(int careId);
@@ -21,8 +23,7 @@ public interface UserCareService {
 
     UserCareDTO finishTransactionUserCare(int careId);
 
-
-    CareResponse getUserCareByUserId(int userId, String keyword, int pageNo, int pageSize);
+    CareResponse getUserCareByUserId(int userId, String keyword, String status, int pageNo, int pageSize);
 
     List<CareDTO> getByUserId(int userId);
 

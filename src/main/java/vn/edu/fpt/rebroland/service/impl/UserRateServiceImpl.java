@@ -2,15 +2,21 @@ package vn.edu.fpt.rebroland.service.impl;
 
 import vn.edu.fpt.rebroland.entity.AvgRate;
 import vn.edu.fpt.rebroland.entity.UserRate;
+import vn.edu.fpt.rebroland.payload.RateDTO;
 import vn.edu.fpt.rebroland.payload.UserRateDTO;
+import vn.edu.fpt.rebroland.payload.UserRateResponse;
 import vn.edu.fpt.rebroland.repository.AvgRateRepository;
 import vn.edu.fpt.rebroland.repository.UserRateRepository;
 import vn.edu.fpt.rebroland.service.UserRateService;
 import org.modelmapper.ModelMapper;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
 import java.text.DecimalFormat;
 import java.util.List;
+import java.util.stream.Collectors;
 
 @Service
 public class UserRateServiceImpl implements UserRateService {
@@ -80,6 +86,30 @@ public class UserRateServiceImpl implements UserRateService {
         DecimalFormat df = new DecimalFormat("#.0");
 
         return Float.parseFloat(df.format(average / starRate.size()));
+    }
+
+    @Override
+    public UserRateResponse getListUserRate(int userRatedId, int userRoleRatedId, int pageNumber, int pageSize) {
+        Pageable pageable = PageRequest.of(pageNumber, pageSize);
+        Page<UserRate> listUserRate = userRateRepository.getListUserRate(userRatedId, userRoleRatedId, pageable);
+        List<UserRate> list = listUserRate.getContent();
+        List<RateDTO> listDto = list.stream().map(userRate -> mapper.map(userRate, RateDTO.class)).collect(Collectors.toList());
+        UserRateResponse response = new UserRateResponse();
+        response.setLists(listDto);
+        response.setPageNo(pageNumber + 1);
+        response.setTotalPages(listUserRate.getTotalPages());
+        response.setTotalResult(listUserRate.getTotalElements());
+        return response;
+    }
+
+    @Override
+    public UserRateDTO getUserRateStartDateMax(int userId, int userRatedId, int roleId) {
+        UserRate userRate = userRateRepository.getUserRateStartDateMax(userId, userRatedId, roleId);
+        if(userRate == null){
+            return null;
+        }else {
+            return mapToDTO(userRate);
+        }
     }
 
     private UserRateDTO mapToDTO(UserRate userRate){

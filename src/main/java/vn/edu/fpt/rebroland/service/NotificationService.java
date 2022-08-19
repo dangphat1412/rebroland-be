@@ -12,4 +12,5 @@ public interface NotificationService {
     List<NotificationDTO> getUnreadNotificationPaging(int userId, int pageNumber);
 
     NotificationDTO getDetailNotificationById(int id);
+    NotificationDTO getNotificationById(int id);
 }

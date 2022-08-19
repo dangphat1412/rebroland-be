@@ -31,7 +31,7 @@ import java.util.regex.Pattern;
 
 @RestController
 @RequestMapping("/api/users")
-@CrossOrigin(origins = "https://rebroland.vercel.app")
+@CrossOrigin(origins = "https://rebroland-frontend.vercel.app")
 public class UserController {
     private UserService userService;
 
@@ -111,7 +111,12 @@ public class UserController {
 
             String token = otpService.generateOtp(registerDTO.getPhone()) + "";
 //            sendSMS(registerDTO.getPhone(), token);
-//            registerDTO.setToken(token);
+            Pattern pattern = Pattern.compile("[$&+,:;=\\\\?@#|/'<>.^*()%!-1234567890]");
+            if (pattern.matcher(registerDTO.getFullName()).find()) {
+                return new ResponseEntity<>("Họ và tên không chứa ký tự đặc biệt và số!", HttpStatus.BAD_REQUEST);
+            }
+            String fullName = registerDTO.getFullName().trim();
+            registerDTO.setFullName(fullName);
             Map<String, Object> map = new HashMap<>();
             map.put("user", registerDTO);
             map.put("tokenTime", otpService.EXPIRE_MINUTES);
@@ -143,6 +148,7 @@ public class UserController {
         if(setRole.contains(role)){
             isBroker = true;
         }
+
         UserDTO userDTO = mapper.map(user, UserDTO.class);
 
 
@@ -329,7 +335,7 @@ public class UserController {
                                           @RequestParam(name = "sortValue", defaultValue = "0") String sortValue,
                                           @RequestHeader(name = "Authorization", required = false) String token){
         int pageNumber = Integer.parseInt(pageNo);
-        int pageSize = 2;
+        int pageSize = 8;
         try{
 //            List<UserDTO> listBroker = userService.getAllBrokerPaging(pageNumber, pageSize, user.getId());
             int userId = 0;
@@ -462,6 +468,12 @@ public class UserController {
         String phone = payload.getString("sub");
         User user = userRepository.findByPhone(phone).
                 orElseThrow(() -> new UsernameNotFoundException("User not found with phone: " + phone));
+        //check admin phone
+        Role roles = roleRepository.findByName("ADMIN").get();
+        User receiver = userRepository.getUserByPhone(registerDTO.getPhone());
+        if(receiver.getRoles().contains(roles)){
+            return new ResponseEntity<>("Số điện thoại không tồn tại trong hệ thống!", HttpStatus.BAD_REQUEST);
+        }
         if(user.getPhone().equals(registerDTO.getPhone())){
             return new ResponseEntity<>("SĐT cập nhật trùng với SĐT hiện tại !", HttpStatus.BAD_REQUEST);
         }else{
@@ -477,7 +489,7 @@ public class UserController {
 
     @PostMapping("/change-phone")
     @Transactional
-    public ResponseEntity<?> processUpdatePhone(@RequestHeader(name = "Authorization") String token,
+    public ResponseEntity<?> changePhoneNumber(@RequestHeader(name = "Authorization") String token,
                                                 @Valid @RequestBody PhoneDTO registerDTO){
         String[] parts = token.split("\\.");
         JSONObject payload = new JSONObject(decode(parts[1]));

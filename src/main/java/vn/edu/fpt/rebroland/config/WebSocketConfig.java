@@ -20,8 +20,8 @@ public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
     @Override
     public void registerStompEndpoints(StompEndpointRegistry registry) {
         // with sockjs
-        //       registry.addEndpoint("/ws-message").setAllowedOriginPatterns("*").withSockJS();
+ //       registry.addEndpoint("/ws-message").setAllowedOriginPatterns("*").withSockJS();
         // without sockjs
-        registry.addEndpoint("/ws-message").setAllowedOriginPatterns("http:localhost:3000", "https://rebroland.vercel.app");
+        registry.addEndpoint("/ws-message").setAllowedOriginPatterns("*");
     }
 }

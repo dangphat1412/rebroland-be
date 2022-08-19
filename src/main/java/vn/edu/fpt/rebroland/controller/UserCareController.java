@@ -11,6 +11,7 @@ import vn.edu.fpt.rebroland.repository.UserRepository;
 import vn.edu.fpt.rebroland.service.ContactService;
 import vn.edu.fpt.rebroland.service.UserCareDetailService;
 import vn.edu.fpt.rebroland.service.UserCareService;
+import vn.edu.fpt.rebroland.service.UserService;
 import com.twilio.Twilio;
 import com.twilio.rest.api.v2010.account.Message;
 import com.twilio.type.PhoneNumber;
@@ -27,7 +28,7 @@ import java.util.*;
 
 @RestController
 @RequestMapping("/api/user-care")
-@CrossOrigin(origins = "https://rebroland.vercel.app")
+@CrossOrigin(origins = "https://rebroland-frontend.vercel.app")
 public class UserCareController {
     private UserCareService userCareService;
 
@@ -41,15 +42,19 @@ public class UserCareController {
 
     private ContactRepository contactRepository;
 
+    private UserService userService;
+
     public UserCareController(UserCareService userCareService, UserRepository userRepository,
                               UserCareRepository userCareRepository, UserCareDetailService userCareDetailService,
-                              ContactService contactService,ContactRepository contactRepository) {
+                              ContactService contactService,ContactRepository contactRepository,
+                              UserService userService) {
         this.userCareService = userCareService;
         this.userRepository = userRepository;
         this.userCareRepository = userCareRepository;
         this.userCareDetailService = userCareDetailService;
         this.contactService = contactService;
         this.contactRepository = contactRepository;
+        this.userService = userService;
     }
 
     private static String decode(String encodedString) {
@@ -123,6 +128,59 @@ public class UserCareController {
 //        return new ResponseEntity<>("Insert user care fail", HttpStatus.BAD_REQUEST);
 
     }
+
+    @GetMapping("/add-customer/get-info/{phone}")
+    public ResponseEntity<?> checkCustomerPhone(@PathVariable(name = "phone") String phone,
+                                            @RequestHeader(name = "Authorization") String token) {
+        int userId = getUserIdFromToken(token);
+
+        User userCared = userRepository.getUserByPhone(phone);
+        if(userCared != null){
+            UserCare userCare = userCareRepository.getUserCareByUserIdAndStatusFalse(userId, userCared.getId());
+            if(userCare != null){
+                return new ResponseEntity<>("Số điện thoại này đang được chăm sóc!", HttpStatus.BAD_REQUEST);
+            }else{
+                Map<String, Object> map = new HashMap<>();
+                map.put("id", userCared.getId());
+                map.put("fullName", userCared.getFullName());
+                map.put("phone", userCared.getPhone());
+                map.put("email", userCared.getEmail());
+                map.put("avatar", userCared.getAvatar());
+                return new ResponseEntity<>(map, HttpStatus.OK);
+            }
+        }else{
+            return new ResponseEntity<>("Số điện thoại không tồn tại trong hệ thống!", HttpStatus.BAD_REQUEST);
+        }
+    }
+
+    @PostMapping("/add-usercare/{userCaredId}")
+    public ResponseEntity<?> createUserCare(@PathVariable(name = "userCaredId") int userCaredId,
+                                                @RequestHeader(name = "Authorization") String token) {
+        int userId = getUserIdFromToken(token);
+        UserDTO userDTO = userService.getUserById(userId);
+
+        User userCared = userRepository.getUserById(userCaredId);
+
+        UserCare userCareWithOnlyUserCaredId = userCareRepository.findUserCareByUserCaredId(userCaredId, userId);
+        if(userCareWithOnlyUserCaredId != null){
+            return new ResponseEntity<>("Người dùng đã ở trong danh sách chăm sóc!", HttpStatus.BAD_REQUEST);
+        }
+        if(userCaredId == userId){
+            return new ResponseEntity<>("Người dùng không thể chăm sóc chính mình!", HttpStatus.BAD_REQUEST);
+        }
+        if(userCared != null){
+            UserCareDTO dto = new UserCareDTO();
+            dto.setUserCaredId(userCaredId);
+            dto.setUser(userDTO);
+
+            UserCareDTO userCareDTO = userCareService.createNewUserCare(dto);
+            return new ResponseEntity<>(userCareDTO, HttpStatus.OK);
+        }else{
+            return new ResponseEntity<>("Người dùng không tồn tại trong hệ thống!", HttpStatus.BAD_REQUEST);
+        }
+    }
+
+
 
     @PostMapping("/{careId}")
     @Transactional
@@ -208,15 +266,16 @@ public class UserCareController {
     @GetMapping
     public ResponseEntity<?> getUserCareByUserId(@RequestParam(name = "pageNo", defaultValue = "0") String pageNo,
                                                  @RequestHeader(name = "Authorization") String token,
-                                                 @RequestParam(name = "keyword", defaultValue = "") String keyword) {
+                                                 @RequestParam(name = "keyword", defaultValue = "") String keyword,
+                                                 @RequestParam(name = "status", defaultValue = "0") String status) {
 
         int userId = getUserIdFromToken(token);
-        int pageSize = 10;
+        int pageSize = 5;
         int pageNumber = Integer.parseInt(pageNo);
         User user = userRepository.findById(userId).orElseThrow(() -> new ResourceNotFoundException("User", "id", userId));
 
         if (user.getCurrentRole() == 3) {
-            CareResponse careResponse = userCareService.getUserCareByUserId(userId, keyword, pageNumber, pageSize);
+            CareResponse careResponse = userCareService.getUserCareByUserId(userId, keyword, status, pageNumber, pageSize);
             return new ResponseEntity<>(careResponse, HttpStatus.OK);
         } else {
             return new ResponseEntity<>("Người dùng không phải broker! !", HttpStatus.BAD_REQUEST);
@@ -296,7 +355,7 @@ public class UserCareController {
     }
 
 
-    @PutMapping("/")
+    @PutMapping("/finish/{careId}")
     @Transactional
     public ResponseEntity<String> finishTransaction(@PathVariable int careId,
                                                     @RequestHeader(name = "Authorization") String token) {
@@ -305,6 +364,7 @@ public class UserCareController {
                 .orElseThrow(() -> new ResourceNotFoundException("User", "id", userId));
         if (user.getCurrentRole() == 3) {
             UserCareDTO newCareDTO = userCareService.finishTransactionUserCare(careId);
+
             return new ResponseEntity<>("Finish transaction!!!", HttpStatus.OK);
         } else {
             return new ResponseEntity<>("You need to change broker role!", HttpStatus.BAD_REQUEST);

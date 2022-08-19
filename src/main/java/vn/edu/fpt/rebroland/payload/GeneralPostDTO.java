@@ -34,8 +34,8 @@ public class GeneralPostDTO {
     private String description;
 
     @NotNull(message = "Diện tích không để trống")
-    @Min(value = 0,message = "Diện tích không âm")
-    @Max(value = 10000,message = "Diện tích không quá 10000")
+    @Min(value = 1,message = "Diện tích từ 1 m2")
+    @Max(value = 10000,message = "Diện tích không quá 10000 m2")
     private float area;
 
     @NotNull(message = "Cập nhập chứng chỉ.")
@@ -47,7 +47,7 @@ public class GeneralPostDTO {
     private int numberOfPostedDay;
 
 
-    @Min(value = 0,message = "Giá không âm")
+    @Min(value = 1000,message = "Giá tối thiểu 1000")
     @Max(value = 1000000000000L,message = "giá không quá 1000 tỷ")
     private Long price;
 

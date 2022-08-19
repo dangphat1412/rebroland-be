@@ -54,7 +54,8 @@ public interface UserRepository extends JpaRepository<User, Integer> {
             "AND IF(:province IS NULL, 1 = 1, u.province LIKE CONCAT('%',:province,'%')) " +
             "AND IF(:check IS NULL, 1 = 1, u.id IN (SELECT user_id FROM `posts` " +
             "                                       WHERE property_id IN :propertyType)) " +
-            "AND (u.id != :userId) "  +
+            "AND (u.id != :userId) " +
+            "AND u.block = false "  +
             "ORDER BY r.avg_rate DESC ", nativeQuery = true)
     Page<User> searchBrokerByStarRateDesc(String fullName, String ward, String district, String province,
                                           String check, List<Integer> propertyType, Pageable pageable, int userId);
@@ -69,7 +70,8 @@ public interface UserRepository extends JpaRepository<User, Integer> {
             "AND IF(:province IS NULL, 1 = 1, u.province LIKE CONCAT('%',:province,'%')) " +
             "AND IF(:check IS NULL, 1 = 1, u.id IN (SELECT user_id FROM `posts` " +
             "                                       WHERE property_id IN :propertyType)) " +
-            "AND (u.id != :userId) ", nativeQuery = true)
+            "AND (u.id != :userId) " +
+            "AND u.block = false ", nativeQuery = true)
     List<User> searchBroker(String fullName, String ward, String district, String province,
                                           String check, List<Integer> propertyType, int userId);
 

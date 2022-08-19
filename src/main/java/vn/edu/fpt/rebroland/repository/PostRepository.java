@@ -105,7 +105,8 @@ public interface PostRepository extends JpaRepository<Post, Integer> {
     Page<Post> findDerivativePostOfBrokerOrderByPricePerSquareDesc(int userId, int propertyId, String check, int status, Pageable pageable);
 
     @Query(value = " SELECT * FROM `posts` p " +
-            " WHERE IF(:status = 0, 1 = 1, IF(:status = 4, p.block = true, p.status_id = :status AND p.block = false))" +
+            " WHERE IF(:status = 0, 1 = 1, IF(:status = 4, p.block = true, p.status_id = :status AND p.block = false)) " +
+            " AND (p.status_id != 6) " +
             " AND ((p.title LIKE CONCAT('%',:keyword,'%')) OR (p.description LIKE CONCAT('%',:keyword,'%')) OR p.post_id = :keyword) ", nativeQuery = true)
     Page<Post> findAll(Pageable pageable, String keyword, int status);
 
@@ -157,7 +158,9 @@ public interface PostRepository extends JpaRepository<Post, Integer> {
 
     @Query(value = " SELECT * FROM `posts` " +
             " WHERE user_id = :userId " +
-            " AND IF(:check IS NULL OR :propertyId = 0, 1 = 1, property_id = :propertyId)", nativeQuery = true)
+            " AND IF(:check IS NULL OR :propertyId = 0, 1 = 1, property_id = :propertyId)" +
+            " AND status_id = 1 " +
+            " AND block = false ", nativeQuery = true)
     Page<Post> getAllPostByUserId(int userId, int propertyId, String check, Pageable pageable);
 
 
@@ -201,6 +204,8 @@ public interface PostRepository extends JpaRepository<Post, Integer> {
             " FROM `posts` " +
             " WHERE user_id = :userId " +
             " AND IF(:check IS NULL OR :propertyId = 0, 1 = 1, property_id = :propertyId)" +
+            " AND status_id = 1 " +
+            " AND block = false " +
             " ORDER BY Total ASC", nativeQuery = true)
     Page<Post> getAllPostByUserIdOrderByPriceAsc(int userId, int propertyId, String check, Pageable pageable);
 
@@ -227,6 +232,8 @@ public interface PostRepository extends JpaRepository<Post, Integer> {
             " FROM `posts` " +
             " WHERE user_id = :userId " +
             " AND IF(:check IS NULL OR :propertyId = 0, 1 = 1, property_id = :propertyId)" +
+            " AND status_id = 1 " +
+            " AND block = false " +
             " ORDER BY Total DESC", nativeQuery = true)
     Page<Post> getAllPostByUserIdOrderByPriceDesc(int userId, int propertyId, String check, Pageable pageable);
 
@@ -253,6 +260,8 @@ public interface PostRepository extends JpaRepository<Post, Integer> {
             " FROM `posts` " +
             " WHERE user_id = :userId " +
             " AND IF(:check IS NULL OR :propertyId = 0, 1 = 1, property_id = :propertyId)" +
+            " AND status_id = 1 " +
+            " AND block = false " +
             " ORDER BY per_m2 ASC", nativeQuery = true)
     Page<Post> getAllPostByUserIdOrderByPricePerSquareAsc(int userId, int propertyId, String check, Pageable pageable);
 
@@ -278,6 +287,8 @@ public interface PostRepository extends JpaRepository<Post, Integer> {
             " FROM `posts` " +
             " WHERE user_id = :userId " +
             " AND IF(:check IS NULL OR :propertyId = 0, 1 = 1, property_id = :propertyId)" +
+            " AND status_id = 1 " +
+            " AND block = false " +
             " ORDER BY per_m2 DESC", nativeQuery = true)
     Page<Post> getAllPostByUserIdOrderByPricePerSquareDesc(int userId, int propertyId, String check, Pageable pageable);
 
@@ -544,7 +555,7 @@ public interface PostRepository extends JpaRepository<Post, Integer> {
     @Query(value = " SELECT * FROM `posts` " +
             " WHERE user_id = :userId " +
             " AND block = false " +
-            " AND status_id != 3 ", nativeQuery = true)
+            " AND status_id != 6 ", nativeQuery = true)
     List<Post> getAllPostUnBlockByUserId(int userId);
 
     @Query(value = " SELECT SUM(amount * (100 - discount) / 100) FROM `transactions` " +
@@ -586,4 +597,15 @@ public interface PostRepository extends JpaRepository<Post, Integer> {
 
     @Query(value = "select * from posts where original_post =:originalPost and user_id=:userId",nativeQuery = true)
     Post getPostByUserIdAndOriginalId(int originalPost,int userId);
+
+    @Query(value = " SELECT * FROM `posts` " +
+            " WHERE status_id = 1 " +
+            " AND block = false " +
+            " AND original_post is null " +
+            " ORDER BY spend_money DESC " +
+            " LIMIT 5 ", nativeQuery = true)
+    List<Post> getOutstandingPost();
+
+    @Query(value = " SELECT SUM(spend_money) FROM `posts` ", nativeQuery = true)
+    Long getTotalPostMoney();
 }

@@ -426,7 +426,7 @@ public class PostServiceImpl implements PostService {
         Page<Post> pagePost = postRepository.getAllPostByUserIdPaging(userId, pageable);
 
         List<PostDTO> listDto = pagePost.getContent().stream().map(post -> mapToDTO(post)).collect(Collectors.toList());
-        ;
+
         List<SearchDTO> listSearchDto = new ArrayList<>();
         for (PostDTO postDto : listDto) {
             SearchDTO dto = new SearchDTO();
@@ -825,7 +825,7 @@ public class PostServiceImpl implements PostService {
         post.setArea(generalPostDTO.getArea());
         post.setCertification(generalPostDTO.isCertification());
         // unit name "thoa thuan" price null
-        if (post.getUnitPrice().getId() == 3 || generalPostDTO.getPrice() < 0) {
+        if (post.getUnitPrice().getId() == 3) {
             post.setPrice(null);
         } else {
             post.setPrice(generalPostDTO.getPrice());
@@ -1340,7 +1340,6 @@ public class PostServiceImpl implements PostService {
         postDTO.setAddress(generalPostDTO.getAddress());
         if (generalPostDTO.getImages() != null) {
             postDTO.setThumbnail(generalPostDTO.getImages().get(0));
-
         } else {
             postDTO.setThumbnail(null);
         }
@@ -1503,25 +1502,29 @@ public class PostServiceImpl implements PostService {
     }
 
     @Override
-    public boolean changeStatusOfPost(int postId) {
+    public int changeStatusOfPost(int postId) {
         Post post = postRepository.findPostByPostId(postId);
         long millis = System.currentTimeMillis();
         Date date = new Date(millis);
         if (post != null) {
 //            Status status = new Status();
             //khong phai bai da hoan thanh giao dich
-            if (post.getStatus().getId() != 3) {
+            if (post.getStatus().getId() != 6) {
                 if(post.isBlock()){
+                    User user = post.getUser();
+                    if(user.isBlock()){
+                        return 0;
+                    }
                     post.setBlock(false);
                     java.util.Date blockDate = post.getBlockDate();
                     post.setBlockDate(null);
                     postRepository.save(post);
 
                     TextMessageDTO messageDTO = new TextMessageDTO();
-                    String message = "Chúng tôi đã hiển thị lại bài viết của bạn !!";
+                    String message = "Chúng tôi đã hiển thị lại bài viết của bạn, mã bài viết: " + postId;
                     messageDTO.setMessage(message);
                     template.convertAndSend("/topic/message/" + post.getUser().getId(), messageDTO);
-                    saveNotificationAndUpdateUser(message, post.getUser().getId());
+                    saveNotificationAndUpdateUser(message, post.getUser().getId(), postId);
 
                     List<Post> listPost = postRepository.getDerivativePostOfOriginalPost(postId);
                     for(Post p: listPost){
@@ -1530,10 +1533,10 @@ public class PostServiceImpl implements PostService {
                             post.setBlockDate(null);
                             postRepository.save(p);
 
-                            String message1 = "Chúng tôi đã hiển thị lại bài viết của bạn !!";
+                            String message1 = "Chúng tôi đã hiển thị lại bài viết của bạn, mã bài viết: " + p.getPostId();
                             messageDTO.setMessage(message1);
                             template.convertAndSend("/topic/message/" + p.getUser().getId(), messageDTO);
-                            saveNotificationAndUpdateUser(message1, p.getUser().getId());
+                            saveNotificationAndUpdateUser(message1, p.getUser().getId(), p.getPostId());
                         }
                     }
                 }else{
@@ -1542,10 +1545,10 @@ public class PostServiceImpl implements PostService {
                     postRepository.save(post);
 
                     TextMessageDTO messageDTO = new TextMessageDTO();
-                    String message = "Chúng tôi đã ẩn bài viết của bạn. Nếu có thắc mắc xin liên hệ số 0397975445.";
+                    String message = "Chúng tôi đã ẩn bài viết mã số " + post.getPostId() + " của bạn. Nếu có thắc mắc xin liên hệ số 0397975445.";
                     messageDTO.setMessage(message);
                     template.convertAndSend("/topic/message/" + post.getUser().getId(), messageDTO);
-                    saveNotificationAndUpdateUser(message, post.getUser().getId());
+                    saveNotificationAndUpdateUser(message, post.getUser().getId(), post.getPostId());
 
                     List<Post> listPost = postRepository.getDerivativePostOfOriginalPost(postId);
                     for(Post p: listPost){
@@ -1553,20 +1556,20 @@ public class PostServiceImpl implements PostService {
                             p.setBlock(true);
                             p.setBlockDate(date);
                             postRepository.save(p);
-                            String message1 = "Chúng tôi đã ẩn bài viết của bạn. Nếu có thắc mắc xin liên hệ số 0397975445.";
+                            String message1 = "Chúng tôi đã ẩn bài viết mã số " + p.getPostId() + " của bạn. Nếu có thắc mắc xin liên hệ số 0397975445.";
                             messageDTO.setMessage(message1);
                             template.convertAndSend("/topic/message/" + p.getUser().getId(), messageDTO);
-                            saveNotificationAndUpdateUser(message1, p.getUser().getId());
+                            saveNotificationAndUpdateUser(message1, p.getUser().getId(), p.getPostId());
                         }
                     }
                 }
 
-                return true;
+                return 1;
             } else {
-                return false;
+                return 2;
             }
         } else {
-            return false;
+            return 3;
         }
     }
 
@@ -1621,7 +1624,7 @@ public class PostServiceImpl implements PostService {
                     String message = "Bài viết gốc đã được gia hạn, chúng tôi hiển thị lại bài phái sinh của bạn!";
                     messageDTO.setMessage(message);
                     template.convertAndSend("/topic/message/" + p.getUser().getId(), messageDTO);
-                    saveNotificationAndUpdateUser(message, p.getUser().getId());
+                    saveNotificationAndUpdateUser(message, p.getUser().getId(), p.getPostId());
                 }
 
             }
@@ -1649,7 +1652,7 @@ public class PostServiceImpl implements PostService {
                     String message = "Bài viết gốc bị gỡ, vì vậy chúng tôi sẽ đóng bài phái sinh của bạn!";
                     messageDTO.setMessage(message);
                     template.convertAndSend("/topic/message/" + p.getUser().getId(), messageDTO);
-                    saveNotificationAndUpdateUser(message, p.getUser().getId());
+                    saveNotificationAndUpdateUser(message, p.getUser().getId(), p.getPostId());
                 }
                 if(statusId == 1){
                     p.setBlock(false);
@@ -1659,7 +1662,7 @@ public class PostServiceImpl implements PostService {
                     String message = "Bài viết gốc đã được hiển thị trở lại, chúng tôi hiển thị lại bài phái sinh của bạn!";
                     messageDTO.setMessage(message);
                     template.convertAndSend("/topic/message/" + p.getUser().getId(), messageDTO);
-                    saveNotificationAndUpdateUser(message, p.getUser().getId());
+                    saveNotificationAndUpdateUser(message, p.getUser().getId(), p.getPostId());
                 }
 
             }
@@ -1667,7 +1670,7 @@ public class PostServiceImpl implements PostService {
 
     }
 
-    private void saveNotificationAndUpdateUser(String message, int userId){
+    private void saveNotificationAndUpdateUser(String message, int userId, int postId){
         NotificationDTO notificationDTO = new NotificationDTO();
         notificationDTO.setUserId(userId);
         if(message == null){
@@ -1676,7 +1679,8 @@ public class PostServiceImpl implements PostService {
             notificationDTO.setContent(message);
         }
 //        notificationDTO.setPhone(userRequest.getPhone());
-        notificationDTO.setType("Post Status");
+        notificationDTO.setPostId(postId);
+        notificationDTO.setType("PostStatus");
         notificationService.createContactNotification(notificationDTO);
 
         //update unread notification user
@@ -1806,6 +1810,24 @@ public class PostServiceImpl implements PostService {
 //        List<Post> listPost = postRepository.getAllOriginalPostByUserId(userId);
 //        return listPost.stream().map(post -> mapper.map(post, PostDTO.class)).collect(Collectors.toList());
 //
+    }
+
+    @Override
+    public List<SearchDTO> getOutstandingPost() {
+        List<Post> listPost = postRepository.getOutstandingPost();
+        List<PostDTO> listDto = listPost.stream().map(post -> mapper.map(post, PostDTO.class)).collect(Collectors.toList());
+        List<SearchDTO> listSearchDto = new ArrayList<>();
+        for (PostDTO postDto : listDto) {
+            SearchDTO dto = new SearchDTO();
+            if(postDto.getDirection() != null){
+                dto.setDirectionId(postDto.getDirection().getId());
+            }else{
+                dto.setDirectionId(0);
+            }
+            setDataToSearchDTO(dto, postDto);
+            listSearchDto.add(dto);
+        }
+        return listSearchDto;
     }
 
 

@@ -18,6 +18,10 @@ public interface PaymentRepository extends JpaRepository<Transactions, Integer> 
             "WHERE type_id = 2 ", nativeQuery = true)
     Long getTotalMoneyFromBroker();
 
+    @Query(value = " SELECT SUM(amount) FROM transactions " +
+            "WHERE type_id = 3 ", nativeQuery = true)
+    Long getTotalDepositMoney();
+
     @Query(value = " SELECT p.* FROM `transactions` p " +
             " JOIN `users` u on p.user_id = u.id" +
             " WHERE p.type_id = 1 " +

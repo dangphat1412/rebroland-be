@@ -29,16 +29,34 @@ public interface UserCareRepository extends JpaRepository<UserCare, Integer> {
 
     @Query(value = "select * from user_cares u join post_cares p on u.care_id = p.care_id " +
             "where u.user_cared_id = :userCaredId and " +
-            "p.post_id = :postId and u.user_id = :userId", nativeQuery = true)
+            "p.post_id = :postId and u.user_id = :userId  and u.status = false", nativeQuery = true)
     UserCare findUserCareByUserCaredIdAndPostId(Integer userCaredId, int postId,int userId);
 
-    @Query(value = "select * from user_cares where user_cared_id = :userCaredId and user_id = :userId", nativeQuery = true)
+    @Query(value = "select * from user_cares where user_cared_id = :userCaredId and user_id = :userId and status = false ", nativeQuery = true)
     UserCare findUserCareByUserCaredId(Integer userCaredId, int userId);
 
     @Query(value = "select * from `user_cares` where user_id =:userId" +
             " AND user_cared_id IN (SELECT u.id FROM `users` u " +
             "                       WHERE (u.phone LIKE CONCAT('%',:keyword,'%')) OR (u.full_name LIKE CONCAT('%',:keyword,'%'))) ", nativeQuery = true)
     Page<UserCare> getUserCareByUserId(Pageable pageable, int userId, String keyword);
+
+    @Query(value = "select * from `user_cares` where user_id =:userId" +
+            " AND status = false " +
+            " AND user_cared_id IN (SELECT u.id FROM `users` u " +
+            "                       WHERE (u.phone LIKE CONCAT('%',:keyword,'%')) OR (u.full_name LIKE CONCAT('%',:keyword,'%'))) ", nativeQuery = true)
+    Page<UserCare> getUserCareByUserIdAndStatusFalse(Pageable pageable, int userId, String keyword);
+
+    @Query(value = "select * from `user_cares` where user_cared_id =:userCaredId " +
+            " AND user_id = :userId " +
+            " AND status = false ", nativeQuery = true)
+    UserCare getUserCareByUserIdAndStatusFalse(int userId, int userCaredId);
+
+    @Query(value = "select * from `user_cares` where user_id =:userId" +
+            " AND status = true " +
+            " AND user_cared_id IN (SELECT u.id FROM `users` u " +
+            "                       WHERE (u.phone LIKE CONCAT('%',:keyword,'%')) OR (u.full_name LIKE CONCAT('%',:keyword,'%'))) ", nativeQuery = true)
+    Page<UserCare> getUserCareByUserIdAndStatusTrue(Pageable pageable, int userId, String keyword);
+
 
     @Query(value = "select * from `user_cares` where user_id =:userId", nativeQuery = true)
     List<UserCare> getListUserCareByUserId(int userId);

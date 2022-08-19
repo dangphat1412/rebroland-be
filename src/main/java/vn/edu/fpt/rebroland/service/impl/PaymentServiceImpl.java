@@ -3,6 +3,7 @@ package vn.edu.fpt.rebroland.service.impl;
 import vn.edu.fpt.rebroland.entity.Transactions;
 import vn.edu.fpt.rebroland.payload.*;
 import vn.edu.fpt.rebroland.repository.PaymentRepository;
+import vn.edu.fpt.rebroland.repository.PostRepository;
 import vn.edu.fpt.rebroland.service.PaymentService;
 import org.modelmapper.ModelMapper;
 import org.springframework.data.domain.Page;
@@ -18,11 +19,13 @@ import java.util.stream.Collectors;
 @Service
 public class PaymentServiceImpl implements PaymentService {
     private PaymentRepository paymentRepository;
+    private PostRepository postRepository;
 
     private ModelMapper mapper;
 
-    public PaymentServiceImpl(PaymentRepository paymentRepository, ModelMapper mapper) {
+    public PaymentServiceImpl(PaymentRepository paymentRepository, ModelMapper mapper, PostRepository postRepository) {
         this.paymentRepository = paymentRepository;
+        this.postRepository = postRepository;
         this.mapper = mapper;
     }
 
@@ -66,13 +69,16 @@ public class PaymentServiceImpl implements PaymentService {
 
     @Override
     public Map<String, Long> getTotalMoney() {
-        Long totalPostAmount = paymentRepository.getTotalMoneyFromPost();
+        Long totalPostAmount = postRepository.getTotalPostMoney();
         Long totalBrokerAmount = paymentRepository.getTotalMoneyFromBroker();
-        Long totalAmount = paymentRepository.getTotalRevenue();
+//        Long totalAmount = paymentRepository.getTotalRevenue();
+        Long totalAmount = totalBrokerAmount + totalPostAmount;
+        Long totalDepositMoney = paymentRepository.getTotalDepositMoney() ;
         Map<String, Long> map = new HashMap<>();
         map.put("totalPostAmount", totalPostAmount);
         map.put("totalBrokerAmount", totalBrokerAmount);
         map.put("totalAmount", totalAmount);
+        map.put("totalDepositMoney", totalDepositMoney);
         return map;
     }
 

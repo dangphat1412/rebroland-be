@@ -12,7 +12,7 @@ import org.springframework.web.bind.annotation.*;
 import javax.validation.Valid;
 
 @RestController
-@CrossOrigin(origins = "https://rebroland.vercel.app")
+@CrossOrigin(origins = "https://rebroland-frontend.vercel.app")
 @RequestMapping("/api/report")
 public class ReportController {
 
@@ -49,7 +49,6 @@ public class ReportController {
         User user = reportService.getUserByToken(token);
 
         int userReportedId = Integer.parseInt(id);
-//        User userReported = reportService.getUserById(userReportedId);
         reportDTO.setUserReportedId(userReportedId);
         reportDTO.setUserReportId(user.getId());
 

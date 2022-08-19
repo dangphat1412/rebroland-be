@@ -1,8 +1,10 @@
 package vn.edu.fpt.rebroland.controller;
 
 import vn.edu.fpt.rebroland.config.PaymentConfig;
+import vn.edu.fpt.rebroland.entity.Role;
 import vn.edu.fpt.rebroland.entity.User;
 import vn.edu.fpt.rebroland.payload.*;
+import vn.edu.fpt.rebroland.repository.RoleRepository;
 import vn.edu.fpt.rebroland.repository.UserRepository;
 import vn.edu.fpt.rebroland.service.OtpService;
 import vn.edu.fpt.rebroland.service.PaymentService;
@@ -26,7 +28,7 @@ import java.text.SimpleDateFormat;
 import java.util.*;
 
 @RestController
-@CrossOrigin(origins = "https://rebroland.vercel.app")
+@CrossOrigin(origins = "https://rebroland-frontend.vercel.app")
 @RequestMapping("/api/payment")
 public class PaymentController {
 
@@ -35,13 +37,16 @@ public class PaymentController {
     private ModelMapper mapper;
     private UserService userService;
     private WithdrawService withdrawService;
+    private RoleRepository roleRepository;
 
-    public PaymentController(PaymentService paymentService, UserRepository userRepository, ModelMapper mapper, UserService userService, WithdrawService withdrawService) {
+    public PaymentController(PaymentService paymentService, UserRepository userRepository, ModelMapper mapper, UserService userService, WithdrawService withdrawService,
+                             RoleRepository roleRepository) {
         this.paymentService = paymentService;
         this.userRepository = userRepository;
         this.mapper = mapper;
         this.userService = userService;
         this.withdrawService = withdrawService;
+        this.roleRepository = roleRepository;
     }
 
     @Autowired
@@ -178,7 +183,7 @@ public class PaymentController {
                 long accountBalance = user.getAccountBalance();
                 user.setAccountBalance(accountBalance + transactionDTO.getAmount());
                 userRepository.save(user);
-                final String linkRedirect = "https://rebroland.vercel.app/thanh-toan-thanh-cong?amount=" + money +"&orderInfo="
+                final String linkRedirect = "https://rebroland-frontend.vercel.app/thanh-toan-thanh-cong?amount=" + money +"&orderInfo="
                         + orderInfo +"&bankCode=" + bankCode + "&cardType=" + cardType + "&payDate=" + payDate + "&transactionNo=" + transactionNo;
                 response.sendRedirect(linkRedirect);
             }
@@ -197,6 +202,12 @@ public class PaymentController {
     public ResponseEntity<?> preTransfer(@RequestHeader(name = "Authorization") String token,
                                          @Valid @RequestBody TransferDTO registerDTO){
         User user = getUserFromToken(token);
+        //check admin phone
+        Role roles = roleRepository.findByName("ADMIN").get();
+        User receiver = userRepository.getUserByPhone(registerDTO.getPhone());
+        if(receiver.getRoles().contains(roles)){
+            return new ResponseEntity<>("Số điện thoại không tồn tại trong hệ thống!", HttpStatus.BAD_REQUEST);
+        }
         if(user.getPhone().equals(registerDTO.getPhone())){
             return new ResponseEntity<>("SĐT nhận tiền trùng với SĐT hiện tại !", HttpStatus.BAD_REQUEST);
         }else{
@@ -220,7 +231,6 @@ public class PaymentController {
             }else {
                 return new ResponseEntity<>("Số điện thoại nhận tiền không tồn tại!", HttpStatus.BAD_REQUEST);
             }
-
         }
     }
 
@@ -229,6 +239,12 @@ public class PaymentController {
     public ResponseEntity<?> processTransfer(@RequestHeader(name = "Authorization") String token,
                                                 @Valid @RequestBody TransferDTO transferDTO){
         User sender = getUserFromToken(token);
+        //check admin phone
+        Role roles = roleRepository.findByName("ADMIN").get();
+        User receiver = userRepository.getUserByPhone(transferDTO.getPhone());
+        if(receiver.getRoles().contains(roles)){
+            return new ResponseEntity<>("Số điện thoại không tồn tại trong hệ thống!", HttpStatus.BAD_REQUEST);
+        }
         if(otpService.getOtp(sender.getPhone()) == null){
             return new ResponseEntity<>("Mã OTP hết hạn!", HttpStatus.BAD_REQUEST);
         }
@@ -240,7 +256,6 @@ public class PaymentController {
         if (otp != otpService.getOtp(sender.getPhone())) {
             return new ResponseEntity<>("Mã OTP sai!", HttpStatus.BAD_REQUEST);
         }else{
-            User receiver = userRepository.getUserByPhone(transferDTO.getPhone());
             if(receiver != null){
 //                User receiver = userRepository.getUserByPhone(transferDTO.getPhone());
                 long amount = transferDTO.getAmount();

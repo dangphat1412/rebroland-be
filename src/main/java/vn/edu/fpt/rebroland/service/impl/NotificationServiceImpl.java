@@ -64,6 +64,12 @@ public class NotificationServiceImpl implements NotificationService {
         return mapToDTO(notification);
     }
 
+    @Override
+    public NotificationDTO getNotificationById(int id) {
+        Notification notification = notificationRepository.findById(id).orElseThrow(() -> new ResourceNotFoundException("Notification", "id", id));
+        return mapToDTO(notification);
+    }
+
     private NotificationDTO mapToDTO(Notification notification) {
         return mapper.map(notification, NotificationDTO.class);
     }

@@ -18,9 +18,9 @@ public interface ReportService {
     ReportDetailResponse getListDetailReport(int reportId, int pageNumber, int pageSize);
     ReportDetailResponse getListDetailReportUser(int userId, int pageNumber, int pageSize);
     ReportResponse getListReportUser(int pageNumber, int pageSize, String keyword, String sortValue);
-    boolean acceptReportPost(int reportId);
+    boolean acceptReportPost(int reportId, String comment);
     boolean rejectReportPost(int reportId);
-    boolean acceptReportUser(int reportId);
+    boolean acceptReportUser(int reportId, String comment);
     boolean rejectReportUser(int reportId);
 
 }

@@ -21,4 +21,5 @@ public class NotificationDTO {
     private String type;
     private boolean unRead;
     private int postId;
+    private Integer sender;
 }

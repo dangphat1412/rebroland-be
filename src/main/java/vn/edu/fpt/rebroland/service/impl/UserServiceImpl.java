@@ -134,9 +134,15 @@ public class UserServiceImpl implements UserService {
         }
 
         List<User> listBroker = userRepository.searchBroker(fullName, ward, district, province, check, listType, userId);
-        List<UserDTO> list = listBroker.stream().map(user -> mapToDTO(user)).collect(Collectors.toList());
+        List<User> list = new ArrayList<>();
+        for (User user : listBroker) {
+            if (!list.contains(user)) {
+                list.add(user);
+            }
+        }
+        List<UserDTO> listDto = list.stream().map(user -> mapToDTO(user)).collect(Collectors.toList());
 
-        return list;
+        return listDto;
     }
 
     @Override
@@ -159,12 +165,13 @@ public class UserServiceImpl implements UserService {
         if(sortOption == 0){
             userPage = userRepository.searchBrokerByStarRateDesc(fullName, ward, district, province, check, listType, pageable, userId);
         }
-        //giao dich thanh cong desc
-//        if(sortOption == 1){
-//            userPage = userRepository.searchBrokerByStarRateAsc(fullName, ward, district, province, address, pageable);
-//        }
 
-        List<User> listUser = userPage.getContent();
+        List<User> listUser = new ArrayList<>();
+        for (User user : userPage.getContent()) {
+            if (!listUser.contains(user)) {
+                listUser.add(user);
+            }
+        }
 
         List<UserDTO> list = new ArrayList<>();
         UserDTO userDTO = null;
@@ -180,6 +187,7 @@ public class UserServiceImpl implements UserService {
 
             list.add(userDTO);
         }
+
         return list;
 
     }
@@ -270,32 +278,35 @@ public class UserServiceImpl implements UserService {
             if(user.isBlock()){
                 user.setBlock(false);
                 Date blockDate = user.getBlockDate();
+                user.setBlockDate(null);
                 userRepository.save(user);
 
                 List<Post> listPost = postRepository.getAllPostBlockByUserId(user.getId());
                 List<Post> listDerivative = new ArrayList<>();
                 for (Post post : listPost) {
-                    if (post.getBlockDate().compareTo(blockDate) == 0) {
-                        post.setBlock(false);
-                        post.setBlockDate(null);
-                        postRepository.save(post);
-                        TextMessageDTO messageDTO = new TextMessageDTO();
-                        String message = "Chúng tôi đã hiển thị lại bài viết của bạn !!";
-                        messageDTO.setMessage(message);
-                        template.convertAndSend("/topic/message/" + post.getUser().getId(), messageDTO);
-                        saveNotificationAndUpdateUser(message, post.getUser().getId());
+                    if (post.isBlock()) {
+                        if (post.getBlockDate().compareTo(blockDate) == 0) {
+                            post.setBlock(false);
+                            post.setBlockDate(null);
+                            postRepository.save(post);
+                            TextMessageDTO messageDTO = new TextMessageDTO();
+                            String message = "Chúng tôi đã hiển thị lại bài viết của bạn, mã bài viết: " + post.getPostId();
+                            messageDTO.setMessage(message);
+                            template.convertAndSend("/topic/message/" + post.getUser().getId(), messageDTO);
+                            saveNotificationAndUpdateUser(message, post.getUser().getId(), post.getPostId());
 
-                        listDerivative = postRepository.getDerivativePostOfOriginalPost(post.getPostId());
-                        for (Post p : listDerivative) {
-                            if (p.getBlockDate().compareTo(blockDate) == 0) {
-                                p.setBlock(false);
-                                post.setBlockDate(null);
-                                postRepository.save(p);
+                            listDerivative = postRepository.getDerivativePostOfOriginalPost(post.getPostId());
+                            for (Post p : listDerivative) {
+                                if (p.getBlockDate().compareTo(blockDate) == 0 && p.isBlock()) {
+                                    p.setBlock(false);
+                                    post.setBlockDate(null);
+                                    postRepository.save(p);
 
-                                String message1 = "Chúng tôi đã hiển thị lại bài viết của bạn !!";
-                                messageDTO.setMessage(message1);
-                                template.convertAndSend("/topic/message/" + p.getUser().getId(), messageDTO);
-                                saveNotificationAndUpdateUser(message1, p.getUser().getId());
+                                    String message1 = "Chúng tôi đã hiển thị lại bài viết của bạn, mã bài viết: " + p.getPostId();
+                                    messageDTO.setMessage(message1);
+                                    template.convertAndSend("/topic/message/" + p.getUser().getId(), messageDTO);
+                                    saveNotificationAndUpdateUser(message1, p.getUser().getId(), p.getPostId());
+                                }
                             }
                         }
 
@@ -317,10 +328,10 @@ public class UserServiceImpl implements UserService {
                     postRepository.save(post);
 
                     TextMessageDTO messageDTO = new TextMessageDTO();
-                    String message = "Chúng tôi đã ẩn bài viết của bạn. Nếu có thắc mắc xin liên hệ số 0397975445.";
+                    String message = "Chúng tôi đã ẩn bài viết mã số " + post.getPostId() + " của bạn. Nếu có thắc mắc xin liên hệ số 0397975445.";
                     messageDTO.setMessage(message);
                     template.convertAndSend("/topic/message/" + post.getUser().getId(), messageDTO);
-                    saveNotificationAndUpdateUser(message, post.getUser().getId());
+                    saveNotificationAndUpdateUser(message, post.getUser().getId(), post.getPostId());
 
                     listDerivative = postRepository.getDerivativePostOfOriginalPost(post.getPostId());
                     for(Post p: listDerivative){
@@ -328,10 +339,10 @@ public class UserServiceImpl implements UserService {
                             p.setBlock(true);
                             p.setBlockDate(date);
                             postRepository.save(p);
-                            String message1 = "Chúng tôi đã ẩn bài viết của bạn. Nếu có thắc mắc xin liên hệ số 0397975445.";
+                            String message1 = "Chúng tôi đã ẩn bài viết mã số " + p.getPostId() + " của bạn. Nếu có thắc mắc xin liên hệ số 0397975445.";
                             messageDTO.setMessage(message1);
                             template.convertAndSend("/topic/message/" + p.getUser().getId(), messageDTO);
-                            saveNotificationAndUpdateUser(message1, p.getUser().getId());
+                            saveNotificationAndUpdateUser(message1, p.getUser().getId(), p.getPostId());
                         }
                     }
                 }
@@ -354,6 +365,16 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
+    public UserDTO getUserById(int id) {
+        User user = userRepository.getUserById(id);
+        if(user != null){
+            return mapToDTO(user);
+        }else {
+            return null;
+        }
+    }
+
+    @Override
     public void updatePassword(User user, String newPassword) {
 //        if(passwordEncoder.matches(newPassword, user.getPassword())){
 //            return false;
@@ -363,7 +384,7 @@ public class UserServiceImpl implements UserService {
 //        }
     }
 
-    private void saveNotificationAndUpdateUser(String message, int userId){
+    private void saveNotificationAndUpdateUser(String message, int userId, int postId){
         NotificationDTO notificationDTO = new NotificationDTO();
         notificationDTO.setUserId(userId);
         if(message == null){
@@ -372,7 +393,8 @@ public class UserServiceImpl implements UserService {
             notificationDTO.setContent(message);
         }
 //        notificationDTO.setPhone(userRequest.getPhone());
-        notificationDTO.setType("Post Status");
+        notificationDTO.setPostId(postId);
+        notificationDTO.setType("PostStatus");
         notificationService.createContactNotification(notificationDTO);
 
         //update unread notification user

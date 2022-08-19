@@ -9,6 +9,7 @@ import vn.edu.fpt.rebroland.repository.UserRepository;
 import vn.edu.fpt.rebroland.service.ContactService;
 import vn.edu.fpt.rebroland.service.NotificationService;
 import vn.edu.fpt.rebroland.service.UserCareService;
+import com.pusher.rest.Pusher;
 import com.twilio.Twilio;
 import com.twilio.rest.api.v2010.account.Message;
 import com.twilio.type.PhoneNumber;
@@ -23,9 +24,10 @@ import org.springframework.web.bind.annotation.*;
 
 import javax.validation.Valid;
 import java.util.Base64;
+import java.util.Collections;
 
 @RestController
-@CrossOrigin(origins = "https://rebroland.vercel.app")
+@CrossOrigin(origins = "https://rebroland-frontend.vercel.app")
 @RequestMapping("/api/contact")
 public class ContactController {
     private ContactService contactService;
@@ -122,10 +124,14 @@ public class ContactController {
         }
 
         ContactDTO newContact = contactService.createContact(contactDTO, userId, postId, userRequest.getId());
-        TextMessageDTO messageDTO = new TextMessageDTO();
-        String message = "Tin nhắn từ SĐT " + userRequest.getPhone() + ": " + contactDTO.getContent();
-        messageDTO.setMessage(message);
-        template.convertAndSend("/topic/message/" + userId, messageDTO);
+//        TextMessageDTO messageDTO = new TextMessageDTO();
+          String message = "Tin nhắn từ SĐT " + userRequest.getPhone() + ": " + contactDTO.getContent();
+//        messageDTO.setMessage(message);
+//        template.convertAndSend("/topic/message/" + userId, messageDTO);
+        Pusher pusher = new Pusher("1465234", "242a962515021986a8d8", "61b1284a169f5231d7d3");
+        pusher.setCluster(userId+"");
+        pusher.setEncrypted(true);
+        pusher.trigger("my-channel", "my-event", Collections.singletonMap("message", message));
 
         //save notification table
         NotificationDTO notificationDTO = new NotificationDTO();

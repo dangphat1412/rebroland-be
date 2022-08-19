@@ -27,5 +27,7 @@ public class ReportDTO {
 
     private UserDTO user;
 
+    private String comment;
+
     private int numberOfUserReport;
 }

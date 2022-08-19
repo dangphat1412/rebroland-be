@@ -6,10 +6,10 @@ import lombok.Data;
 import java.util.Date;
 
 @Data
-public class UserRateDTO {
+public class RateDTO {
     private int id;
 
-    private int userId;
+    private UserDTO user;
 
 
     private String description;
@@ -22,6 +22,5 @@ public class UserRateDTO {
     private int userRated;
 
     private int userRoleRated;
-
 
 }

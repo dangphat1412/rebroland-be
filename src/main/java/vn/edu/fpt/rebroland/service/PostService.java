@@ -81,7 +81,7 @@ public interface PostService {
 
     void setDataToRealEstateDTO(RealEstatePostDTO realEstatePostDTO, PostDTO postDTO, int postId);
 
-    boolean changeStatusOfPost(int postId);
+    int changeStatusOfPost(int postId);
 
     Map<String, Integer> getNumberOfPropertyType();
 
@@ -94,4 +94,6 @@ public interface PostService {
     void changeStatusOfDerivativePostOfPost(int postId);
 
     SearchResponse getAllOriginalPostByUserId(int userId, int pageNo, int pageSize, String sortValue);
+
+    List<SearchDTO> getOutstandingPost();
 }

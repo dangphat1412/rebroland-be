@@ -208,6 +208,7 @@ public class ReportServiceImpl implements ReportService {
             dto.setNumberOfUserReport(reportRepository.getNumberOfUserReportPost(dto.getPostId(), reportDTO.getStatus(), reportDTO.getReportId()));
             dto.setReportStatus(reportDTO.getStatus());
             dto.setReportId(reportDTO.getReportId());
+            dto.setComment(reportDTO.getComment());
             listSearchDto.add(dto);
         }
         searchResponse.setPosts(listSearchDto);
@@ -276,10 +277,11 @@ public class ReportServiceImpl implements ReportService {
     SimpMessagingTemplate template;
 
     @Override
-    public boolean acceptReportPost(int reportId) {
+    public boolean acceptReportPost(int reportId, String comment) {
         Report reportedPost = reportRepository.getReportById(reportId);
         if(reportedPost != null && reportedPost.getStatus() == 1){
             reportedPost.setStatus(2);
+            reportedPost.setComment(comment);
             reportRepository.save(reportedPost);
             Post post = reportedPost.getPost();
 
@@ -295,7 +297,8 @@ public class ReportServiceImpl implements ReportService {
                     p.setBlock(true);
                     p.setBlockDate(date);
                     postRepository.save(p);
-                    String message1 = "Chúng tôi đã ẩn bài viết của bạn. Nếu có thắc mắc xin liên hệ số 0397975445.";
+                    String message1 = "Chúng tôi đã ẩn bài viết của bạn. Lý do là: " + comment +
+                            ". Nếu có thắc mắc xin liên hệ số 0397975445.";
                     messageDTO.setMessage(message1);
                     template.convertAndSend("/topic/message/" + p.getUser().getId(), messageDTO);
                     saveNotificationAndUpdateUser(message1, p.getUser());
@@ -360,14 +363,16 @@ public class ReportServiceImpl implements ReportService {
     }
 
     @Override
-    public boolean acceptReportUser(int reportId) {
+    public boolean acceptReportUser(int reportId, String comment) {
         Report report = reportRepository.getReportById(reportId);
         long millis = System.currentTimeMillis();
         Date date = new Date(millis);
         if(report != null && report.getStatus() == 1){
             report.setStatus(2);
+            report.setComment(comment);
             reportRepository.save(report);
             User user = report.getUser();
+
             user.setBlock(true);
             user.setBlockDate(date);
             userRepository.save(user);

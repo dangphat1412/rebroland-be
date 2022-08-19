@@ -25,7 +25,7 @@ import java.util.*;
 import java.util.regex.Pattern;
 
 @RestController
-@CrossOrigin(origins = "https://rebroland.vercel.app")
+@CrossOrigin(origins = "https://rebroland-frontend.vercel.app")
 @RequestMapping("/api/posts")
 public class PostController {
 
@@ -133,6 +133,15 @@ public class PostController {
         if (post.isAllowDerivative() && post.getOriginalPost() == null) {
             if (user.getCurrentRole() == 3) {
                 if (user.getId() != post.getUser().getId()) {
+                    Pattern pattern = Pattern.compile("[$&+,:;=\\\\?@#|/'<>.^*()%!-1234567890]");
+                    if (pattern.matcher(generalPostDTO.getContactName()).find()) {
+                        return new ResponseEntity<>("Tên liên lạc không chứa ký tự đặc biệt và số", HttpStatus.BAD_REQUEST);
+                    }
+                    if (generalPostDTO.getOwner() != null) {
+                        if (pattern.matcher(generalPostDTO.getOwner()).find()) {
+                            return new ResponseEntity<>("Tên chủ hộ không chứa ký tự đặc biệt và số", HttpStatus.BAD_REQUEST);
+                        }
+                    }
                     PostDTO postDTO = postService.setDataToPostDTO(generalPostDTO, userId, date, false);
                     postDTO.setOriginalPost(postId);
                     postDTO.setTransactionStartDate(post.getTransactionStartDate());
@@ -146,17 +155,10 @@ public class PostController {
                             postDTO.setPrice(generalPostDTO.getPrice());
                         }
                     }
+
                     PostDTO newPostDTO = postService.createPost(postDTO, userId, generalPostDTO.getDirectionId(), generalPostDTO.getPropertyTypeId(),
                             generalPostDTO.getUnitPriceId(), 1, generalPostDTO.getLongevityId());
-                    Pattern pattern = Pattern.compile("[$&+,:;=\\\\?@#|/'<>.^*()%!-1234567890]");
-                    if (pattern.matcher(generalPostDTO.getContactName()).find()) {
-                        return new ResponseEntity<>("Tên liên lạc không chứa ký tự đặc biệt và số", HttpStatus.BAD_REQUEST);
-                    }
-                    if (generalPostDTO.getOwner() != null) {
-                        if (pattern.matcher(generalPostDTO.getOwner()).find()) {
-                            return new ResponseEntity<>("Tên chủ hộ không chứa ký tự đặc biệt và số", HttpStatus.BAD_REQUEST);
-                        }
-                    }
+
                     if (generalPostDTO.getImages() != null) {
                         imageService.createImage(generalPostDTO.getImages(), newPostDTO.getPostId());
                     }
@@ -189,7 +191,7 @@ public class PostController {
         }
 
 
-        return new ResponseEntity<>("Tạo bài phái sinh thành công.", HttpStatus.CREATED);
+        return new ResponseEntity<>("Tạo bài phái sinh thành công!", HttpStatus.CREATED);
     }
 
     //switch mode of post
@@ -231,8 +233,6 @@ public class PostController {
         long millis = System.currentTimeMillis();
         java.sql.Date date = new java.sql.Date(millis);
         User user = userRepository.findById(userId).orElseThrow(() -> new ResourceNotFoundException("User", "id", userId));
-
-
         PriceDTO priceDTO = priceService.getPriceByTypeIdAndStatus(1);
         long totalPayment = generalPostDTO.getNumberOfPostedDay() * (priceDTO.getPrice() * (100 - priceDTO.getDiscount()) / 100);
         if (user.getAccountBalance() < totalPayment) {
@@ -243,9 +243,11 @@ public class PostController {
                 user.setAccountBalance(newBalanceAccount);
                 userRepository.save(user);
                 Pattern pattern = Pattern.compile("[$&+,:;=\\\\?@#|/'<>.^*()%!-1234567890]");
+
                 if (pattern.matcher(generalPostDTO.getContactName()).find()) {
                     return new ResponseEntity<>("Tên liên lạc không chứa ký tự đặc biệt và số", HttpStatus.BAD_REQUEST);
                 }
+
                 if (generalPostDTO.getOwner() != null) {
                     if (pattern.matcher(generalPostDTO.getOwner()).find()) {
                         return new ResponseEntity<>("Tên chủ hộ không chứa ký tự đặc biệt và số", HttpStatus.BAD_REQUEST);
@@ -265,6 +267,8 @@ public class PostController {
                 }else {
                     if(generalPostDTO.getPrice()==null){
                         return new ResponseEntity<>("Giá cả không được để trống", HttpStatus.BAD_REQUEST);
+                    }else{
+                        postDTO.setPrice(generalPostDTO.getPrice());
                     }
                 }
                 postDTO.setSpendMoney(totalPayment);
@@ -568,13 +572,11 @@ public class PostController {
                     return new ResponseEntity<>("Tên chủ hộ không chứa ký tự đặc biệt và số", HttpStatus.BAD_REQUEST);
                 }
             }
-            if(generalPostDTO.getUnitPriceId() ==3 ){
+            if(generalPostDTO.getUnitPriceId() == 3 ){
                 generalPostDTO.setPrice(null);
             }else {
                 if(generalPostDTO.getPrice()==null){
                     return new ResponseEntity<>("Giá cả không được để trống", HttpStatus.BAD_REQUEST);
-                }else{
-                    generalPostDTO.setPrice(generalPostDTO.getPrice());
                 }
             }
             PostDTO newPostDTO = postService.updatePost(generalPostDTO, post, userId, generalPostDTO.getImages());
@@ -854,7 +856,11 @@ public class PostController {
     public ResponseEntity<?> createRealEstateHistory(@PathVariable(name = "postId") int postId,
                                                      @RequestBody HistoryDTO historyDTO) {
         Post post = postRepository.findPostByPostId(postId);
-        if (post != null && post.getStatus().getId() == 1) {
+        if (post != null && post.getStatus().getId() == 1 && post.getOriginalPost() == null) {
+            Pattern pattern = Pattern.compile("[$&+,:;=\\\\?@#|/'<>.^*()%!-1234567890]");
+            if (pattern.matcher(historyDTO.getOwner()).find()) {
+                return new ResponseEntity<>("Họ và tên không chứa ký tự đặc biệt và số!", HttpStatus.BAD_REQUEST);
+            }
             long spendMoney = post.getSpendMoney();
             long refundMoney = 0;
             RefundPercentDTO refundPercentDTO = new RefundPercentDTO();
@@ -891,6 +897,7 @@ public class PostController {
                 refundMoney = spendMoney * (100 - refundPercentDTO.getPercent()) / 100;
             }
             post.setStatus(new Status(3));
+            post.setSpendMoney(spendMoney - refundMoney);
             postRepository.save(post);
             postService.changeStatusOfDerivativePostOfPost(postId);
 
@@ -920,6 +927,27 @@ public class PostController {
             long accountBalance = user.getAccountBalance();
             user.setAccountBalance(accountBalance + refundMoney);
             userRepository.save(user);
+
+            List<Post> listPostDto = postRepository.getDerivativePostOfOriginalPost(postId);
+            for(Post p: listPostDto){
+                User u = p.getUser();
+                TextMessageDTO messageDTO1 = new TextMessageDTO();
+                String message1 = "Giao dịch đã kết thúc. Vui lòng đánh giá người đăng bài!";
+                messageDTO.setMessage(message1);
+                template.convertAndSend("/topic/message/" + u.getId(), messageDTO1);
+
+                NotificationDTO notification = new NotificationDTO();
+                notification.setUserId(p.getUser().getId());
+                notification.setContent(message);
+                notification.setSender(userId);
+                notification.setType("FinishTransaction");
+                notificationService.createContactNotification(notificationDTO);
+
+                int unread = u.getUnreadNotification();
+                unread++;
+                u.setUnreadNotification(unread);
+                userRepository.save(u);
+            }
 
             return new ResponseEntity<>("Hoàn thành giao dịch!", HttpStatus.OK);
         } else {
@@ -957,5 +985,11 @@ public class PostController {
         map.put("lists", searchResponse);
         map.put("user", userDTO);
         return new ResponseEntity<>(map, HttpStatus.OK);
+    }
+
+    @GetMapping("/outstanding")
+    public ResponseEntity<?> getOutstandingPost(){
+        List<SearchDTO> list = postService.getOutstandingPost();
+        return new ResponseEntity<>(list, HttpStatus.OK);
     }
 }
