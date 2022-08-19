@@ -55,8 +55,8 @@ public class ContactController {
 
     @GetMapping("/broker")
     public ResponseEntity<?> getContactsByBrokerId(@RequestParam(name = "pageNo", defaultValue = "0") String pageNo,
-                                                 @RequestParam(name = "keyword", defaultValue = "") String keyword,
-                                                 @RequestHeader(name = "Authorization") String token) {
+                                                   @RequestParam(name = "keyword", defaultValue = "") String keyword,
+                                                   @RequestHeader(name = "Authorization") String token) {
 
         int userId = getUserIdFromToken(token);
         int pageSize = 5;
@@ -71,8 +71,8 @@ public class ContactController {
 
     @GetMapping("/user")
     public ResponseEntity<?> getContactsByUserId(@RequestParam(name = "pageNo", defaultValue = "0") String pageNo,
-                                                   @RequestParam(name = "keyword", defaultValue = "") String keyword,
-                                                   @RequestHeader(name = "Authorization") String token) {
+                                                 @RequestParam(name = "keyword", defaultValue = "") String keyword,
+                                                 @RequestHeader(name = "Authorization") String token) {
 
         int userId = getUserIdFromToken(token);
         int pageSize = 5;
@@ -83,13 +83,13 @@ public class ContactController {
 
     @PostMapping("/user/confirm/{contactId}")
     public ResponseEntity<?> confirmContact(@RequestHeader(name = "Authorization") String token,
-                                            @PathVariable(name = "contactId") int contactId){
+                                            @PathVariable(name = "contactId") int contactId) {
         User user = getUserFromToken(token);
-        if(user.getRoles().size() == 1){
+        if (user.getRoles().size() == 1) {
             contactService.deleteContact(contactId);
             return new ResponseEntity<>("Đã xác nhận yêu cầu !", HttpStatus.OK);
         }
-        if(user.getRoles().size() == 2){
+        if (user.getRoles().size() == 2) {
             ContactDTO contactDTO = contactService.getContactById(contactId);
             contactDTO.setRoleId(3);
             contactService.createBrokerContact(contactDTO);
@@ -109,36 +109,36 @@ public class ContactController {
                                                 @RequestHeader(name = "Authorization") String token) {
 
         User userRequest = getUserFromToken(token);
-        if(userRequest.getId() == userId){
+        if (userRequest.getId() == userId) {
             return new ResponseEntity<>("Không thể gửi liên lạc!", HttpStatus.BAD_REQUEST);
         }
-        if(postId == 0){
+        if (postId == 0) {
             ContactDTO dto2 = contactService.getContactByUserIdAndPostIdNull(userRequest.getId(), userId, contactDTO.getRoleId());
-            if(dto2 != null){
+            if (dto2 != null) {
                 return new ResponseEntity<>("Bạn đã gửi liên hệ rồi! Hãy đợi liên hệ lại nhé!", HttpStatus.BAD_REQUEST);
             }
         }
         ContactDTO dto = contactService.getContactByUserIdAndPostId(userRequest.getId(), userId, postId, contactDTO.getRoleId());
-        if(dto != null){
+        if (dto != null) {
             return new ResponseEntity<>("Bạn đã gửi liên hệ rồi! Hãy đợi nhà môi giới liên hệ lại nhé!", HttpStatus.BAD_REQUEST);
         }
 
         ContactDTO newContact = contactService.createContact(contactDTO, userId, postId, userRequest.getId());
 //        TextMessageDTO messageDTO = new TextMessageDTO();
-          String message = "Tin nhắn từ SĐT " + userRequest.getPhone() + ": " + contactDTO.getContent();
+        String message = "Tin nhắn từ SĐT " + userRequest.getPhone() + ": " + contactDTO.getContent();
 //        messageDTO.setMessage(message);
 //        template.convertAndSend("/topic/message/" + userId, messageDTO);
         Pusher pusher = new Pusher("1465234", "242a962515021986a8d8", "61b1284a169f5231d7d3");
-        pusher.setCluster(userId+"");
+        pusher.setCluster("ap1");
         pusher.setEncrypted(true);
-        pusher.trigger("my-channel", "my-event", Collections.singletonMap("message", message));
+        pusher.trigger("my-channel-" + userId, "my-event", Collections.singletonMap("message", message));
 
         //save notification table
         NotificationDTO notificationDTO = new NotificationDTO();
         notificationDTO.setUserId(userId);
-        if(contactDTO.getContent() == null){
+        if (contactDTO.getContent() == null) {
             notificationDTO.setContent("");
-        }else{
+        } else {
             notificationDTO.setContent(contactDTO.getContent());
         }
         notificationDTO.setPhone(userRequest.getPhone());
@@ -160,13 +160,11 @@ public class ContactController {
     }
 
 
-
-
     public void sendSMS(String phone, String token) {
         Twilio.init(System.getenv("TWILIO_ACCOUNT_SID"),
                 System.getenv("TWILIO_AUTH_TOKEN"));
 
-        Message.creator(new PhoneNumber(phone.replaceFirst("0","+84")),
+        Message.creator(new PhoneNumber(phone.replaceFirst("0", "+84")),
                 new PhoneNumber("+19844647230"), token).create();
     }
 
