@@ -9,7 +9,7 @@ import org.springframework.web.bind.annotation.*;
 import java.util.List;
 
 @RestController
-@CrossOrigin(origins = "https://rebroland-frontend.vercel.app")
+@CrossOrigin(origins = "https://rebroland.vercel.app")
 @RequestMapping("/api/directions")
 public class DirectionController {
     private DirectionService directionService;

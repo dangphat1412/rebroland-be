@@ -28,7 +28,7 @@ import java.text.SimpleDateFormat;
 import java.util.*;
 
 @RestController
-@CrossOrigin(origins = "https://rebroland-frontend.vercel.app")
+@CrossOrigin(origins = "https://rebroland.vercel.app")
 @RequestMapping("/api/payment")
 public class PaymentController {
 
@@ -183,7 +183,7 @@ public class PaymentController {
                 long accountBalance = user.getAccountBalance();
                 user.setAccountBalance(accountBalance + transactionDTO.getAmount());
                 userRepository.save(user);
-                final String linkRedirect = "https://rebroland-frontend.vercel.app/thanh-toan-thanh-cong?amount=" + money +"&orderInfo="
+                final String linkRedirect = "https://rebroland.vercel.app/thanh-toan-thanh-cong?amount=" + money +"&orderInfo="
                         + orderInfo +"&bankCode=" + bankCode + "&cardType=" + cardType + "&payDate=" + payDate + "&transactionNo=" + transactionNo;
                 response.sendRedirect(linkRedirect);
             }

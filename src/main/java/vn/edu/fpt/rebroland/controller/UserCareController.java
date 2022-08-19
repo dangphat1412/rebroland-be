@@ -28,7 +28,7 @@ import java.util.*;
 
 @RestController
 @RequestMapping("/api/user-care")
-@CrossOrigin(origins = "https://rebroland-frontend.vercel.app")
+@CrossOrigin(origins = "https://rebroland.vercel.app")
 public class UserCareController {
     private UserCareService userCareService;
 
