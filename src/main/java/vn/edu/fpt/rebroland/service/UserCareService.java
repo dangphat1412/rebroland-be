@@ -2,10 +2,7 @@ package vn.edu.fpt.rebroland.service;
 
 import vn.edu.fpt.rebroland.entity.User;
 import vn.edu.fpt.rebroland.entity.UserCare;
-import vn.edu.fpt.rebroland.payload.CareDTO;
-import vn.edu.fpt.rebroland.payload.CareResponse;
-import vn.edu.fpt.rebroland.payload.ShortPostDTO;
-import vn.edu.fpt.rebroland.payload.UserCareDTO;
+import vn.edu.fpt.rebroland.payload.*;
 
 import java.util.List;
 
@@ -13,7 +10,7 @@ public interface UserCareService {
     UserCareDTO createUserCare(UserCareDTO userCareDTO, User user,
                              UserCare userCareWithOnlyUserCaredId, int check);
 
-    UserCareDTO createNewUserCare(UserCareDTO userCareDTO);
+    UserCareDTO createNewUserCare(UserCareDTO userCareDTO, UserDTO dto);
 
     UserCareDTO updateUserCare(UserCareDTO userCareDTO, int careId);
 

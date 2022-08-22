@@ -51,7 +51,16 @@ public class UserRateController {
         if(dto == null){
             return new ResponseEntity<>("Đánh giá thất bại!", HttpStatus.BAD_REQUEST);
         }
-        return new ResponseEntity<>(dto, HttpStatus.OK);
+
+        AvgRate avgRate = rateRepository.getAvgRateByUserIdAndRoleId(userRatedId, 2);
+        Map<String, Object> map = new HashMap<>();
+        if (avgRate != null) {
+            map.put("starRate", avgRate.getAvgRate());
+        } else {
+            map.put("starRate", 0);
+        }
+        return new ResponseEntity<>(map, HttpStatus.OK);
+//        return new ResponseEntity<>(dto, HttpStatus.OK);
     }
 
     //rate broker
@@ -207,7 +216,16 @@ public class UserRateController {
             if(dto == null){
                 return new ResponseEntity<>("Đánh giá thất bại!", HttpStatus.BAD_REQUEST);
             }
-            return new ResponseEntity<>(dto, HttpStatus.OK);
+
+            AvgRate avgRate = rateRepository.getAvgRateByUserIdAndRoleId(userRatedId, 2);
+            Map<String, Object> map = new HashMap<>();
+            if (avgRate != null) {
+                map.put("starRate", avgRate.getAvgRate());
+            } else {
+                map.put("starRate", 0);
+            }
+            return new ResponseEntity<>(map, HttpStatus.OK);
+//            return new ResponseEntity<>(dto, HttpStatus.OK);
 
         }else {
             return new ResponseEntity<>("Người dùng không tồn tại trong hệ thống!" ,HttpStatus.BAD_REQUEST);
@@ -247,7 +265,14 @@ public class UserRateController {
             if(dto == null){
                 return new ResponseEntity<>("Đánh giá thất bại!", HttpStatus.BAD_REQUEST);
             }else{
-                return new ResponseEntity<>(dto, HttpStatus.OK);
+                AvgRate avgRate = rateRepository.getAvgRateByUserIdAndRoleId(userRatedId, 3);
+                Map<String, Object> map = new HashMap<>();
+                if (avgRate != null) {
+                    map.put("starRate", avgRate.getAvgRate());
+                } else {
+                    map.put("starRate", 0);
+                }
+                return new ResponseEntity<>(map, HttpStatus.OK);
             }
         }else {
             return new ResponseEntity<>("Người dùng không tồn tại trong hệ thống!" ,HttpStatus.BAD_REQUEST);

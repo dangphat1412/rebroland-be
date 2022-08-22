@@ -27,7 +27,8 @@ public interface UserRateRepository extends JpaRepository<UserRate, Integer> {
 
     @Query(value = " SELECT * FROM `user_rates` " +
             " WHERE user_rated = :userRatedId " +
-            " AND user_role_rated = :roleRatedId ", nativeQuery = true)
+            " AND user_role_rated = :roleRatedId " +
+            " ORDER BY start_date DESC ", nativeQuery = true)
     Page<UserRate> getListUserRate(int userRatedId, int roleRatedId, Pageable pageable);
 
     @Query(value = " SELECT * FROM `user_rates` " +

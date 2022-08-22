@@ -8,7 +8,7 @@ import javax.validation.constraints.Pattern;
 @Data
 public class RegisterDTO {
     @NotEmpty(message = "Tên không được để trống !")
-    @Pattern(regexp = "^\\p{L}+[\\p{L}\\p{Pd}\\p{Zs}']*\\p{L}+$|^\\p{L}+$", message = "Tên người dùng không hợp lệ!")
+//    @Pattern(regexp = "^\\p{L}+[\\p{L}\\p{Pd}\\p{Zs}']*\\p{L}+$|^\\p{L}+$", message = "Tên người dùng không hợp lệ!")
     private String fullName;
 
     @NotEmpty(message = "Số điện thoại không được để trống !")

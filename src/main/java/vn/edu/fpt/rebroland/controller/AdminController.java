@@ -7,10 +7,8 @@ import vn.edu.fpt.rebroland.repository.RoleRepository;
 import vn.edu.fpt.rebroland.repository.UserRepository;
 import vn.edu.fpt.rebroland.service.*;
 import org.cloudinary.json.JSONObject;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.web.bind.annotation.*;
 
@@ -34,10 +32,11 @@ public class AdminController {
     private PaymentService paymentService;
     private WithdrawService withdrawService;
     private PriceService priceService;
+    private RefundPercentService refundPercentService;
 
     public AdminController(UserRepository userRepository, UserService userService, PostService postService, RoleRepository roleRepository,
                            ReportService reportService, NotificationService notificationService, PaymentService paymentService,
-                           WithdrawService withdrawService, PriceService priceService) {
+                           WithdrawService withdrawService, PriceService priceService, RefundPercentService refundPercentService) {
         this.userRepository = userRepository;
         this.userService = userService;
         this.postService = postService;
@@ -47,6 +46,7 @@ public class AdminController {
         this.paymentService = paymentService;
         this.withdrawService = withdrawService;
         this.priceService = priceService;
+        this.refundPercentService = refundPercentService;
     }
 
     @GetMapping("/list-users")
@@ -59,9 +59,9 @@ public class AdminController {
         int pageSize = 5;
         Role role = roleRepository.findByName("ADMIN").get();
         if(user.getRoles().contains(role)){
-            List<UserDTO> listUser = userService.getAllUserForAdminPaging(user.getId(), pageNumber, pageSize, keyword, sortValue);
+            List<UserDTO> listUser = userService.getAllUserForAdminPaging(user.getId(), pageNumber, pageSize, keyword.trim(), sortValue);
 
-            List<UserDTO> listAllUser = userService.getAllUserForAdmin(user.getId(), keyword, sortValue);
+            List<UserDTO> listAllUser = userService.getAllUserForAdmin(user.getId(), keyword.trim(), sortValue);
             int totalPage = 0;
             if(listAllUser.size() % pageSize == 0){
                 totalPage = listAllUser.size() / pageSize;
@@ -132,9 +132,6 @@ public class AdminController {
             return new ResponseEntity<>("Người dùng không phải admin!", HttpStatus.BAD_REQUEST);
         }
     }
-
-    @Autowired
-    SimpMessagingTemplate template;
 
     @PutMapping("/post/status/{postId}")
     public ResponseEntity<?> changeLockStatusOfPost(@PathVariable(name = "postId") int postId){
@@ -331,7 +328,7 @@ public class AdminController {
         int pageNumber = Integer.parseInt(pageNo);
         int pageSize = 10;
         if(user.getRoles().contains(role)){
-            PaymentResponse listPayment = paymentService.getAllPayments(pageNumber, pageSize, keyword, sortValue);
+            PaymentResponse listPayment = paymentService.getAllPayments(pageNumber, pageSize, keyword.trim(), sortValue);
             return new ResponseEntity<>(listPayment, HttpStatus.OK);
         }else{
             return new ResponseEntity<>("Người dùng không phải admin!", HttpStatus.BAD_REQUEST);
@@ -361,7 +358,7 @@ public class AdminController {
         int pageNumber = Integer.parseInt(pageNo);
         int pageSize = 5;
         if(user.getRoles().contains(role)){
-            WithdrawResponse list = withdrawService.getAllDirectWithdraw(pageNumber, pageSize, keyword, sortValue);
+            WithdrawResponse list = withdrawService.getAllDirectWithdraw(pageNumber, pageSize, keyword.trim(), sortValue);
             return new ResponseEntity<>(list, HttpStatus.OK);
         }else{
             return new ResponseEntity<>("Người dùng không phải admin!", HttpStatus.BAD_REQUEST);
@@ -389,12 +386,12 @@ public class AdminController {
     @PostMapping("/list-cashout/reject/{withdrawId}")
     public ResponseEntity<?> rejectWithdraw(@RequestHeader(name = "Authorization") String token,
                                                   @PathVariable(name = "withdrawId") int withdrawId,
-                                                  @Valid @RequestBody WithdrawDTO withdrawDTO){
+                                                  @RequestBody WithdrawDTO withdrawDTO){
         User user = getUserFromToken(token);
         Role role = roleRepository.findByName("ADMIN").get();
 
         if(user.getRoles().contains(role)){
-            boolean result = withdrawService.rejectWithdraw(withdrawId, withdrawDTO.getContent());
+            boolean result = withdrawService.rejectWithdraw(withdrawId, withdrawDTO.getComment());
             if(result){
                 return new ResponseEntity<>("Đã từ chối yêu cầu rút tiền !", HttpStatus.OK);
             }else{
@@ -415,7 +412,7 @@ public class AdminController {
         int pageNumber = Integer.parseInt(pageNo);
         int pageSize = 5;
         if(user.getRoles().contains(role)){
-            WithdrawResponse list = withdrawService.getAllTransferWithdraw(pageNumber, pageSize, keyword, sortValue);
+            WithdrawResponse list = withdrawService.getAllTransferWithdraw(pageNumber, pageSize, keyword.trim(), sortValue);
             return new ResponseEntity<>(list, HttpStatus.OK);
         }else{
             return new ResponseEntity<>("Người dùng không phải admin!", HttpStatus.BAD_REQUEST);
@@ -432,8 +429,8 @@ public class AdminController {
         int pageNumber = Integer.parseInt(pageNo);
         int pageSize = 5;
         if(user.getRoles().contains(role)){
-            WithdrawResponse listDirect = withdrawService.getAllDirectWithdraw(pageNumber, pageSize, keyword, sortValue);
-            WithdrawResponse listTransfer = withdrawService.getAllTransferWithdraw(pageNumber, pageSize, keyword, sortValue);
+            WithdrawResponse listDirect = withdrawService.getAllDirectWithdraw(pageNumber, pageSize, keyword.trim(), sortValue);
+            WithdrawResponse listTransfer = withdrawService.getAllTransferWithdraw(pageNumber, pageSize, keyword.trim(), sortValue);
             Map<String, Object> map = new HashMap<>();
             map.put("direct", listDirect);
             map.put("transfer", listTransfer);
@@ -443,18 +440,32 @@ public class AdminController {
         }
     }
 
-    @PutMapping("/update-price")
-    public ResponseEntity<?> updatePrice(@RequestHeader(name = "Authorization") String token,
-                                      @Valid @RequestBody ListPrice listPrice){
+//    @PutMapping("/update-price")
+//    public ResponseEntity<?> updatePrice(@RequestHeader(name = "Authorization") String token,
+//                                      @Valid @RequestBody ListPrice listPrice){
+//        User user = getUserFromToken(token);
+//        Role role = roleRepository.findByName("ADMIN").get();
+//
+//        if(user.getRoles().contains(role)){
+//            priceService.createPrice(listPrice);
+////            if(dto == null){
+////                return new ResponseEntity<>("Giá đã tồn tại trong hệ thống!", HttpStatus.BAD_REQUEST);
+////            }
+//            return new ResponseEntity<>("Cập nhật giá thành công!", HttpStatus.OK);
+//        }else{
+//            return new ResponseEntity<>("Người dùng không phải admin!", HttpStatus.BAD_REQUEST);
+//        }
+//    }
+
+    @PutMapping("/update-price-broker")
+    public ResponseEntity<?> updatePriceBroker(@RequestHeader(name = "Authorization") String token,
+                                      @Valid @RequestBody BrokerPriceDTO listPrice){
         User user = getUserFromToken(token);
         Role role = roleRepository.findByName("ADMIN").get();
 
         if(user.getRoles().contains(role)){
-            priceService.createPrice(listPrice);
-//            if(dto == null){
-//                return new ResponseEntity<>("Giá đã tồn tại trong hệ thống!", HttpStatus.BAD_REQUEST);
-//            }
-            return new ResponseEntity<>("Cập nhật giá thành công!", HttpStatus.OK);
+            Map<String, Object> map = priceService.createBrokerPrice(listPrice);
+            return new ResponseEntity<>(map, HttpStatus.OK);
         }else{
             return new ResponseEntity<>("Người dùng không phải admin!", HttpStatus.BAD_REQUEST);
         }
@@ -477,6 +488,20 @@ public class AdminController {
         }
     }
 
+    @PutMapping("/list-refund-percent")
+    public ResponseEntity<?> updateRefundPercent(@RequestHeader(name = "Authorization") String token,
+                                                 @Valid @RequestBody PercentDTO refundPercentDTO){
+        User user = getUserFromToken(token);
+        Role role = roleRepository.findByName("ADMIN").get();
+
+        if(user.getRoles().contains(role)){
+            Map<String, Object> refund = refundPercentService.createRefundPercent(refundPercentDTO);
+            return new ResponseEntity<>(refund, HttpStatus.OK);
+        }else{
+            return new ResponseEntity<>("Người dùng không phải admin!", HttpStatus.BAD_REQUEST);
+        }
+    }
+
 
     @GetMapping("/list-price/price-post")
     public ResponseEntity<?> getListPostPrice(@RequestHeader(name = "Authorization") String token){
@@ -485,6 +510,36 @@ public class AdminController {
 
         if(user.getRoles().contains(role)){
             Map<String, Object> map = priceService.getListPostPrice();
+            return new ResponseEntity<>(map, HttpStatus.OK);
+        }else{
+            return new ResponseEntity<>("Người dùng không phải admin!", HttpStatus.BAD_REQUEST);
+        }
+    }
+
+    @GetMapping("/list-refund-percent")
+    public ResponseEntity<?> getListRefundPercent(@RequestHeader(name = "Authorization") String token){
+        User user = getUserFromToken(token);
+        Role role = roleRepository.findByName("ADMIN").get();
+
+        if(user.getRoles().contains(role)){
+            Map<String, Object> map = refundPercentService.getListRefundPercent();
+            return new ResponseEntity<>(map, HttpStatus.OK);
+        }else{
+            return new ResponseEntity<>("Người dùng không phải admin!", HttpStatus.BAD_REQUEST);
+        }
+    }
+
+    @GetMapping("/list-price-broker")
+    public ResponseEntity<?> getListPriceBroker(@RequestHeader(name = "Authorization") String token){
+        User user = getUserFromToken(token);
+        Role role = roleRepository.findByName("ADMIN").get();
+
+        if(user.getRoles().contains(role)){
+            List<PriceDTO> list = priceService.getListPriceBroker(2);
+            List<Integer> listBrokerPrice = priceService.getListBrokerPrice();
+            Map<String, Object> map = new HashMap<>();
+            map.put("currentPrice", list);
+            map.put("list", listBrokerPrice);
             return new ResponseEntity<>(map, HttpStatus.OK);
         }else{
             return new ResponseEntity<>("Người dùng không phải admin!", HttpStatus.BAD_REQUEST);

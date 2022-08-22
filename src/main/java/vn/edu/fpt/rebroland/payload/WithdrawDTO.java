@@ -20,7 +20,7 @@ public class WithdrawDTO {
     private String content;
 
 //    @NotEmpty(message = "Số tài khoản không được để trống!")
-    @Pattern(regexp = "^[0-9]+$", message = "Tài khoản ngân hàng chỉ chứa chữ số!")
+    @Pattern(regexp = "^[0-9]+$", message = "Số tài khoản ngân hàng là dãy các chữ số!")
     private String accountNumber;
 
     @Pattern(regexp = "^[a-zA-Z ]*$", message = "Tên tài khoản chỉ chứa ký tự!")

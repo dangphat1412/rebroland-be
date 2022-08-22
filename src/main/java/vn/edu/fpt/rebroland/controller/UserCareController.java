@@ -1,11 +1,10 @@
 package vn.edu.fpt.rebroland.controller;
 
-import vn.edu.fpt.rebroland.entity.Contact;
-import vn.edu.fpt.rebroland.entity.User;
-import vn.edu.fpt.rebroland.entity.UserCare;
+import vn.edu.fpt.rebroland.entity.*;
 import vn.edu.fpt.rebroland.exception.ResourceNotFoundException;
 import vn.edu.fpt.rebroland.payload.*;
 import vn.edu.fpt.rebroland.repository.ContactRepository;
+import vn.edu.fpt.rebroland.repository.RoleRepository;
 import vn.edu.fpt.rebroland.repository.UserCareRepository;
 import vn.edu.fpt.rebroland.repository.UserRepository;
 import vn.edu.fpt.rebroland.service.ContactService;
@@ -43,11 +42,12 @@ public class UserCareController {
     private ContactRepository contactRepository;
 
     private UserService userService;
+    private RoleRepository roleRepository;
 
     public UserCareController(UserCareService userCareService, UserRepository userRepository,
                               UserCareRepository userCareRepository, UserCareDetailService userCareDetailService,
                               ContactService contactService,ContactRepository contactRepository,
-                              UserService userService) {
+                              UserService userService, RoleRepository roleRepository) {
         this.userCareService = userCareService;
         this.userRepository = userRepository;
         this.userCareRepository = userCareRepository;
@@ -55,6 +55,7 @@ public class UserCareController {
         this.contactService = contactService;
         this.contactRepository = contactRepository;
         this.userService = userService;
+        this.roleRepository = roleRepository;
     }
 
     private static String decode(String encodedString) {
@@ -135,6 +136,13 @@ public class UserCareController {
         int userId = getUserIdFromToken(token);
 
         User userCared = userRepository.getUserByPhone(phone);
+        Role role = roleRepository.findByName("ADMIN").get();
+        if(userCared.getRoles().contains(role)){
+            return new ResponseEntity<>("Số điện thoại không hợp lệ!", HttpStatus.BAD_REQUEST);
+        }
+        if(userCared.getId() == userId){
+            return new ResponseEntity<>("Người dùng không thể chăm sóc chính mình!", HttpStatus.BAD_REQUEST);
+        }
         if(userCared != null){
             UserCare userCare = userCareRepository.getUserCareByUserIdAndStatusFalse(userId, userCared.getId());
             if(userCare != null){
@@ -160,20 +168,26 @@ public class UserCareController {
         UserDTO userDTO = userService.getUserById(userId);
 
         User userCared = userRepository.getUserById(userCaredId);
-
+        Role role = roleRepository.findByName("ADMIN").get();
+        if(userCared.getRoles().contains(role)){
+            return new ResponseEntity<>("Số điện thoại không hợp lệ!", HttpStatus.BAD_REQUEST);
+        }
         UserCare userCareWithOnlyUserCaredId = userCareRepository.findUserCareByUserCaredId(userCaredId, userId);
         if(userCareWithOnlyUserCaredId != null){
             return new ResponseEntity<>("Người dùng đã ở trong danh sách chăm sóc!", HttpStatus.BAD_REQUEST);
         }
+
         if(userCaredId == userId){
             return new ResponseEntity<>("Người dùng không thể chăm sóc chính mình!", HttpStatus.BAD_REQUEST);
         }
         if(userCared != null){
             UserCareDTO dto = new UserCareDTO();
             dto.setUserCaredId(userCaredId);
+            UserDTO userCaredDTO = userService.getUserById(userCaredId);
             dto.setUser(userDTO);
 
-            UserCareDTO userCareDTO = userCareService.createNewUserCare(dto);
+            UserCareDTO userCareDTO = userCareService.createNewUserCare(dto, userCaredDTO);
+
             return new ResponseEntity<>(userCareDTO, HttpStatus.OK);
         }else{
             return new ResponseEntity<>("Người dùng không tồn tại trong hệ thống!", HttpStatus.BAD_REQUEST);
@@ -201,11 +215,10 @@ public class UserCareController {
                     if (date.compareTo(date1) > 0) {
                         return new ResponseEntity<>("Thời gian hẹn trước không đúng !", HttpStatus.BAD_REQUEST);
                     } else {
-                        UserCareDetailDTO userCareDetailDTO1 = userCareDetailService.createUserCareDetail(careId, userCareDetailDTO, date1);
                         if(userCareDetailDTO.getAlertTime()!=null){
                             Calendar cal = Calendar.getInstance();
                             cal.setTime(date1);
-                            cal.add(Calendar.SECOND, - userCareDetailDTO.getAlertTime());
+                            cal.add(Calendar.SECOND, - userCareDetailDTO.getAlertTime() * 60);
                             Date dateAlert = cal.getTime();
                             if (date.compareTo(dateAlert) > 0) {
                                 return new ResponseEntity<>("Thời gian hẹn trước không đúng !", HttpStatus.BAD_REQUEST);
@@ -216,6 +229,7 @@ public class UserCareController {
                             sendRemindMessage(user.getPhone(), userCareDetailDTO.getDateAppointment(), userCareDetailDTO.getTimeAppointment(), 0);
 
                         }
+                        UserCareDetailDTO userCareDetailDTO1 = userCareDetailService.createUserCareDetail(careId, userCareDetailDTO, date1);
                         return new ResponseEntity<>(userCareDetailDTO1, HttpStatus.CREATED);
                     }
                 }
@@ -255,7 +269,7 @@ public class UserCareController {
         TimerTask timerTask = new TimerTask() {
             @Override
             public void run() {
-                sendSMS(phone, message);
+//                sendSMS(phone, message);
             }
         };
         Timer timer = new Timer();

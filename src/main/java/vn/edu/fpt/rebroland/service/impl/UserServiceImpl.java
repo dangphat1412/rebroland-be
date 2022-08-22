@@ -9,12 +9,12 @@ import vn.edu.fpt.rebroland.repository.RoleRepository;
 import vn.edu.fpt.rebroland.repository.UserRepository;
 import vn.edu.fpt.rebroland.service.NotificationService;
 import vn.edu.fpt.rebroland.service.UserService;
+import com.pusher.rest.Pusher;
 import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
-import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -42,8 +42,6 @@ public class UserServiceImpl implements UserService {
     private PasswordEncoder passwordEncoder;
     @Autowired
     private RoleRepository roleRepository;
-    @Autowired
-    SimpMessagingTemplate template;
 
 
     @Override
@@ -126,7 +124,7 @@ public class UserServiceImpl implements UserService {
     public List<UserDTO> getAllBroker(String fullName, String ward, String district, String province, List<String> propertyType, int userId) {
         String check = null;
         List<Integer> listType = new ArrayList<>();
-        if(propertyType != null){
+        if(propertyType != null && !propertyType.isEmpty()){
             for (String s : propertyType) {
                 listType.add(Integer.parseInt(s));
             }
@@ -152,7 +150,7 @@ public class UserServiceImpl implements UserService {
 
         String check = null;
         List<Integer> listType = new ArrayList<>();
-        if(propertyType != null){
+        if(propertyType != null && !propertyType.isEmpty()){
             for (String s : propertyType) {
                 listType.add(Integer.parseInt(s));
             }
@@ -187,6 +185,13 @@ public class UserServiceImpl implements UserService {
 
             list.add(userDTO);
         }
+
+        Collections.sort(list, new Comparator<UserDTO>() {
+            @Override
+            public int compare(UserDTO u1, UserDTO u2) {
+                return Float.compare(u2.getAvgRate(), u1.getAvgRate());
+            }
+        });
 
         return list;
 
@@ -289,10 +294,15 @@ public class UserServiceImpl implements UserService {
                             post.setBlock(false);
                             post.setBlockDate(null);
                             postRepository.save(post);
-                            TextMessageDTO messageDTO = new TextMessageDTO();
+//                            TextMessageDTO messageDTO = new TextMessageDTO();
                             String message = "Chúng tôi đã hiển thị lại bài viết của bạn, mã bài viết: " + post.getPostId();
-                            messageDTO.setMessage(message);
-                            template.convertAndSend("/topic/message/" + post.getUser().getId(), messageDTO);
+//                            messageDTO.setMessage(message);
+//                            template.convertAndSend("/topic/message/" + post.getUser().getId(), messageDTO);
+                            Pusher pusher = new Pusher("1465234", "242a962515021986a8d8", "61b1284a169f5231d7d3");
+                            pusher.setCluster("ap1");
+                            pusher.setEncrypted(true);
+                            pusher.trigger("my-channel-" + post.getUser().getId(), "my-event", Collections.singletonMap("message", message));
+
                             saveNotificationAndUpdateUser(message, post.getUser().getId(), post.getPostId());
 
                             listDerivative = postRepository.getDerivativePostOfOriginalPost(post.getPostId());
@@ -303,8 +313,12 @@ public class UserServiceImpl implements UserService {
                                     postRepository.save(p);
 
                                     String message1 = "Chúng tôi đã hiển thị lại bài viết của bạn, mã bài viết: " + p.getPostId();
-                                    messageDTO.setMessage(message1);
-                                    template.convertAndSend("/topic/message/" + p.getUser().getId(), messageDTO);
+//                                    messageDTO.setMessage(message1);
+//                                    template.convertAndSend("/topic/message/" + p.getUser().getId(), messageDTO);
+//                                    Pusher pusher = new Pusher("1465234", "242a962515021986a8d8", "61b1284a169f5231d7d3");
+                                    pusher.setCluster("ap1");
+                                    pusher.setEncrypted(true);
+                                    pusher.trigger("my-channel-" + p.getUser().getId(), "my-event", Collections.singletonMap("message", message1));
                                     saveNotificationAndUpdateUser(message1, p.getUser().getId(), p.getPostId());
                                 }
                             }
@@ -329,8 +343,13 @@ public class UserServiceImpl implements UserService {
 
                     TextMessageDTO messageDTO = new TextMessageDTO();
                     String message = "Chúng tôi đã ẩn bài viết mã số " + post.getPostId() + " của bạn. Nếu có thắc mắc xin liên hệ số 0397975445.";
-                    messageDTO.setMessage(message);
-                    template.convertAndSend("/topic/message/" + post.getUser().getId(), messageDTO);
+//                    messageDTO.setMessage(message);
+//                    template.convertAndSend("/topic/message/" + post.getUser().getId(), messageDTO);
+                    Pusher pusher = new Pusher("1465234", "242a962515021986a8d8", "61b1284a169f5231d7d3");
+                    pusher.setCluster("ap1");
+                    pusher.setEncrypted(true);
+                    pusher.trigger("my-channel-" + post.getUser().getId(), "my-event", Collections.singletonMap("message", message));
+
                     saveNotificationAndUpdateUser(message, post.getUser().getId(), post.getPostId());
 
                     listDerivative = postRepository.getDerivativePostOfOriginalPost(post.getPostId());
@@ -340,8 +359,12 @@ public class UserServiceImpl implements UserService {
                             p.setBlockDate(date);
                             postRepository.save(p);
                             String message1 = "Chúng tôi đã ẩn bài viết mã số " + p.getPostId() + " của bạn. Nếu có thắc mắc xin liên hệ số 0397975445.";
-                            messageDTO.setMessage(message1);
-                            template.convertAndSend("/topic/message/" + p.getUser().getId(), messageDTO);
+//                            messageDTO.setMessage(message1);
+//                            template.convertAndSend("/topic/message/" + p.getUser().getId(), messageDTO);
+                            pusher.setCluster("ap1");
+                            pusher.setEncrypted(true);
+                            pusher.trigger("my-channel-" + p.getUser().getId(), "my-event", Collections.singletonMap("message", message1));
+
                             saveNotificationAndUpdateUser(message1, p.getUser().getId(), p.getPostId());
                         }
                     }

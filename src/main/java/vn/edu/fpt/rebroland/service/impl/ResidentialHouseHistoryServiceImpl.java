@@ -41,6 +41,17 @@ public class ResidentialHouseHistoryServiceImpl implements ResidentialHouseHisto
     }
 
     @Override
+    public ResidentialHouseHistoryDTO getResidentialHouseHistoryByBarcode(String barcode) {
+        ResidentialHouseHistory residentialHouseHistory = residentialHouseHistoryRepository.getResidentialLandHistoryByBarcode(barcode);
+        if(residentialHouseHistory != null){
+            return mapToDTO(residentialHouseHistory);
+        }else{
+            return null;
+        }
+
+    }
+
+    @Override
     public void deleteResidentialHouseHistoryById(int id) {
         ResidentialHouseHistory residentialHouseHistory = residentialHouseHistoryRepository
                 .findById(id).orElseThrow(() -> new ResourceNotFoundException("HouseHistoryId", "id", id));

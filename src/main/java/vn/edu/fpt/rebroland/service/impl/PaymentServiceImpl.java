@@ -55,6 +55,13 @@ public class PaymentServiceImpl implements PaymentService {
             case 2:
                 pagePayment = paymentRepository.findAllBrokerPayment(pageable, keyword);
                 break;
+            case 3:
+                pagePayment = paymentRepository.findAllDepositMoneyIntoWallet(pageable, keyword);
+                break;
+            case 6:
+                pagePayment = paymentRepository.findAllWithdrawMoney(pageable, keyword);
+                break;
+
         }
         List<Transactions> listTransactions = pagePayment.getContent();
         List<TransactionDTO> listDto = listTransactions.stream().map(transactions -> mapToDTO(transactions)).collect(Collectors.toList());

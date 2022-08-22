@@ -39,6 +39,16 @@ public class ApartmentHistoryServiceImpl implements ApartmentHistoryService {
     }
 
     @Override
+    public ApartmentHistoryDTO getApartmentHistoryByBarcode(String barcode) {
+        ApartmentHistory apartmentHistory = apartmentHistoryRepository.getApartmentHistoryByBarcode(barcode);
+        if(apartmentHistory != null){
+            return mapToDTO(apartmentHistory);
+        }else{
+            return null;
+        }
+    }
+
+    @Override
     public void deleteApartmentHistory(int id) {
         ApartmentHistory apartmentHistory = apartmentHistoryRepository
                 .findById(id).orElseThrow(() -> new ResourceNotFoundException("AparmentHistory", "id", id));

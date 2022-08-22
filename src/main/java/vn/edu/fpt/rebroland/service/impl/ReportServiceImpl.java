@@ -6,14 +6,13 @@ import vn.edu.fpt.rebroland.payload.*;
 import vn.edu.fpt.rebroland.repository.*;
 import vn.edu.fpt.rebroland.service.NotificationService;
 import vn.edu.fpt.rebroland.service.ReportService;
+import com.pusher.rest.Pusher;
 import org.cloudinary.json.JSONObject;
 import org.modelmapper.ModelMapper;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
-import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -22,6 +21,7 @@ import java.sql.Date;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Base64;
+import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -74,15 +74,15 @@ public class ReportServiceImpl implements ReportService {
         detailDTO.setContent(reportPostDTO.getContent());
         detailDTO.setUser(mapper.map(userReport, UserDTO.class));
         //report post
-        if (postId != null && userReportedId == null) {
+        if ((postId != null) && (userReportedId == null)) {
             Post post = postRepository.findPostByPostId(postId);
             if (post.getUser().getId() == reportPostDTO.getUserReportId()) {
                 return HttpStatus.BAD_REQUEST;
             }
 
-            Report reportedPost = reportRepository.getReportedPost(postId);
+//            Report reportedPost = reportRepository.getReportedPost(postId);
             Report report = new Report();
-            if (reportedPost == null) {
+//            if (reportedPost == null) {
                 //create new report and report detail
                 report.setPost(post);
                 //1: chưa xử lý, 2: đã xử lý, 3: bỏ qua
@@ -94,14 +94,14 @@ public class ReportServiceImpl implements ReportService {
 
                 createEvidence(reportPostDTO.getImages(), reportDetail.getDetailId());
                 return HttpStatus.CREATED;
-            } else {
-                //insert report detail with reportedPostId
-                detailDTO.setReportId(reportedPost.getReportId());
-                ReportDetail reportDetail = detailRepository.save(mapper.map(detailDTO, ReportDetail.class));
-
-                createEvidence(reportPostDTO.getImages(), reportDetail.getDetailId());
-                return HttpStatus.CREATED;
-            }
+//            } else {
+//                //insert report detail with reportedPostId
+//                detailDTO.setReportId(reportedPost.getReportId());
+//                ReportDetail reportDetail = detailRepository.save(mapper.map(detailDTO, ReportDetail.class));
+//
+//                createEvidence(reportPostDTO.getImages(), reportDetail.getDetailId());
+//                return HttpStatus.CREATED;
+//            }
         }
 
         //report user
@@ -114,9 +114,9 @@ public class ReportServiceImpl implements ReportService {
                     return HttpStatus.BAD_REQUEST;
                 }
             }
-            Report reportedPost = reportRepository.getReportedUser(userReportedId);
+//            Report reportedPost = reportRepository.getReportedUser(userReportedId);
             Report report = new Report();
-            if (reportedPost == null) {
+//            if (reportedPost == null) {
                 report.setUser(user);
                 report.setStatus(1);
                 Report newReport = reportRepository.save(report);
@@ -124,12 +124,12 @@ public class ReportServiceImpl implements ReportService {
                 ReportDetail reportDetail = detailRepository.save(mapper.map(detailDTO, ReportDetail.class));
                 createEvidence(reportPostDTO.getImages(), reportDetail.getDetailId());
                 return HttpStatus.CREATED;
-            } else {
-                detailDTO.setReportId(reportedPost.getReportId());
-                ReportDetail reportDetail = detailRepository.save(mapper.map(detailDTO, ReportDetail.class));
-                createEvidence(reportPostDTO.getImages(), reportDetail.getDetailId());
-                return HttpStatus.CREATED;
-            }
+//            } else {
+//                detailDTO.setReportId(reportedPost.getReportId());
+//                ReportDetail reportDetail = detailRepository.save(mapper.map(detailDTO, ReportDetail.class));
+//                createEvidence(reportPostDTO.getImages(), reportDetail.getDetailId());
+//                return HttpStatus.CREATED;
+//            }
         }
         return HttpStatus.BAD_REQUEST;
     }
@@ -273,9 +273,6 @@ public class ReportServiceImpl implements ReportService {
         return searchResponse;
     }
 
-    @Autowired
-    SimpMessagingTemplate template;
-
     @Override
     public boolean acceptReportPost(int reportId, String comment) {
         Report reportedPost = reportRepository.getReportById(reportId);
@@ -290,7 +287,7 @@ public class ReportServiceImpl implements ReportService {
 
             long millis = System.currentTimeMillis();
             Date date = new Date(millis);
-            TextMessageDTO messageDTO = new TextMessageDTO();
+//            TextMessageDTO messageDTO = new TextMessageDTO();
             List<Post> listPost = postRepository.getDerivativePostOfOriginalPost(post.getPostId());
             for(Post p: listPost){
                 if(!p.isBlock()){
@@ -299,22 +296,37 @@ public class ReportServiceImpl implements ReportService {
                     postRepository.save(p);
                     String message1 = "Chúng tôi đã ẩn bài viết của bạn. Lý do là: " + comment +
                             ". Nếu có thắc mắc xin liên hệ số 0397975445.";
-                    messageDTO.setMessage(message1);
-                    template.convertAndSend("/topic/message/" + p.getUser().getId(), messageDTO);
+//                    messageDTO.setMessage(message1);
+//                    template.convertAndSend("/topic/message/" + p.getUser().getId(), messageDTO);
+                    Pusher pusher = new Pusher("1465234", "242a962515021986a8d8", "61b1284a169f5231d7d3");
+                    pusher.setCluster("ap1");
+                    pusher.setEncrypted(true);
+                    pusher.trigger("my-channel-" + p.getUser().getId(), "my-event", Collections.singletonMap("message", message1));
+
                     saveNotificationAndUpdateUser(message1, p.getUser());
                 }
             }
             //block bài ăn theo
 
 
-            messageDTO.setMessage("Bài viết của bạn: '" + post.getTitle() + "' đã bị chặn vì có người tố cáo !");
-            template.convertAndSend("/topic/message/" + post.getUser().getId(), messageDTO);
+//            messageDTO.setMessage("Bài viết của bạn mã số " + post.getPostId() + " đã bị chặn vì có người tố cáo !");
+            String s = "Bài viết của bạn mã số " + post.getPostId() + " đã bị chặn vì có người tố cáo !";
+//            template.convertAndSend("/topic/message/" + post.getUser().getId(), messageDTO);
+            Pusher pusher = new Pusher("1465234", "242a962515021986a8d8", "61b1284a169f5231d7d3");
+            pusher.setCluster("ap1");
+            pusher.setEncrypted(true);
+            pusher.trigger("my-channel-" + post.getUser().getId(), "my-event", Collections.singletonMap("message", s));
+
             saveNotificationAndUpdateUser("Bài viết của bạn: '" + post.getTitle() + "' đã bị chặn vì có người tố cáo !", post.getUser());
 
             List<Integer> listUserReportId = detailRepository.getDetailReportByReportId(reportedPost.getReportId());
             for (int userReportId: listUserReportId) {
-                messageDTO.setMessage("Tố cáo của bạn được chấp nhận. Cảm ơn bạn vì đã tố cáo !");
-                template.convertAndSend("/topic/message/" + userReportId, messageDTO);
+//                messageDTO.setMessage("Tố cáo của bạn được chấp nhận. Cảm ơn bạn vì đã tố cáo !");
+//                template.convertAndSend("/topic/message/" + userReportId, messageDTO);
+                pusher.setCluster("ap1");
+                pusher.setEncrypted(true);
+                pusher.trigger("my-channel-" + userReportId, "my-event", Collections.singletonMap("message", "Tố cáo của bạn được chấp nhận. Cảm ơn bạn vì đã tố cáo !"));
+
                 User user = userRepository.findById(userReportId)
                         .orElseThrow(() -> new ResourceNotFoundException("User", "id", userReportId));
                 saveNotificationAndUpdateUser("Tố cáo của bạn được chấp nhận. Cảm ơn bạn vì đã tố cáo !", user);
@@ -347,11 +359,16 @@ public class ReportServiceImpl implements ReportService {
             reportedPost.setStatus(3);
             reportRepository.save(reportedPost);
 
-            TextMessageDTO messageDTO = new TextMessageDTO();
+//            TextMessageDTO messageDTO = new TextMessageDTO();
             List<Integer> listUserReportId = detailRepository.getDetailReportByReportId(reportedPost.getReportId());
             for (int userReportId: listUserReportId) {
-                messageDTO.setMessage("Chúng tôi đã hủy báo cáo của bạn. Nếu có thắc mắc xin liên hệ SĐT: 0834117442");
-                template.convertAndSend("/topic/message/" + userReportId, messageDTO);
+//                messageDTO.setMessage("Chúng tôi đã hủy báo cáo của bạn. Nếu có thắc mắc xin liên hệ SĐT: 0834117442");
+//                template.convertAndSend("/topic/message/" + userReportId, messageDTO);
+                Pusher pusher = new Pusher("1465234", "242a962515021986a8d8", "61b1284a169f5231d7d3");
+                pusher.setCluster("ap1");
+                pusher.setEncrypted(true);
+                pusher.trigger("my-channel-" + userReportId, "my-event", Collections.singletonMap("message", "Chúng tôi đã hủy báo cáo của bạn. Nếu có thắc mắc xin liên hệ SĐT: 0834117442"));
+
                 User user = userRepository.findById(userReportId)
                         .orElseThrow(() -> new ResourceNotFoundException("User", "id", userReportId));
                 saveNotificationAndUpdateUser("Chúng tôi đã hủy báo cáo của bạn. Nếu có thắc mắc xin liên hệ SĐT: 0834117442", user);
@@ -386,10 +403,15 @@ public class ReportServiceImpl implements ReportService {
                 post.setBlockDate(date);
                 postRepository.save(post);
 
-                TextMessageDTO messageDTO = new TextMessageDTO();
+//                TextMessageDTO messageDTO = new TextMessageDTO();
                 String message = "Chúng tôi đã ẩn bài viết của bạn. Nếu có thắc mắc xin liên hệ số 0397975445.";
-                messageDTO.setMessage(message);
-                template.convertAndSend("/topic/message/" + post.getUser().getId(), messageDTO);
+//                messageDTO.setMessage(message);
+//                template.convertAndSend("/topic/message/" + post.getUser().getId(), messageDTO);
+                Pusher pusher = new Pusher("1465234", "242a962515021986a8d8", "61b1284a169f5231d7d3");
+                pusher.setCluster("ap1");
+                pusher.setEncrypted(true);
+                pusher.trigger("my-channel-" + post.getUser().getId(), "my-event", Collections.singletonMap("message", message));
+
                 saveNotificationAndUpdateUser(message, post.getUser());
 
                 listDerivative = postRepository.getDerivativePostOfOriginalPost(post.getPostId());
@@ -399,8 +421,13 @@ public class ReportServiceImpl implements ReportService {
                         p.setBlockDate(date);
                         postRepository.save(p);
                         String message1 = "Chúng tôi đã ẩn bài viết của bạn. Nếu có thắc mắc xin liên hệ số 0397975445.";
-                        messageDTO.setMessage(message1);
-                        template.convertAndSend("/topic/message/" + p.getUser().getId(), messageDTO);
+//                        messageDTO.setMessage(message1);
+//                        template.convertAndSend("/topic/message/" + p.getUser().getId(), messageDTO);
+
+                        pusher.setCluster("ap1");
+                        pusher.setEncrypted(true);
+                        pusher.trigger("my-channel-" + p.getUser().getId(), "my-event", Collections.singletonMap("message", message1));
+
                         saveNotificationAndUpdateUser(message1, p.getUser());
                     }
                 }
@@ -409,8 +436,13 @@ public class ReportServiceImpl implements ReportService {
             TextMessageDTO messageDTO = new TextMessageDTO();
             List<Integer> listUserReportId = detailRepository.getDetailReportByReportId(report.getReportId());
             for (int userReportId: listUserReportId) {
-                messageDTO.setMessage("Tố cáo của bạn được chấp nhận. Cảm ơn bạn vì đã tố cáo !");
-                template.convertAndSend("/topic/message/" + userReportId, messageDTO);
+//                messageDTO.setMessage("Tố cáo của bạn được chấp nhận. Cảm ơn bạn vì đã tố cáo !");
+//                template.convertAndSend("/topic/message/" + userReportId, messageDTO);
+                Pusher pusher = new Pusher("1465234", "242a962515021986a8d8", "61b1284a169f5231d7d3");
+                pusher.setCluster("ap1");
+                pusher.setEncrypted(true);
+                pusher.trigger("my-channel-" + userReportId, "my-event", Collections.singletonMap("message", "Tố cáo của bạn được chấp nhận. Cảm ơn bạn vì đã tố cáo !"));
+
                 User userReport = userRepository.findById(userReportId)
                         .orElseThrow(() -> new ResourceNotFoundException("User", "id", userReportId));
                 saveNotificationAndUpdateUser("Tố cáo của bạn được chấp nhận. Cảm ơn bạn vì đã tố cáo !", userReport);
@@ -428,11 +460,16 @@ public class ReportServiceImpl implements ReportService {
             reportedPost.setStatus(3);
             reportRepository.save(reportedPost);
 
-            TextMessageDTO messageDTO = new TextMessageDTO();
+//            TextMessageDTO messageDTO = new TextMessageDTO();
             List<Integer> listUserReportId = detailRepository.getDetailReportByReportId(reportedPost.getReportId());
             for (int userReportId: listUserReportId) {
-                messageDTO.setMessage("Chúng tôi đã hủy báo cáo của bạn. Nếu có thắc mắc xin liên hệ SĐT: 0834117442");
-                template.convertAndSend("/topic/message/" + userReportId, messageDTO);
+//                messageDTO.setMessage("Chúng tôi đã hủy báo cáo của bạn. Nếu có thắc mắc xin liên hệ SĐT: 0834117442");
+//                template.convertAndSend("/topic/message/" + userReportId, messageDTO);
+                Pusher pusher = new Pusher("1465234", "242a962515021986a8d8", "61b1284a169f5231d7d3");
+                pusher.setCluster("ap1");
+                pusher.setEncrypted(true);
+                pusher.trigger("my-channel-" + userReportId, "my-event", Collections.singletonMap("message", "Chúng tôi đã hủy báo cáo của bạn. Nếu có thắc mắc xin liên hệ SĐT: 0834117442"));
+
                 User user = userRepository.findById(userReportId)
                         .orElseThrow(() -> new ResourceNotFoundException("User", "id", userReportId));
                 saveNotificationAndUpdateUser("Chúng tôi đã hủy báo cáo của bạn. Nếu có thắc mắc xin liên hệ SĐT: 0834117442", user);

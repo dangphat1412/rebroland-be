@@ -9,6 +9,9 @@ public interface ResidentialHouseHistoryService {
 
     ResidentialHouseHistoryDTO getResidentialHouseHistoryByBarcodeAndPlotNumberAndDate(String barcode, int plotNumber, String date);
 
+    ResidentialHouseHistoryDTO getResidentialHouseHistoryByBarcode(String barcode);
+
+
     void deleteResidentialHouseHistoryById(int id);
 
     String updateResidentialHouseHistory(ResidentialHouseHistoryDTO residentialHouseHistoryDTO, int id);

@@ -29,4 +29,7 @@ public interface PriceRepository extends JpaRepository<Price,Integer> {
 
     @Query(value = "select Distinct price from prices where type_id = 1", nativeQuery = true)
     List<Integer> getListPostPrice();
+
+    @Query(value = "select Distinct price from prices where type_id = 2 and unit_date = 30", nativeQuery = true)
+    List<Integer> getListBrokerPrice();
 }

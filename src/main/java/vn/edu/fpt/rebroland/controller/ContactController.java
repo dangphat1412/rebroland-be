@@ -14,10 +14,8 @@ import com.twilio.Twilio;
 import com.twilio.rest.api.v2010.account.Message;
 import com.twilio.type.PhoneNumber;
 import org.cloudinary.json.JSONObject;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.*;
@@ -98,8 +96,6 @@ public class ContactController {
         return new ResponseEntity<>("Đã xảy ra lỗi !", HttpStatus.BAD_REQUEST);
     }
 
-    @Autowired
-    SimpMessagingTemplate template;
 
     @PostMapping("/{userId}/{postId}")
     @Transactional

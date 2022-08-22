@@ -55,16 +55,6 @@ public class PaymentController {
     @PostMapping("/create-payment")
     public ResponseEntity<?> createPayment(@Valid @RequestBody TransactionDTO transactionDTO,
                                            @RequestHeader(name = "Authorization") String token) throws UnsupportedEncodingException {
-//        try{
-//            long amount = Long.parseLong(transactionDTO.getAmount()+"");
-//
-//        }catch (NumberFormatException e){
-//            return new ResponseEntity<>("Số tiền chỉ chứa chữ số!", HttpStatus.BAD_REQUEST);
-//        }
-//        String amount = transactionDTO.getAmount() + "";
-//        if (!amount.matches("[0-9]+")){
-//            return new ResponseEntity<>("Số tiền chỉ chứa chữ số!", HttpStatus.BAD_REQUEST);
-//        }
 
         Map<String, String> vnp_Params = new HashMap<>();
         vnp_Params.put("vnp_Version", PaymentConfig.VERSIONVNPAY);
@@ -205,8 +195,11 @@ public class PaymentController {
         //check admin phone
         Role roles = roleRepository.findByName("ADMIN").get();
         User receiver = userRepository.getUserByPhone(registerDTO.getPhone());
-        if(receiver.getRoles().contains(roles)){
+        if(receiver == null){
             return new ResponseEntity<>("Số điện thoại không tồn tại trong hệ thống!", HttpStatus.BAD_REQUEST);
+        }
+        if(receiver.getRoles().contains(roles)){
+            return new ResponseEntity<>("Số điện thoại không hợp lệ!", HttpStatus.BAD_REQUEST);
         }
         if(user.getPhone().equals(registerDTO.getPhone())){
             return new ResponseEntity<>("SĐT nhận tiền trùng với SĐT hiện tại !", HttpStatus.BAD_REQUEST);
@@ -222,10 +215,12 @@ public class PaymentController {
                 }
 
                 String otp = otpService.generateOtp(user.getPhone()) + "";
+                otpService.remainCount(registerDTO.getPhone(), 3);
 //                sendSMS(user.getPhone(), otp);
                 Map<String, Object> map = new HashMap<>();
                 map.put("transferData", registerDTO);
                 map.put("tokenTime", otpService.EXPIRE_MINUTES);
+                map.put("remainTime", 3);
                 map.put("otp", otp);
                 return new ResponseEntity<>(map, HttpStatus.OK);
             }else {
@@ -243,17 +238,27 @@ public class PaymentController {
         Role roles = roleRepository.findByName("ADMIN").get();
         User receiver = userRepository.getUserByPhone(transferDTO.getPhone());
         if(receiver.getRoles().contains(roles)){
-            return new ResponseEntity<>("Số điện thoại không tồn tại trong hệ thống!", HttpStatus.BAD_REQUEST);
+            return new ResponseEntity<>("Số điện thoại không hợp lệ!", HttpStatus.BAD_REQUEST);
+        }
+        int remainTime = 3;
+        if(otpService.getCount(transferDTO.getPhone()) != null){
+            remainTime = otpService.getCount(transferDTO.getPhone());
+        }
+        if(remainTime == 0){
+            otpService.clearCount(transferDTO.getPhone());
+            otpService.clearOtp(transferDTO.getPhone());
+            return new ResponseEntity<>("Nhập sai quá số lần quy định!", HttpStatus.BAD_REQUEST);
         }
         if(otpService.getOtp(sender.getPhone()) == null){
             return new ResponseEntity<>("Mã OTP hết hạn!", HttpStatus.BAD_REQUEST);
         }
-        if(transferDTO.getToken().isEmpty() || transferDTO.getToken() == null){
-            return new ResponseEntity<>("Mã OTP không tồn tại!", HttpStatus.BAD_REQUEST);
+        if((transferDTO.getToken() == null) || (transferDTO.getToken().isEmpty())){
+            return new ResponseEntity<>("Mã OTP sai!", HttpStatus.BAD_REQUEST);
         }
         int otp = Integer.parseInt(transferDTO.getToken());
 
         if (otp != otpService.getOtp(sender.getPhone())) {
+            otpService.remainCount(transferDTO.getPhone(), remainTime);
             return new ResponseEntity<>("Mã OTP sai!", HttpStatus.BAD_REQUEST);
         }else{
             if(receiver != null){
@@ -310,10 +315,12 @@ public class PaymentController {
             }
 
             String otp = otpService.generateOtp(user.getPhone()) + "";
+            otpService.remainCount(user.getPhone(), 3);
 //                sendSMS(user.getPhone(), otp);
             Map<String, Object> map = new HashMap<>();
             map.put("cashoutData", withdrawDTO);
             map.put("tokenTime", otpService.EXPIRE_MINUTES);
+            map.put("remainTime", 3);
             map.put("otp", otp);
             return new ResponseEntity<>(map, HttpStatus.OK);
         } else {
@@ -326,6 +333,15 @@ public class PaymentController {
     public ResponseEntity<?> processWithdraw(@RequestHeader(name = "Authorization") String token,
                                              @Valid @RequestBody WithdrawDTO withdrawDTO){
         User sender = getUserFromToken(token);
+        int remainTime = 3;
+        if(otpService.getCount(sender.getPhone()) != null){
+            remainTime = otpService.getCount(sender.getPhone());
+        }
+        if(remainTime == 0){
+            otpService.clearCount(sender.getPhone());
+            otpService.clearOtp(sender.getPhone());
+            return new ResponseEntity<>("Nhập sai quá số lần quy định!", HttpStatus.BAD_REQUEST);
+        }
         if(otpService.getOtp(sender.getPhone()) == null){
             return new ResponseEntity<>("Mã OTP hết hạn!", HttpStatus.BAD_REQUEST);
         }
@@ -335,6 +351,7 @@ public class PaymentController {
         int otp = Integer.parseInt(withdrawDTO.getToken());
 
         if (otp != otpService.getOtp(sender.getPhone())) {
+            otpService.remainCount(sender.getPhone(), remainTime);
             return new ResponseEntity<>("Mã OTP sai!", HttpStatus.BAD_REQUEST);
         } else {
             long amount = withdrawDTO.getMoney();

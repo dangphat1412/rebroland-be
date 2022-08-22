@@ -2,13 +2,13 @@ package vn.edu.fpt.rebroland.service.impl;
 
 
 import vn.edu.fpt.rebroland.entity.Price;
-import vn.edu.fpt.rebroland.payload.ListPrice;
-import vn.edu.fpt.rebroland.payload.PriceDTO;
+import vn.edu.fpt.rebroland.payload.*;
 import vn.edu.fpt.rebroland.repository.PriceRepository;
 import vn.edu.fpt.rebroland.service.PriceService;
 import org.modelmapper.ModelMapper;
 import org.springframework.stereotype.Service;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -50,6 +50,70 @@ public class PriceServiceImpl implements PriceService {
         map.put("currentPrice", price);
         map.put("listPrice", listPrice);
         return map;
+    }
+
+    @Override
+    public Map<String, Object> createBrokerPrice(BrokerPriceDTO brokerPriceDTO) {
+        Price oneMonthPrice = priceRepository.getPriceByTypeIdAndUnitDate(2, 30);
+        Price threeMonthPrice = priceRepository.getPriceByTypeIdAndUnitDate(2, 90);
+        Price sixMonthPrice = priceRepository.getPriceByTypeIdAndUnitDate(2, 180);
+        Price twelveMonthPrice = priceRepository.getPriceByTypeIdAndUnitDate(2, 360);
+
+        PriceDTO oneMonthDto = createBrokerPriceByMonth(oneMonthPrice, brokerPriceDTO.getBrokerPrice(), brokerPriceDTO.getOneMonthDiscount(), 30);
+        PriceDTO threeMonthDto = createBrokerPriceByMonth(threeMonthPrice, brokerPriceDTO.getBrokerPrice() * 3, brokerPriceDTO.getThreeMonthsDiscount(), 90);
+        PriceDTO sixMonthDto = createBrokerPriceByMonth(sixMonthPrice, brokerPriceDTO.getBrokerPrice() * 6, brokerPriceDTO.getSixMonthsDiscount(), 180);
+        PriceDTO twelveMonthDto = createBrokerPriceByMonth(twelveMonthPrice, brokerPriceDTO.getBrokerPrice() * 12, brokerPriceDTO.getTwelveMonthsDiscount(), 360);
+
+        List<PriceDTO> list = new ArrayList<>();
+        list.add(oneMonthDto);
+        list.add(threeMonthDto);
+        list.add(sixMonthDto);
+        list.add(twelveMonthDto);
+
+        Map<String, Object> map = new HashMap<>();
+        map.put("currentPrice", list);
+        return map;
+    }
+
+    private PriceDTO createBrokerPriceByMonth(Price brokerPrice, long price, int discount, int unitDate) {
+        try {
+            PriceDTO dto = new PriceDTO();
+            long millis = System.currentTimeMillis();
+            java.sql.Date date = new java.sql.Date(millis);
+            dto.setStartDate(date);
+            dto.setTypeId(2);
+            if (brokerPrice == null) {
+                dto.setPrice(price);
+                dto.setDiscount(discount);
+                dto.setStatus(true);
+                dto.setUnitDate(unitDate);
+                Price p = mapToEntity(dto);
+                Price newPrice = priceRepository.save(p);
+                return mapToDTO(newPrice);
+            } else {
+                if (brokerPrice.getPrice() == price && brokerPrice.getDiscount() == discount) {
+                    return mapToDTO(brokerPrice);
+                }
+                brokerPrice.setStatus(false);
+                priceRepository.save(brokerPrice);
+                dto.setPrice(price);
+                dto.setDiscount(discount);
+                dto.setStatus(true);
+                dto.setUnitDate(unitDate);
+                Price p = mapToEntity(dto);
+                Price newPrice = priceRepository.save(p);
+                return mapToDTO(newPrice);
+            }
+
+        } catch (Exception e) {
+            return null;
+        }
+    }
+
+    @Override
+    public List<Integer> getListBrokerPrice() {
+        List<Integer> listPrice = priceRepository.getListBrokerPrice();
+        return listPrice;
     }
 
     @Override

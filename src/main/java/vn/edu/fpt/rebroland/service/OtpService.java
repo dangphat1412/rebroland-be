@@ -14,6 +14,8 @@ public class OtpService {
 
     private LoadingCache<String, Integer> otpCache;
 
+    private LoadingCache<String, Integer> count;
+
     public OtpService() {
         super();
         otpCache = CacheBuilder.newBuilder().
@@ -23,6 +25,12 @@ public class OtpService {
                         return null;
                     }
                 });
+        count = CacheBuilder.newBuilder().build(new CacheLoader<String, Integer>() {
+            @Override
+            public Integer load(String s) throws Exception {
+                return null;
+            }
+        });
     }
 
     public int generateOtp(String key){
@@ -30,6 +38,22 @@ public class OtpService {
         int otp = 100000 + random.nextInt(900000);
         otpCache.put(key, otp);
         return otp;
+    }
+
+    public void remainCount(String key, int c){
+        count.put(key, c - 1);
+    }
+
+    public Integer getCount(String key){
+        try {
+            return count.get(key);
+        }catch (Exception e){
+            return null;
+        }
+    }
+
+    public void clearCount(String key){
+        count.invalidate(key);
     }
 
     public Integer getOtp(String key){
@@ -43,6 +67,5 @@ public class OtpService {
     public void clearOtp(String key){
         otpCache.invalidate(key);
     }
-
 
 }

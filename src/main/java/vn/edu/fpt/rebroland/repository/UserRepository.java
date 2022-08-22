@@ -53,7 +53,7 @@ public interface UserRepository extends JpaRepository<User, Integer> {
             "AND IF(:district IS NULL, 1 = 1, u.district LIKE CONCAT('%',:district,'%')) " +
             "AND IF(:province IS NULL, 1 = 1, u.province LIKE CONCAT('%',:province,'%')) " +
             "AND IF(:check IS NULL, 1 = 1, u.id IN (SELECT user_id FROM `posts` " +
-            "                                       WHERE property_id IN :propertyType)) " +
+            "                                       WHERE property_id IN :propertyType AND status_id = 1)) " +
             "AND (u.id != :userId) " +
             "AND u.block = false "  +
             "ORDER BY r.avg_rate DESC ", nativeQuery = true)
@@ -69,7 +69,7 @@ public interface UserRepository extends JpaRepository<User, Integer> {
             "AND IF(:district IS NULL, 1 = 1, u.district LIKE CONCAT('%',:district,'%')) " +
             "AND IF(:province IS NULL, 1 = 1, u.province LIKE CONCAT('%',:province,'%')) " +
             "AND IF(:check IS NULL, 1 = 1, u.id IN (SELECT user_id FROM `posts` " +
-            "                                       WHERE property_id IN :propertyType)) " +
+            "                                       WHERE property_id IN :propertyType AND status_id = 1)) " +
             "AND (u.id != :userId) " +
             "AND u.block = false ", nativeQuery = true)
     List<User> searchBroker(String fullName, String ward, String district, String province,

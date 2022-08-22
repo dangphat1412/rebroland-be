@@ -7,6 +7,7 @@ public interface ApartmentHistoryService {
     ApartmentHistoryDTO createApartmentHistory(ApartmentHistoryDTO apartmentHistoryDTO);
 
     ApartmentHistoryDTO getApartmentHistoryByBarcodeAndBuildingNameAndDate(String barcode, String buildingName, String date);
+    ApartmentHistoryDTO getApartmentHistoryByBarcode(String barcode);
     void deleteApartmentHistory(int id);
 
     String updateApartmentHistory(ApartmentHistoryDTO apartmentHistoryDTO, int id);

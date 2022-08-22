@@ -9,12 +9,12 @@ import vn.edu.fpt.rebroland.repository.PostRepository;
 import vn.edu.fpt.rebroland.repository.RoleRepository;
 import vn.edu.fpt.rebroland.repository.UserRepository;
 import vn.edu.fpt.rebroland.service.*;
+import com.pusher.rest.Pusher;
 import org.cloudinary.json.JSONObject;
 import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.*;
@@ -747,7 +747,7 @@ public class PostController {
                 return new ResponseEntity<>("Người dùng không phải là broker!", HttpStatus.OK);
             }
             int pageNumber = Integer.parseInt(pageNo);
-            int pageSize = 8;
+            int pageSize = 5;
 
             SearchResponse lists = postService.getDerivativePostOfBrokerPaging(userId, propertyTypeId, pageNumber, pageSize, sortValue, status);
 
@@ -849,24 +849,99 @@ public class PostController {
     }
 
     @Autowired
-    SimpMessagingTemplate template;
+    private OtpService otpService;
+
+    @PostMapping("/history/send-otp/{postId}")
+    public ResponseEntity<?> sendOtpToOwnerPhone(@PathVariable(name = "postId") int postId,
+                                                     @Valid @RequestBody HistoryDTO historyDTO) {
+        Post post = postRepository.findPostByPostId(postId);
+        if (post != null && post.getStatus().getId() == 1 && post.getOriginalPost() == null) {
+            if(historyDTO.getOwner() != null){
+                Pattern pattern = Pattern.compile("[$&+,:;=\\\\?@#|/'<>.^*()%!-1234567890]");
+                if (pattern.matcher(historyDTO.getOwner()).find()) {
+                    return new ResponseEntity<>("Họ và tên không chứa ký tự đặc biệt và số!", HttpStatus.BAD_REQUEST);
+                }
+            }
+            if (historyDTO.isProvideInfo()) {
+                switch (historyDTO.getTypeId()) {
+                    case 1:
+                        ResidentialHouseHistoryDTO houseDto = residentialHouseHistoryService.getResidentialHouseHistoryByBarcode(historyDTO.getBarcode());
+                        if (houseDto != null) {
+                            return new ResponseEntity<>("Mã vạch đã bị trùng!", HttpStatus.BAD_REQUEST);
+                        }
+                        break;
+                    case 2:
+                        if(historyDTO.getRoomNumber() == null || historyDTO.getRoomNumber().isEmpty()){
+                            return new ResponseEntity<>("Số phòng không được để trống!", HttpStatus.BAD_REQUEST);
+                        }
+                        if(historyDTO.getBuildingName() == null || historyDTO.getBuildingName().isEmpty()){
+                            return new ResponseEntity<>("Tên tòa nhà không được để trống!", HttpStatus.BAD_REQUEST);
+                        }
+                        ApartmentHistoryDTO dto = apartmentHistoryService.getApartmentHistoryByBarcode(historyDTO.getBarcode());
+                        if (dto != null) {
+                            return new ResponseEntity<>("Mã vạch đã bị trùng!", HttpStatus.BAD_REQUEST);
+                        }
+                        break;
+                    case 3:
+                        ResidentialLandHistoryDTO landDto = residentialLandHistoryService.getResidentialLandHistoryByBarcode(historyDTO.getBarcode());
+                        if (landDto != null) {
+                            return new ResponseEntity<>("Mã vạch đã bị trùng!", HttpStatus.BAD_REQUEST);
+                        }
+                        break;
+                }
+            }
+            String token = otpService.generateOtp(historyDTO.getPhone()) + "";
+            otpService.remainCount(historyDTO.getPhone(), 3);
+//            sendSMS(resetPasswordDTO.getPhone(), token);
+            Map<String, Object> map = new HashMap<>();
+            map.put("historyData", historyDTO);
+            map.put("tokenTime", otpService.EXPIRE_MINUTES);
+            map.put("remainTime", 3);
+            map.put("otp", token);
+            return new ResponseEntity<>(map, HttpStatus.OK);
+        } else {
+            return new ResponseEntity<>("Bài viết không tồn tại hoặc không hoạt động!", HttpStatus.BAD_REQUEST);
+        }
+    }
 
     @PostMapping("/history/{postId}")
 //    @Transactional
     public ResponseEntity<?> createRealEstateHistory(@PathVariable(name = "postId") int postId,
-                                                     @RequestBody HistoryDTO historyDTO) {
+                                                     @Valid @RequestBody HistoryDTO historyDTO) {
         Post post = postRepository.findPostByPostId(postId);
-        if (post != null && post.getStatus().getId() == 1 && post.getOriginalPost() == null) {
-            Pattern pattern = Pattern.compile("[$&+,:;=\\\\?@#|/'<>.^*()%!-1234567890]");
-            if (pattern.matcher(historyDTO.getOwner()).find()) {
-                return new ResponseEntity<>("Họ và tên không chứa ký tự đặc biệt và số!", HttpStatus.BAD_REQUEST);
-            }
+        if(post.getOriginalPost() != null){
+            return new ResponseEntity<>("Không được kết thúc giao dịch ở bài phái sinh!", HttpStatus.BAD_REQUEST);
+        }
+        if (post != null && post.getStatus().getId() == 1) {
             long spendMoney = post.getSpendMoney();
             long refundMoney = 0;
             RefundPercentDTO refundPercentDTO = new RefundPercentDTO();
             refundPercentDTO = refundPercentService.getActiveRefundPercent(1);
             refundMoney = spendMoney * (100 - refundPercentDTO.getPercent()) / 100;
             if (historyDTO.isProvideInfo()) {
+                int remainTime = 3;
+                if(otpService.getCount(historyDTO.getPhone()) != null){
+                    remainTime = otpService.getCount(historyDTO.getPhone());
+                }
+                if(remainTime == 0){
+                    otpService.clearCount(historyDTO.getPhone());
+                    otpService.clearOtp(historyDTO.getPhone());
+                    return new ResponseEntity<>("Nhập sai quá số lần quy định!", HttpStatus.BAD_REQUEST);
+                }
+                if(historyDTO.getOwner() != null) {
+                    Pattern pattern = Pattern.compile("[$&+,:;=\\\\?@#|/'<>.^*()%!-1234567890]");
+                    if (pattern.matcher(historyDTO.getOwner()).find()) {
+                        return new ResponseEntity<>("Họ và tên không chứa ký tự đặc biệt và số!", HttpStatus.BAD_REQUEST);
+                    }
+                }
+                if(otpService.getOtp(historyDTO.getPhone()) == null){
+                    return new ResponseEntity<>("Mã OTP đã hết hạn!", HttpStatus.BAD_REQUEST);
+                }
+                int otp = Integer.parseInt(historyDTO.getToken());
+                if (otp != otpService.getOtp(historyDTO.getPhone())) {
+                    otpService.remainCount(historyDTO.getPhone(), remainTime);
+                    return new ResponseEntity<>("Mã OTP sai!", HttpStatus.BAD_REQUEST);
+                }
                 switch (historyDTO.getTypeId()) {
                     case 1:
                         ResidentialHouseHistoryDTO houseHistoryDTO = new ResidentialHouseHistoryDTO();
@@ -878,6 +953,12 @@ public class PostController {
                         break;
                     case 2:
                         ApartmentHistoryDTO apartmentHistoryDTO = new ApartmentHistoryDTO();
+                        if(historyDTO.getRoomNumber() == null || historyDTO.getRoomNumber().isEmpty()){
+                            return new ResponseEntity<>("Số phòng không được để trống!", HttpStatus.BAD_REQUEST);
+                        }
+                        if(historyDTO.getBuildingName() == null || historyDTO.getBuildingName().isEmpty()){
+                            return new ResponseEntity<>("Tên tòa nhà không được để trống!", HttpStatus.BAD_REQUEST);
+                        }
                         apartmentHistoryService.setDataToApartmentHistoryDTO(apartmentHistoryDTO, historyDTO);
                         ApartmentHistoryDTO dto = apartmentHistoryService.createApartmentHistory(apartmentHistoryDTO);
                         if (dto == null) {
@@ -905,10 +986,15 @@ public class PostController {
 
 
             int userId = post.getUser().getId();
-            TextMessageDTO messageDTO = new TextMessageDTO();
+//            TextMessageDTO messageDTO = new TextMessageDTO();
             String message = "Bạn được hoàn lại " + refundMoney + " VNĐ";
-            messageDTO.setMessage(message);
-            template.convertAndSend("/topic/message/" + userId, messageDTO);
+//            messageDTO.setMessage(message);
+//            template.convertAndSend("/topic/message/" + userId, messageDTO);
+            Pusher pusher = new Pusher("1465234", "242a962515021986a8d8", "61b1284a169f5231d7d3");
+            pusher.setCluster("ap1");
+            pusher.setEncrypted(true);
+            pusher.trigger("my-channel-" + userId, "my-event", Collections.singletonMap("message", message));
+
 
             //save notification table
             NotificationDTO notificationDTO = new NotificationDTO();
@@ -931,10 +1017,14 @@ public class PostController {
             List<Post> listPostDto = postRepository.getDerivativePostOfOriginalPost(postId);
             for(Post p: listPostDto){
                 User u = p.getUser();
-                TextMessageDTO messageDTO1 = new TextMessageDTO();
+//                TextMessageDTO messageDTO1 = new TextMessageDTO();
                 String message1 = "Giao dịch đã kết thúc. Vui lòng đánh giá người đăng bài!";
-                messageDTO.setMessage(message1);
-                template.convertAndSend("/topic/message/" + u.getId(), messageDTO1);
+//                messageDTO.setMessage(message1);
+//                template.convertAndSend("/topic/message/" + u.getId(), messageDTO1);
+
+                pusher.setCluster("ap1");
+                pusher.setEncrypted(true);
+                pusher.trigger("my-channel-" + u.getId(), "my-event", Collections.singletonMap("message", message1));
 
                 NotificationDTO notification = new NotificationDTO();
                 notification.setUserId(p.getUser().getId());

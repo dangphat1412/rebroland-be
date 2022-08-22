@@ -6,13 +6,12 @@ import vn.edu.fpt.rebroland.payload.*;
 import vn.edu.fpt.rebroland.repository.*;
 import vn.edu.fpt.rebroland.service.NotificationService;
 import vn.edu.fpt.rebroland.service.PostService;
+import com.pusher.rest.Pusher;
 import org.modelmapper.ModelMapper;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
-import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Service;
 
 import java.sql.Date;
@@ -299,7 +298,29 @@ public class PostServiceImpl implements PostService {
         List<SearchDTO> listSearchDto = new ArrayList<>();
         for (PostDTO postDto : listDto) {
             SearchDTO dto = new SearchDTO();
+            if(postDto.getDirection() != null){
+                dto.setDirectionId(postDto.getDirection().getId());
+            }else{
+                dto.setDirectionId(0);
+            }
             setDataToSearchDTO(dto, postDto);
+            int postId = postDto.getPostId();
+            switch (postDto.getPropertyType().getId()) {
+                case 1: // view residential house
+                    ResidentialHouse residentialHouse = houseRepository.findByPostId(postId);
+                    dto.setNumberOfBedroom(residentialHouse.getNumberOfBedroom());
+                    dto.setNumberOfBathroom(residentialHouse.getNumberOfBathroom());
+                    break;
+                case 2:// view apartment
+                    Apartment apartment = apartmentRepository.findByPostId(postId);
+                    dto.setNumberOfBedroom(apartment.getNumberOfBedroom());
+                    dto.setNumberOfBathroom(apartment.getNumberOfBathroom());
+                    break;
+                case 3:// view residential land
+                    dto.setNumberOfBedroom(0);
+                    dto.setNumberOfBathroom(0);
+                    break;
+            }
             listSearchDto.add(dto);
         }
         SearchResponse searchResponse = new SearchResponse();
@@ -1520,10 +1541,15 @@ public class PostServiceImpl implements PostService {
                     post.setBlockDate(null);
                     postRepository.save(post);
 
-                    TextMessageDTO messageDTO = new TextMessageDTO();
+//                    TextMessageDTO messageDTO = new TextMessageDTO();
                     String message = "Chúng tôi đã hiển thị lại bài viết của bạn, mã bài viết: " + postId;
-                    messageDTO.setMessage(message);
-                    template.convertAndSend("/topic/message/" + post.getUser().getId(), messageDTO);
+//                    messageDTO.setMessage(message);
+//                    template.convertAndSend("/topic/message/" + post.getUser().getId(), messageDTO);
+                    Pusher pusher = new Pusher("1465234", "242a962515021986a8d8", "61b1284a169f5231d7d3");
+                    pusher.setCluster("ap1");
+                    pusher.setEncrypted(true);
+                    pusher.trigger("my-channel-" + post.getUser().getId(), "my-event", Collections.singletonMap("message", message));
+
                     saveNotificationAndUpdateUser(message, post.getUser().getId(), postId);
 
                     List<Post> listPost = postRepository.getDerivativePostOfOriginalPost(postId);
@@ -1534,8 +1560,12 @@ public class PostServiceImpl implements PostService {
                             postRepository.save(p);
 
                             String message1 = "Chúng tôi đã hiển thị lại bài viết của bạn, mã bài viết: " + p.getPostId();
-                            messageDTO.setMessage(message1);
-                            template.convertAndSend("/topic/message/" + p.getUser().getId(), messageDTO);
+//                            messageDTO.setMessage(message1);
+//                            template.convertAndSend("/topic/message/" + p.getUser().getId(), messageDTO);
+                            pusher.setCluster("ap1");
+                            pusher.setEncrypted(true);
+                            pusher.trigger("my-channel-" + p.getUser().getId(), "my-event", Collections.singletonMap("message", message1));
+
                             saveNotificationAndUpdateUser(message1, p.getUser().getId(), p.getPostId());
                         }
                     }
@@ -1546,8 +1576,13 @@ public class PostServiceImpl implements PostService {
 
                     TextMessageDTO messageDTO = new TextMessageDTO();
                     String message = "Chúng tôi đã ẩn bài viết mã số " + post.getPostId() + " của bạn. Nếu có thắc mắc xin liên hệ số 0397975445.";
-                    messageDTO.setMessage(message);
-                    template.convertAndSend("/topic/message/" + post.getUser().getId(), messageDTO);
+//                    messageDTO.setMessage(message);
+//                    template.convertAndSend("/topic/message/" + post.getUser().getId(), messageDTO);
+                    Pusher pusher = new Pusher("1465234", "242a962515021986a8d8", "61b1284a169f5231d7d3");
+                    pusher.setCluster("ap1");
+                    pusher.setEncrypted(true);
+                    pusher.trigger("my-channel-" + post.getUser().getId(), "my-event", Collections.singletonMap("message", message));
+
                     saveNotificationAndUpdateUser(message, post.getUser().getId(), post.getPostId());
 
                     List<Post> listPost = postRepository.getDerivativePostOfOriginalPost(postId);
@@ -1557,8 +1592,12 @@ public class PostServiceImpl implements PostService {
                             p.setBlockDate(date);
                             postRepository.save(p);
                             String message1 = "Chúng tôi đã ẩn bài viết mã số " + p.getPostId() + " của bạn. Nếu có thắc mắc xin liên hệ số 0397975445.";
-                            messageDTO.setMessage(message1);
-                            template.convertAndSend("/topic/message/" + p.getUser().getId(), messageDTO);
+//                            messageDTO.setMessage(message1);
+//                            template.convertAndSend("/topic/message/" + p.getUser().getId(), messageDTO);
+                            pusher.setCluster("ap1");
+                            pusher.setEncrypted(true);
+                            pusher.trigger("my-channel-" + p.getUser().getId(), "my-event", Collections.singletonMap("message", message1));
+
                             saveNotificationAndUpdateUser(message1, p.getUser().getId(), p.getPostId());
                         }
                     }
@@ -1620,10 +1659,15 @@ public class PostServiceImpl implements PostService {
                     p.setBlock(false);
                     postRepository.save(p);
 
-                    TextMessageDTO messageDTO = new TextMessageDTO();
+//                    TextMessageDTO messageDTO = new TextMessageDTO();
                     String message = "Bài viết gốc đã được gia hạn, chúng tôi hiển thị lại bài phái sinh của bạn!";
-                    messageDTO.setMessage(message);
-                    template.convertAndSend("/topic/message/" + p.getUser().getId(), messageDTO);
+//                    messageDTO.setMessage(message);
+//                    template.convertAndSend("/topic/message/" + p.getUser().getId(), messageDTO);
+                    Pusher pusher = new Pusher("1465234", "242a962515021986a8d8", "61b1284a169f5231d7d3");
+                    pusher.setCluster("ap1");
+                    pusher.setEncrypted(true);
+                    pusher.trigger("my-channel-" + p.getUser().getId(), "my-event", Collections.singletonMap("message", message));
+
                     saveNotificationAndUpdateUser(message, p.getUser().getId(), p.getPostId());
                 }
 
@@ -1631,8 +1675,6 @@ public class PostServiceImpl implements PostService {
         }
     }
 
-    @Autowired
-    SimpMessagingTemplate template;
 
     @Override
     public void changeStatus(int postId, int statusId) {
@@ -1648,20 +1690,30 @@ public class PostServiceImpl implements PostService {
                     p.setBlock(true);
                     postRepository.save(p);
 
-                    TextMessageDTO messageDTO = new TextMessageDTO();
+//                    TextMessageDTO messageDTO = new TextMessageDTO();
                     String message = "Bài viết gốc bị gỡ, vì vậy chúng tôi sẽ đóng bài phái sinh của bạn!";
-                    messageDTO.setMessage(message);
-                    template.convertAndSend("/topic/message/" + p.getUser().getId(), messageDTO);
+//                    messageDTO.setMessage(message);
+//                    template.convertAndSend("/topic/message/" + p.getUser().getId(), messageDTO);
+                    Pusher pusher = new Pusher("1465234", "242a962515021986a8d8", "61b1284a169f5231d7d3");
+                    pusher.setCluster("ap1");
+                    pusher.setEncrypted(true);
+                    pusher.trigger("my-channel-" + p.getUser().getId(), "my-event", Collections.singletonMap("message", message));
+
                     saveNotificationAndUpdateUser(message, p.getUser().getId(), p.getPostId());
                 }
                 if(statusId == 1){
                     p.setBlock(false);
                     postRepository.save(p);
 
-                    TextMessageDTO messageDTO = new TextMessageDTO();
+//                    TextMessageDTO messageDTO = new TextMessageDTO();
                     String message = "Bài viết gốc đã được hiển thị trở lại, chúng tôi hiển thị lại bài phái sinh của bạn!";
-                    messageDTO.setMessage(message);
-                    template.convertAndSend("/topic/message/" + p.getUser().getId(), messageDTO);
+//                    messageDTO.setMessage(message);
+//                    template.convertAndSend("/topic/message/" + p.getUser().getId(), messageDTO);
+                    Pusher pusher = new Pusher("1465234", "242a962515021986a8d8", "61b1284a169f5231d7d3");
+                    pusher.setCluster("ap1");
+                    pusher.setEncrypted(true);
+                    pusher.trigger("my-channel-" + p.getUser().getId(), "my-event", Collections.singletonMap("message", message));
+
                     saveNotificationAndUpdateUser(message, p.getUser().getId(), p.getPostId());
                 }
 
@@ -1825,6 +1877,23 @@ public class PostServiceImpl implements PostService {
                 dto.setDirectionId(0);
             }
             setDataToSearchDTO(dto, postDto);
+            int postId = postDto.getPostId();
+            switch (postDto.getPropertyType().getId()) {
+                case 1: // view residential house
+                    ResidentialHouse residentialHouse = houseRepository.findByPostId(postId);
+                    dto.setNumberOfBedroom(residentialHouse.getNumberOfBedroom());
+                    dto.setNumberOfBathroom(residentialHouse.getNumberOfBathroom());
+                    break;
+                case 2:// view apartment
+                    Apartment apartment = apartmentRepository.findByPostId(postId);
+                    dto.setNumberOfBedroom(apartment.getNumberOfBedroom());
+                    dto.setNumberOfBathroom(apartment.getNumberOfBathroom());
+                    break;
+                case 3:// view residential land
+                    dto.setNumberOfBedroom(0);
+                    dto.setNumberOfBathroom(0);
+                    break;
+            }
             listSearchDto.add(dto);
         }
         return listSearchDto;

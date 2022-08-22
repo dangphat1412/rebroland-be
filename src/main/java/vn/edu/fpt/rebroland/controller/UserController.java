@@ -110,16 +110,19 @@ public class UserController {
             }
 
             String token = otpService.generateOtp(registerDTO.getPhone()) + "";
+            otpService.remainCount(registerDTO.getPhone(), 3);
+
 //            sendSMS(registerDTO.getPhone(), token);
+            String fullName = registerDTO.getFullName().trim();
+            registerDTO.setFullName(fullName);
             Pattern pattern = Pattern.compile("[$&+,:;=\\\\?@#|/'<>.^*()%!-1234567890]");
             if (pattern.matcher(registerDTO.getFullName()).find()) {
                 return new ResponseEntity<>("Họ và tên không chứa ký tự đặc biệt và số!", HttpStatus.BAD_REQUEST);
             }
-            String fullName = registerDTO.getFullName().trim();
-            registerDTO.setFullName(fullName);
             Map<String, Object> map = new HashMap<>();
             map.put("user", registerDTO);
             map.put("tokenTime", otpService.EXPIRE_MINUTES);
+            map.put("remainTime", 3);
             map.put("otp", token);
             return new ResponseEntity<>(map, HttpStatus.OK);
         }catch (AuthenticationException e){
@@ -167,6 +170,18 @@ public class UserController {
         if(userRepository.existsByPhone(registerDTO.getPhone())) {
             return new ResponseEntity<>("Số điên thoại đã được sử dụng!", HttpStatus.BAD_REQUEST);
         }
+        int remainTime = 3;
+        if(otpService.getCount(registerDTO.getPhone()) != null){
+            remainTime = otpService.getCount(registerDTO.getPhone());
+        }
+        if(remainTime == 0){
+            otpService.clearCount(registerDTO.getPhone());
+            otpService.clearOtp(registerDTO.getPhone());
+            return new ResponseEntity<>("Nhập sai quá số lần quy định!", HttpStatus.BAD_REQUEST);
+        }
+        if((registerDTO.getToken() == null) || (registerDTO.getToken().isEmpty())){
+            return new ResponseEntity<>("Mã OTP sai!", HttpStatus.BAD_REQUEST);
+        }
         if(otpService.getOtp(registerDTO.getPhone()) == null){
             return new ResponseEntity<>("Mã OTP đã hết hạn!", HttpStatus.BAD_REQUEST);
         }
@@ -174,6 +189,7 @@ public class UserController {
         int otp = Integer.parseInt(registerDTO.getToken());
 
         if (otp != otpService.getOtp(registerDTO.getPhone())) {
+            otpService.remainCount(registerDTO.getPhone(), remainTime);
             return new ResponseEntity<>("Mã OTP sai!", HttpStatus.BAD_REQUEST);
         }
         userService.createUser(registerDTO);
@@ -189,18 +205,26 @@ public class UserController {
 
     @PostMapping("/forgot-password/otp")
     public ResponseEntity<?> processForgotPassword(@Valid @RequestBody ResetPasswordDTO resetPasswordDTO) {
-        User user = userRepository.findByPhone(resetPasswordDTO.getPhone()).
-                orElseThrow(() -> new UsernameNotFoundException("User not found with phone: " + resetPasswordDTO.getPhone()));
+//        User user = userRepository.findByPhone(resetPasswordDTO.getPhone()).
+//                orElseThrow(() -> new UsernameNotFoundException("User not found with phone: " + resetPasswordDTO.getPhone()));
+        User user = userRepository.getUserByPhone(resetPasswordDTO.getPhone());
+//        if(resetPasswordDTO.getToken() == null){
+//            return new ResponseEntity<>("Mã OTP không được để trống!", HttpStatus.BAD_REQUEST);
+//        }
         if (user != null) {
             String token = otpService.generateOtp(resetPasswordDTO.getPhone()) + "";
+            otpService.remainCount(resetPasswordDTO.getPhone(), 3);
 //            sendSMS(resetPasswordDTO.getPhone(), token);
             Map<String, Object> map = new HashMap<>();
             map.put("user", resetPasswordDTO);
             map.put("tokenTime", otpService.EXPIRE_MINUTES);
+            map.put("remainTime", 3);
             map.put("otp", token);
             return new ResponseEntity<>(map, HttpStatus.OK);
+        }else{
+            return new ResponseEntity<>("Số điện thoại chưa được đăng kí!", HttpStatus.BAD_REQUEST);
         }
-        return new ResponseEntity<>("Gửi OTP thất bại!", HttpStatus.BAD_REQUEST);
+//        return new ResponseEntity<>("Gửi OTP thất bại!", HttpStatus.BAD_REQUEST);
 
 
     }
@@ -218,15 +242,25 @@ public class UserController {
 //        User user = userRepository.findByPhone(resetPasswordDTO.getPhone()).
 //                orElseThrow(() -> new UsernameNotFoundException("Số điện thoại chưa được đăng kí " + resetPasswordDTO.getPhone()));
         User user = userRepository.getUserByPhone(resetPasswordDTO.getPhone());
+
         if(user == null){
             return new ResponseEntity<>("Số điện thoại chưa được đăng kí!", HttpStatus.BAD_REQUEST);
         }
-
+        int remainTime = 3;
+        if(otpService.getCount(resetPasswordDTO.getPhone()) != null){
+            remainTime = otpService.getCount(resetPasswordDTO.getPhone());
+        }
+        if(remainTime == 0){
+            otpService.clearCount(resetPasswordDTO.getPhone());
+            otpService.clearOtp(resetPasswordDTO.getPhone());
+            return new ResponseEntity<>("Nhập sai quá số lần quy định!", HttpStatus.BAD_REQUEST);
+        }
         if(otpService.getOtp(resetPasswordDTO.getPhone()) == null){
             return new ResponseEntity<>("Mã OTP đã hết hạn!", HttpStatus.BAD_REQUEST);
         }
 
         if (resetPasswordDTO.getToken() != otpService.getOtp(resetPasswordDTO.getPhone())) {
+            otpService.remainCount(resetPasswordDTO.getPhone(), remainTime);
             return new ResponseEntity<>("Mã OTP sai!", HttpStatus.BAD_REQUEST);
         }else {
 
@@ -471,17 +505,20 @@ public class UserController {
         //check admin phone
         Role roles = roleRepository.findByName("ADMIN").get();
         User receiver = userRepository.getUserByPhone(registerDTO.getPhone());
-        if(receiver.getRoles().contains(roles)){
-            return new ResponseEntity<>("Số điện thoại không tồn tại trong hệ thống!", HttpStatus.BAD_REQUEST);
+        if(receiver != null && receiver.getRoles().contains(roles)){
+            return new ResponseEntity<>("Số điện thoại không hợp lệ!", HttpStatus.BAD_REQUEST);
         }
         if(user.getPhone().equals(registerDTO.getPhone())){
             return new ResponseEntity<>("SĐT cập nhật trùng với SĐT hiện tại !", HttpStatus.BAD_REQUEST);
         }else{
             String otp = otpService.generateOtp(registerDTO.getPhone()) + "";
+            otpService.remainCount(registerDTO.getPhone(), 3);
+
 //                sendSMS(registerDTO.getPhone(), otp);
             Map<String, Object> map = new HashMap<>();
             map.put("phoneData", registerDTO);
             map.put("tokenTime", otpService.EXPIRE_MINUTES);
+            map.put("remainTime", 3);
             map.put("otp", otp);
             return new ResponseEntity<>(map, HttpStatus.OK);
         }
@@ -496,6 +533,15 @@ public class UserController {
         String phone = payload.getString("sub");
         User newUser = userRepository.findByPhone(phone).
                 orElseThrow(() -> new UsernameNotFoundException("User not found with phone: " + phone));
+        int remainTime = 3;
+        if(otpService.getCount(registerDTO.getPhone()) != null){
+            remainTime = otpService.getCount(registerDTO.getPhone());
+        }
+        if(remainTime == 0){
+            otpService.clearCount(registerDTO.getPhone());
+            otpService.clearOtp(registerDTO.getPhone());
+            return new ResponseEntity<>("Nhập sai quá số lần quy định!", HttpStatus.BAD_REQUEST);
+        }
         if(otpService.getOtp(registerDTO.getPhone()) == null){
             return new ResponseEntity<>("Mã OTP hết hạn!", HttpStatus.BAD_REQUEST);
         }
@@ -505,6 +551,7 @@ public class UserController {
         int otp = Integer.parseInt(registerDTO.getToken());
 
         if (otp != otpService.getOtp(registerDTO.getPhone())) {
+            otpService.remainCount(registerDTO.getPhone(), remainTime);
             return new ResponseEntity<>("Mã OTP sai!", HttpStatus.BAD_REQUEST);
         }else{
             UserDTO userDTO = userService.getUserByPhone(registerDTO.getPhone());

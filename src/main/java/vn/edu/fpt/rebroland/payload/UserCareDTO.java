@@ -1,5 +1,6 @@
 package vn.edu.fpt.rebroland.payload;
 
+import com.fasterxml.jackson.annotation.JsonFormat;
 import lombok.Data;
 
 import javax.validation.constraints.Size;
@@ -11,6 +12,7 @@ public class UserCareDTO {
 
     private Integer userCaredId;
 
+    @JsonFormat(pattern = "dd-MM-yyyy")
     private Date startDate;
 
     @Size(max = 200,message = "Phần mô tả không quá 200 ký tự")

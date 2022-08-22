@@ -334,8 +334,9 @@ public interface PostRepository extends JpaRepository<Post, Integer> {
             "WHERE p.post_id in (SELECT u.post_id FROM `user_follow_posts` u " +
             "WHERE u.user_id = :userId " +
             "AND u.role_id = :roleId)" +
-            "AND IF(:check IS NULL OR :propertyId = 0, 1 = 1, p.property_id = :propertyId)"
-            , nativeQuery = true)
+            "AND IF(:check IS NULL OR :propertyId = 0, 1 = 1, p.property_id = :propertyId)" +
+            "AND p.block = false " +
+            "AND (p.status_id = 1 OR p.status_id = 3) ", nativeQuery = true)
     Page<Post> getFollowPostIdByUserPaging(int userId, int roleId, int propertyId, String check, Pageable pageable);
 
 
@@ -351,6 +352,8 @@ public interface PostRepository extends JpaRepository<Post, Integer> {
             "WHERE p.post_id in (SELECT post_id FROM `user_follow_posts` u " +
             "WHERE u.user_id = :userId " +
             "AND u.role_id = :roleId) " +
+            "AND p.block = false " +
+            "AND (p.status_id = 1 OR p.status_id = 3) " +
             "ORDER BY p.start_date DESC ", nativeQuery = true)
     List<Post> getFollowPostIdByUser(int userId, int roleId);
 

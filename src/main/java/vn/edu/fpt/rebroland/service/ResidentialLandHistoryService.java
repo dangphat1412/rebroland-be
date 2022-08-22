@@ -10,6 +10,7 @@ public interface ResidentialLandHistoryService {
             (ResidentialLandHistoryDTO residentialLandHistoryDTO);
 
     ResidentialLandHistoryDTO getResidentialLandHistoryByBarcodeAndPlotNumberAndDate(String barcode, int plotNumber, String date);
+    ResidentialLandHistoryDTO getResidentialLandHistoryByBarcode(String barcode);
 
     void deleteResidentialLandHistoryById(int id);
 

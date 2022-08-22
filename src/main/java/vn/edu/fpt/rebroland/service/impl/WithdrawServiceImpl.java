@@ -7,14 +7,14 @@ import vn.edu.fpt.rebroland.repository.UserRepository;
 import vn.edu.fpt.rebroland.repository.WithdrawRepository;
 import vn.edu.fpt.rebroland.service.NotificationService;
 import vn.edu.fpt.rebroland.service.WithdrawService;
+import com.pusher.rest.Pusher;
 import org.modelmapper.ModelMapper;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
-import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Service;
 
+import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -104,8 +104,6 @@ public class WithdrawServiceImpl implements WithdrawService {
         return searchResponse;
     }
 
-    @Autowired
-    SimpMessagingTemplate template;
 
     @Override
     public boolean acceptWithdraw(int withdrawId) {
@@ -115,9 +113,13 @@ public class WithdrawServiceImpl implements WithdrawService {
             withdrawRepository.save(withdraw);
             User user = withdraw.getUser();
 
-            TextMessageDTO messageDTO = new TextMessageDTO();
-            messageDTO.setMessage("Yêu cầu rút tiền của bạn được chấp nhận!");
-            template.convertAndSend("/topic/message/" + user.getId(), messageDTO);
+//            TextMessageDTO messageDTO = new TextMessageDTO();
+//            messageDTO.setMessage("Yêu cầu rút tiền của bạn được chấp nhận!");
+//            template.convertAndSend("/topic/message/" + user.getId(), messageDTO);
+            Pusher pusher = new Pusher("1465234", "242a962515021986a8d8", "61b1284a169f5231d7d3");
+            pusher.setCluster("ap1");
+            pusher.setEncrypted(true);
+            pusher.trigger("my-channel-" + user.getId(), "my-event", Collections.singletonMap("message", "Yêu cầu rút tiền của bạn được chấp nhận!"));
 
             saveNotificationAndUpdateUser("Yêu cầu rút tiền của bạn được chấp nhận !", user);
 
@@ -141,9 +143,13 @@ public class WithdrawServiceImpl implements WithdrawService {
             user.setAccountBalance(money + accountBalance);
             userRepository.save(user);
 
-            TextMessageDTO messageDTO = new TextMessageDTO();
-            messageDTO.setMessage("Yêu cầu rút tiền của bạn bị từ chối!");
-            template.convertAndSend("/topic/message/" + user.getId(), messageDTO);
+//            TextMessageDTO messageDTO = new TextMessageDTO();
+//            messageDTO.setMessage("Yêu cầu rút tiền của bạn bị từ chối!");
+//            template.convertAndSend("/topic/message/" + user.getId(), messageDTO);
+            Pusher pusher = new Pusher("1465234", "242a962515021986a8d8", "61b1284a169f5231d7d3");
+            pusher.setCluster("ap1");
+            pusher.setEncrypted(true);
+            pusher.trigger("my-channel-" + user.getId(), "my-event", Collections.singletonMap("message", "Yêu cầu rút tiền của bạn bị từ chối!"));
 
             saveNotificationAndUpdateUser("Yêu cầu rút tiền của bạn bị từ chối!", user);
 

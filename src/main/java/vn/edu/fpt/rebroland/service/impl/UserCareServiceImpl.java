@@ -10,13 +10,12 @@ import vn.edu.fpt.rebroland.repository.UserCareRepository;
 import vn.edu.fpt.rebroland.repository.UserRepository;
 import vn.edu.fpt.rebroland.service.NotificationService;
 import vn.edu.fpt.rebroland.service.UserCareService;
+import com.pusher.rest.Pusher;
 import org.modelmapper.ModelMapper;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
-import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
 
@@ -83,14 +82,16 @@ public class UserCareServiceImpl implements UserCareService {
     }
 
     @Override
-    public UserCareDTO createNewUserCare(UserCareDTO userCareDTO) {
+    public UserCareDTO createNewUserCare(UserCareDTO userCareDTO, UserDTO dto) {
         long millis = System.currentTimeMillis();
         java.sql.Date date = new java.sql.Date(millis);
         userCareDTO.setStartDate(date);
         userCareDTO.setStatus(false);
         UserCare userCare = mapToEntity(userCareDTO);
         UserCare newUserCare = userCareRepository.save(userCare);
-        return mapToDTO(newUserCare);
+        UserCareDTO careDTO = mapToDTO(newUserCare);
+        careDTO.setUser(dto);
+        return careDTO;
     }
 
     @Override
@@ -121,9 +122,6 @@ public class UserCareServiceImpl implements UserCareService {
         }
     }
 
-    @Autowired
-    SimpMessagingTemplate template;
-
     @Override
     public UserCareDTO finishTransactionUserCare(int careId) {
         UserCare userCare = userCareRepository.findById(careId).orElseThrow(() -> new ResourceNotFoundException("UserCare", "id", careId));
@@ -135,12 +133,15 @@ public class UserCareServiceImpl implements UserCareService {
         User userCared = userRepository.getUserById(userCaredId);
 
         //send notification to user
-        TextMessageDTO messageDTO = new TextMessageDTO();
+//        TextMessageDTO messageDTO = new TextMessageDTO();
         String message = "Việc chăm sóc khách hàng đã kết thúc. Vui lòng đánh giá broker!";
-        messageDTO.setMessage(message);
-//        messageDTO.setUserId(userId);
-//        messageDTO.setRoleId(3);
-        template.convertAndSend("/topic/message/" + userCaredId, messageDTO);
+//        messageDTO.setMessage(message);
+//        template.convertAndSend("/topic/message/" + userCaredId, messageDTO);
+        Pusher pusher = new Pusher("1465234", "242a962515021986a8d8", "61b1284a169f5231d7d3");
+        pusher.setCluster("ap1");
+        pusher.setEncrypted(true);
+        pusher.trigger("my-channel-" + userCaredId, "my-event", Collections.singletonMap("message", message));
+
 
         NotificationDTO notificationDTO = new NotificationDTO();
         notificationDTO.setUserId(userCaredId);

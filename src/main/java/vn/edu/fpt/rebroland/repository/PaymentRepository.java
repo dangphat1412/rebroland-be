@@ -36,6 +36,20 @@ public interface PaymentRepository extends JpaRepository<Transactions, Integer> 
 
     @Query(value = " SELECT p.* FROM `transactions` p " +
             " JOIN `users` u on p.user_id = u.id" +
-            " WHERE ((u.phone LIKE CONCAT('%',:keyword,'%')) OR (u.full_name LIKE CONCAT('%',:keyword,'%')) OR p.user_id = :keyword) ", nativeQuery = true)
+            " WHERE p.type_id = 3 " +
+            " AND ((u.phone LIKE CONCAT('%',:keyword,'%')) OR (u.full_name LIKE CONCAT('%',:keyword,'%')) OR p.user_id = :keyword) ", nativeQuery = true)
+    Page<Transactions> findAllDepositMoneyIntoWallet(Pageable pageable, String keyword);
+
+    @Query(value = " SELECT p.* FROM `transactions` p " +
+            " JOIN `users` u on p.user_id = u.id" +
+            " WHERE p.type_id = 6 " +
+            " AND ((u.phone LIKE CONCAT('%',:keyword,'%')) OR (u.full_name LIKE CONCAT('%',:keyword,'%')) OR p.user_id = :keyword) ", nativeQuery = true)
+    Page<Transactions> findAllWithdrawMoney(Pageable pageable, String keyword);
+
+    @Query(value = " SELECT p.* FROM `transactions` p " +
+            " JOIN `users` u on p.user_id = u.id" +
+            " WHERE ((u.phone LIKE CONCAT('%',:keyword,'%')) OR (u.full_name LIKE CONCAT('%',:keyword,'%')) OR p.user_id = :keyword) " +
+            " AND (p.type_id != 4) " +
+            " AND (p.type_id != 5) ", nativeQuery = true)
     Page<Transactions> findAll(Pageable pageable, String keyword);
 }
