@@ -78,38 +78,56 @@ public interface UserRepository extends JpaRepository<User, Integer> {
 
     @Query(value = " SELECT * FROM `users` u " +
             " WHERE (u.id != :userId) " +
-            " AND ((u.full_name LIKE CONCAT('%',:keyword,'%')) OR (u.phone LIKE CONCAT('%',:keyword,'%')) OR u.id = :keyword) ", nativeQuery = true)
-    Page<User> getAllUserForAdminPaging(int userId, String keyword, Pageable pageable);
+            " AND ((u.full_name LIKE CONCAT('%',:keyword,'%')) OR (u.phone LIKE CONCAT('%',:keyword,'%')) OR u.id = :keyword) " +
+            " AND IF(:roleId = 0, 1 = 1, u.id IN (SELECT user_id FROM `user_roles`" +
+            "                                      GROUP BY user_id " +
+            "                                       HAVING COUNT(role_id) = :roleId))", nativeQuery = true)
+    Page<User> getAllUserForAdminPaging(int userId, String keyword, int roleId, Pageable pageable);
 
     @Query(value = " SELECT * FROM `users` u " +
             " WHERE (u.id != :userId) " +
             " AND ((u.full_name LIKE CONCAT('%',:keyword,'%')) OR (u.phone LIKE CONCAT('%',:keyword,'%')) " +
             "      OR u.id = :keyword) " +
+            " AND IF(:roleId = 0, 1 = 1, u.id IN (SELECT user_id FROM `user_roles`" +
+            "                                      GROUP BY user_id " +
+            "                                       HAVING COUNT(role_id) = :roleId))" +
             " AND u.block = false ", nativeQuery = true)
-    Page<User> getAllActiveUserForAdminPaging(int userId, String keyword, Pageable pageable);
+    Page<User> getAllActiveUserForAdminPaging(int userId, String keyword, int roleId, Pageable pageable);
 
     @Query(value = " SELECT * FROM `users` u " +
             " WHERE (u.id != :userId) " +
             " AND ((u.full_name LIKE CONCAT('%',:keyword,'%')) OR (u.phone LIKE CONCAT('%',:keyword,'%')) OR u.id = :keyword) " +
+            " AND IF(:roleId = 0, 1 = 1, u.id IN (SELECT user_id FROM `user_roles`" +
+            "                                      GROUP BY user_id " +
+            "                                       HAVING COUNT(role_id) = :roleId))" +
             " AND u.block = true ", nativeQuery = true)
-    Page<User> getAllBlockUserForAdminPaging(int userId, String keyword, Pageable pageable);
+    Page<User> getAllBlockUserForAdminPaging(int userId, String keyword, int roleId, Pageable pageable);
 
     @Query(value = " SELECT * FROM `users` u" +
             " WHERE (u.id != :userId) " +
-            " AND ((u.full_name LIKE CONCAT('%',:keyword,'%')) OR (u.phone LIKE CONCAT('%',:keyword,'%')) OR u.id = :keyword) ", nativeQuery = true)
-    List<User> getAllUserForAdmin(int userId, String keyword);
+            " AND ((u.full_name LIKE CONCAT('%',:keyword,'%')) OR (u.phone LIKE CONCAT('%',:keyword,'%')) OR u.id = :keyword) " +
+            " AND IF(:roleId = 0, 1 = 1, u.id IN (SELECT user_id FROM `user_roles`" +
+            "                                      GROUP BY user_id " +
+            "                                       HAVING COUNT(role_id) = :roleId))", nativeQuery = true)
+    List<User> getAllUserForAdmin(int userId, String keyword, int roleId);
 
     @Query(value = " SELECT * FROM `users` u " +
             " WHERE (u.id != :userId) " +
             " AND ((u.full_name LIKE CONCAT('%',:keyword,'%')) OR (u.phone LIKE CONCAT('%',:keyword,'%')) OR u.id = :keyword) " +
+            " AND IF(:roleId = 0, 1 = 1, u.id IN (SELECT user_id FROM `user_roles`" +
+            "                                      GROUP BY user_id " +
+            "                                       HAVING COUNT(role_id) = :roleId))" +
             " AND u.block = false ", nativeQuery = true)
-    List<User> getAllActiveUserForAdmin(int userId, String keyword);
+    List<User> getAllActiveUserForAdmin(int userId, String keyword, int roleId);
 
     @Query(value = " SELECT * FROM `users` u " +
             " WHERE (u.id != :userId) " +
             " AND ((u.full_name LIKE CONCAT('%',:keyword,'%')) OR (u.phone LIKE CONCAT('%',:keyword,'%')) OR u.id = :keyword) " +
+            " AND IF(:roleId = 0, 1 = 1, u.id IN (SELECT user_id FROM `user_roles`" +
+            "                                      GROUP BY user_id " +
+            "                                       HAVING COUNT(role_id) = :roleId)) " +
             " AND u.block = true ", nativeQuery = true)
-    List<User> getAllBlockUserForAdmin(int userId, String keyword);
+    List<User> getAllBlockUserForAdmin(int userId, String keyword, int roleId);
 
     @Query(value = " SELECT * FROM `users` u " +
             " WHERE u.id IN (SELECT user_id FROM reports " +

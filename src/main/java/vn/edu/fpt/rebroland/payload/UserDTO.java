@@ -13,29 +13,29 @@ import java.util.Date;
 public class UserDTO {
     private int id;
 
-    //    @NotEmpty(message = "Vui lòng điền đầy đủ họ tên")
+//    @NotEmpty(message = "Vui lòng điền đầy đủ họ tên")
  //   @Pattern(regexp = ("^[a-zA-Z]+(([^\\s][a-zA-Z ])?[a-zA-Z]*)*$"), message = "Tên không đúng định dạng!")
     private String fullName;
 
-    @JsonFormat(pattern = "yyyy-MM-dd")
+    @JsonFormat(pattern="dd-MM-yyyy")
     private Date dob;
 
-    //    @NotNull(message = "You must choose gender")
+//    @NotNull(message = "You must choose gender")
     private Boolean gender;
 
     private String address;
 
-    //    @NotEmpty(message = "Ward should not be empty")
+//    @NotEmpty(message = "Ward should not be empty")
     private String ward;
 
-    //    @NotEmpty(message = "District should not be empty")
+//    @NotEmpty(message = "District should not be empty")
     private String district;
 
-    //    @NotEmpty(message = "City should not be empty")
+//    @NotEmpty(message = "City should not be empty")
     private String province;
 
-    //    @NotEmpty(message = "Vui lòng điền số điện thoại")
-    @Pattern(regexp = "(84|0[3|5|7|8|9])+([0-9]{8})\\b", message = "Số điện thoại không hợp lệ.")
+//    @NotEmpty(message = "Vui lòng điền số điện thoại")
+    @Pattern(regexp = "(84|0[3|5|7|8|9])+([0-9]{8})\\b",message = "Số điện thoại không hợp lệ.")
     private String phone;
 
     @Email(regexp = "^[_A-Za-z0-9-\\+]+(\\.[_A-Za-z0-9-]+)*@[A-Za-z0-9-]+(\\.[A-Za-z0-9]+)*(\\.[A-Za-z]{2,})$", message = "Email không hợp lệ.")
@@ -57,7 +57,7 @@ public class UserDTO {
     @Pattern(regexp = "^(?:(?:http|https):\\/\\/)?(?:www.)?zalo.me\\/(84|0[3|5|7|8|9])+([0-9]{8})$", message = "Link zalo không hợp lệ!")
     private String zaloLink;
 
-    @JsonFormat(pattern="yyyy-MM-dd")
+    @JsonFormat(pattern="dd-MM-yyyy HH:mm:ss")
     private Date startDate;
 
     private float avgRate;

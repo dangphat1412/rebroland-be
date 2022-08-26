@@ -6,10 +6,8 @@ import vn.edu.fpt.rebroland.entity.User;
 import vn.edu.fpt.rebroland.payload.*;
 import vn.edu.fpt.rebroland.repository.RoleRepository;
 import vn.edu.fpt.rebroland.repository.UserRepository;
-import vn.edu.fpt.rebroland.service.OtpService;
-import vn.edu.fpt.rebroland.service.PaymentService;
-import vn.edu.fpt.rebroland.service.UserService;
-import vn.edu.fpt.rebroland.service.WithdrawService;
+import vn.edu.fpt.rebroland.service.*;
+import com.pusher.rest.Pusher;
 import org.cloudinary.json.JSONObject;
 import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -24,6 +22,7 @@ import javax.validation.Valid;
 import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
+import java.text.DecimalFormat;
 import java.text.SimpleDateFormat;
 import java.util.*;
 
@@ -38,15 +37,17 @@ public class PaymentController {
     private UserService userService;
     private WithdrawService withdrawService;
     private RoleRepository roleRepository;
+    private NotificationService notificationService;
 
     public PaymentController(PaymentService paymentService, UserRepository userRepository, ModelMapper mapper, UserService userService, WithdrawService withdrawService,
-                             RoleRepository roleRepository) {
+                             RoleRepository roleRepository, NotificationService notificationService) {
         this.paymentService = paymentService;
         this.userRepository = userRepository;
         this.mapper = mapper;
         this.userService = userService;
         this.withdrawService = withdrawService;
         this.roleRepository = roleRepository;
+        this.notificationService = notificationService;
     }
 
     @Autowired
@@ -170,9 +171,31 @@ public class PaymentController {
 
             TransactionDTO newTransactionDTO = paymentService.createTransaction(transactionDTO);
             if(newTransactionDTO != null){
+//                long accountBalance = user.getAccountBalance();
+//                user.setAccountBalance(accountBalance + transactionDTO.getAmount());
+//                userRepository.save(user);
+                DecimalFormat formatter = new DecimalFormat("###,###,###");
+                String message1 = "Bạn đã nạp vào ví " + formatter.format(transactionDTO.getAmount()) + " VNĐ";
+                Pusher pusher = new Pusher("1465234", "242a962515021986a8d8", "61b1284a169f5231d7d3");
+                pusher.setCluster("ap1");
+                pusher.setEncrypted(true);
+                pusher.trigger("my-channel-" + user.getId(), "my-event", Collections.singletonMap("message", message1));
+
+                NotificationDTO notificationDTO = new NotificationDTO();
+                notificationDTO.setUserId(user.getId());
+                notificationDTO.setContent(message1);
+//            notificationDTO.setPhone(userRequest.getPhone());
+                notificationDTO.setType("Payment");
+                notificationService.createContactNotification(notificationDTO);
+
+                //update unread notification user
+                int numberUnread = user.getUnreadNotification();
+                numberUnread++;
+                user.setUnreadNotification(numberUnread);
                 long accountBalance = user.getAccountBalance();
                 user.setAccountBalance(accountBalance + transactionDTO.getAmount());
                 userRepository.save(user);
+
                 final String linkRedirect = "https://rebroland.vercel.app/thanh-toan-thanh-cong?amount=" + money +"&orderInfo="
                         + orderInfo +"&bankCode=" + bankCode + "&cardType=" + cardType + "&payDate=" + payDate + "&transactionNo=" + transactionNo;
                 response.sendRedirect(linkRedirect);
@@ -274,7 +297,7 @@ public class PaymentController {
                 userRepository.save(sender);
 
                 receiver.setAccountBalance(newReceiverAccountBalance);
-                userRepository.save(receiver);
+//                userRepository.save(receiver);
 
                 TransactionDTO senderDto = new TransactionDTO();
                 senderDto.setUser(mapper.map(sender, UserDTO.class));
@@ -283,12 +306,50 @@ public class PaymentController {
                 senderDto.setTypeId(4);
                 TransactionDTO dto = paymentService.createTransaction(senderDto);
 
+                DecimalFormat formatter = new DecimalFormat("###,###,###");
+
+
+                String message = "Bạn vừa chuyển " + formatter.format(amount) + " VNĐ đến SĐT " + receiver.getPhone() + ". Nội dung: " + transferDTO.getContent();
+                Pusher pusher = new Pusher("1465234", "242a962515021986a8d8", "61b1284a169f5231d7d3");
+                pusher.setCluster("ap1");
+                pusher.setEncrypted(true);
+                pusher.trigger("my-channel-" + receiver.getId(), "my-event", Collections.singletonMap("message", message));
+
+                NotificationDTO notificationDTO1 = new NotificationDTO();
+                notificationDTO1.setUserId(sender.getId());
+                notificationDTO1.setContent(message);
+                notificationDTO1.setType("SendMoney");
+                notificationService.createContactNotification(notificationDTO1);
+
+                int numberUnread1 = sender.getUnreadNotification();
+                numberUnread1++;
+                sender.setUnreadNotification(numberUnread1);
+                userRepository.save(sender);
+
                 TransactionDTO receiverDto = new TransactionDTO();
                 receiverDto.setUser(mapper.map(receiver, UserDTO.class));
                 receiverDto.setDescription("Nhận tiền");
                 receiverDto.setAmount(amount);
                 receiverDto.setTypeId(5);
                 TransactionDTO transactionDTO = paymentService.createTransaction(receiverDto);
+
+                String message1 = "Bạn nhận được " + formatter.format(amount) + " VNĐ từ SĐT " + sender.getPhone() + ". Nội dung: " + transferDTO.getContent();
+                pusher.setCluster("ap1");
+                pusher.setEncrypted(true);
+                pusher.trigger("my-channel-" + receiver.getId(), "my-event", Collections.singletonMap("message", message1));
+
+                NotificationDTO notificationDTO = new NotificationDTO();
+                notificationDTO.setUserId(receiver.getId());
+                notificationDTO.setContent(message1);
+                notificationDTO.setType("ReceiveMoney");
+                notificationService.createContactNotification(notificationDTO);
+
+                //update unread notification user
+                int numberUnread = receiver.getUnreadNotification();
+                numberUnread++;
+                receiver.setUnreadNotification(numberUnread);
+                userRepository.save(receiver);
+
                 if(dto != null && transactionDTO != null){
                     transferDTO.setToken(null);
                     return new ResponseEntity<>(transferDTO, HttpStatus.CREATED);
@@ -345,7 +406,7 @@ public class PaymentController {
         if(otpService.getOtp(sender.getPhone()) == null){
             return new ResponseEntity<>("Mã OTP hết hạn!", HttpStatus.BAD_REQUEST);
         }
-        if(withdrawDTO.getToken().isEmpty() || withdrawDTO.getToken() == null){
+        if((withdrawDTO.getToken() == null) || (withdrawDTO.getToken().isEmpty())){
             return new ResponseEntity<>("Mã OTP sai!", HttpStatus.BAD_REQUEST);
         }
         int otp = Integer.parseInt(withdrawDTO.getToken());

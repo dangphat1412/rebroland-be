@@ -108,10 +108,10 @@ public class UserRateController {
             userRateDTO.setUserId(user.getId());
 
             int userRatedId = userRateDTO.getUserRated();
-            User userRated = userRepository.getUserById(userRatedId);
-            if(userRated.getRoles().size() != 2){
-                return new ResponseEntity<>("Người được đánh giá không phải là broker!", HttpStatus.BAD_REQUEST);
-            }
+//            User userRated = userRepository.getUserById(userRatedId);
+//            if(userRated.getRoles().size() != 2){
+//                return new ResponseEntity<>("Người được đánh giá không phải là broker!", HttpStatus.BAD_REQUEST);
+//            }
             userRateDTO.setUserRated(userRatedId);
             userRateDTO.setUserRoleRated(3);
 
@@ -244,7 +244,7 @@ public class UserRateController {
                 Calendar cal = Calendar.getInstance();
                 Date date = rateDTO.getStartDate();
                 cal.setTime(date);
-                cal.add(Calendar.SECOND, 30);
+                cal.add(Calendar.DATE, 7);
                 Date newDate = cal.getTime();
                 long millis = System.currentTimeMillis();
                 java.sql.Date now = new java.sql.Date(millis);

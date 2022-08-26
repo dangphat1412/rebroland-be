@@ -53,15 +53,16 @@ public class AdminController {
     public ResponseEntity<?> getAllAccounts(@RequestHeader(name = "Authorization") String token,
                                         @RequestParam(name = "keyword", defaultValue = "") String keyword,
                                         @RequestParam(name = "sortValue", defaultValue = "0") String sortValue,
-                                        @RequestParam(name = "pageNo", defaultValue = "0") String pageNo){
+                                        @RequestParam(name = "pageNo", defaultValue = "0") String pageNo,
+                                            @RequestParam(name = "roleValue", defaultValue = "0") int roleId){
         User user = getUserFromToken(token);
         int pageNumber = Integer.parseInt(pageNo);
         int pageSize = 5;
         Role role = roleRepository.findByName("ADMIN").get();
         if(user.getRoles().contains(role)){
-            List<UserDTO> listUser = userService.getAllUserForAdminPaging(user.getId(), pageNumber, pageSize, keyword.trim(), sortValue);
+            List<UserDTO> listUser = userService.getAllUserForAdminPaging(user.getId(), pageNumber, pageSize, keyword.trim(), sortValue, roleId);
 
-            List<UserDTO> listAllUser = userService.getAllUserForAdmin(user.getId(), keyword.trim(), sortValue);
+            List<UserDTO> listAllUser = userService.getAllUserForAdmin(user.getId(), keyword.trim(), sortValue, roleId);
             int totalPage = 0;
             if(listAllUser.size() % pageSize == 0){
                 totalPage = listAllUser.size() / pageSize;
@@ -126,7 +127,7 @@ public class AdminController {
         Role role = roleRepository.findByName("ADMIN").get();
 
         if(user.getRoles().contains(role)){
-            PostDTO dto = postService.getPostByPostId(postId);
+            PostDTO dto = postService.findPostByPostId(postId);
             return new ResponseEntity<>(dto, HttpStatus.OK);
         }else{
             return new ResponseEntity<>("Người dùng không phải admin!", HttpStatus.BAD_REQUEST);
@@ -251,7 +252,6 @@ public class AdminController {
         Role role = roleRepository.findByName("ADMIN").get();
         if(user.getRoles().contains(role)){
             boolean result = reportService.acceptReportPost(reportId, reportDTO.getComment());
-
 
             if(result){
                 return new ResponseEntity<>("Đã giải quyết báo cáo !", HttpStatus.OK);
@@ -462,7 +462,6 @@ public class AdminController {
                                       @Valid @RequestBody BrokerPriceDTO listPrice){
         User user = getUserFromToken(token);
         Role role = roleRepository.findByName("ADMIN").get();
-
         if(user.getRoles().contains(role)){
             Map<String, Object> map = priceService.createBrokerPrice(listPrice);
             return new ResponseEntity<>(map, HttpStatus.OK);

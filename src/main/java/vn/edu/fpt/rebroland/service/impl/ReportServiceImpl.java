@@ -80,9 +80,9 @@ public class ReportServiceImpl implements ReportService {
                 return HttpStatus.BAD_REQUEST;
             }
 
-//            Report reportedPost = reportRepository.getReportedPost(postId);
+            Report reportedPost = reportRepository.getReportedPost(postId);
             Report report = new Report();
-//            if (reportedPost == null) {
+            if (reportedPost == null) {
                 //create new report and report detail
                 report.setPost(post);
                 //1: chưa xử lý, 2: đã xử lý, 3: bỏ qua
@@ -94,14 +94,14 @@ public class ReportServiceImpl implements ReportService {
 
                 createEvidence(reportPostDTO.getImages(), reportDetail.getDetailId());
                 return HttpStatus.CREATED;
-//            } else {
-//                //insert report detail with reportedPostId
-//                detailDTO.setReportId(reportedPost.getReportId());
-//                ReportDetail reportDetail = detailRepository.save(mapper.map(detailDTO, ReportDetail.class));
-//
-//                createEvidence(reportPostDTO.getImages(), reportDetail.getDetailId());
-//                return HttpStatus.CREATED;
-//            }
+            } else {
+                //insert report detail with reportedPostId
+                detailDTO.setReportId(reportedPost.getReportId());
+                ReportDetail reportDetail = detailRepository.save(mapper.map(detailDTO, ReportDetail.class));
+
+                createEvidence(reportPostDTO.getImages(), reportDetail.getDetailId());
+                return HttpStatus.CREATED;
+            }
         }
 
         //report user
@@ -114,9 +114,9 @@ public class ReportServiceImpl implements ReportService {
                     return HttpStatus.BAD_REQUEST;
                 }
             }
-//            Report reportedPost = reportRepository.getReportedUser(userReportedId);
+            Report reportedPost = reportRepository.getReportedUser(userReportedId);
             Report report = new Report();
-//            if (reportedPost == null) {
+            if (reportedPost == null) {
                 report.setUser(user);
                 report.setStatus(1);
                 Report newReport = reportRepository.save(report);
@@ -124,12 +124,12 @@ public class ReportServiceImpl implements ReportService {
                 ReportDetail reportDetail = detailRepository.save(mapper.map(detailDTO, ReportDetail.class));
                 createEvidence(reportPostDTO.getImages(), reportDetail.getDetailId());
                 return HttpStatus.CREATED;
-//            } else {
-//                detailDTO.setReportId(reportedPost.getReportId());
-//                ReportDetail reportDetail = detailRepository.save(mapper.map(detailDTO, ReportDetail.class));
-//                createEvidence(reportPostDTO.getImages(), reportDetail.getDetailId());
-//                return HttpStatus.CREATED;
-//            }
+            } else {
+                detailDTO.setReportId(reportedPost.getReportId());
+                ReportDetail reportDetail = detailRepository.save(mapper.map(detailDTO, ReportDetail.class));
+                createEvidence(reportPostDTO.getImages(), reportDetail.getDetailId());
+                return HttpStatus.CREATED;
+            }
         }
         return HttpStatus.BAD_REQUEST;
     }
@@ -281,14 +281,21 @@ public class ReportServiceImpl implements ReportService {
             reportedPost.setComment(comment);
             reportRepository.save(reportedPost);
             Post post = reportedPost.getPost();
-
             post.setBlock(true);
+
+            String s = "Bài viết của bạn mã số " + post.getPostId() + " đã bị chặn vì có người tố cáo !";
+            Pusher pusher = new Pusher("1465234", "242a962515021986a8d8", "61b1284a169f5231d7d3");
+            pusher.setCluster("ap1");
+            pusher.setEncrypted(true);
+            pusher.trigger("my-channel-" + post.getUser().getId(), "my-event", Collections.singletonMap("message", s));
+            saveNotificationAndUpdateUser(s, post.getUser(), "DropOriginalPostStatus");
+
             postRepository.save(post);
 
             long millis = System.currentTimeMillis();
             Date date = new Date(millis);
 //            TextMessageDTO messageDTO = new TextMessageDTO();
-            List<Post> listPost = postRepository.getDerivativePostOfOriginalPost(post.getPostId());
+            List<Post> listPost = postRepository.getPostOfOriginalPost(post.getPostId());
             for(Post p: listPost){
                 if(!p.isBlock()){
                     p.setBlock(true);
@@ -298,39 +305,26 @@ public class ReportServiceImpl implements ReportService {
                             ". Nếu có thắc mắc xin liên hệ số 0397975445.";
 //                    messageDTO.setMessage(message1);
 //                    template.convertAndSend("/topic/message/" + p.getUser().getId(), messageDTO);
-                    Pusher pusher = new Pusher("1465234", "242a962515021986a8d8", "61b1284a169f5231d7d3");
                     pusher.setCluster("ap1");
                     pusher.setEncrypted(true);
                     pusher.trigger("my-channel-" + p.getUser().getId(), "my-event", Collections.singletonMap("message", message1));
 
-                    saveNotificationAndUpdateUser(message1, p.getUser());
+                    saveNotificationAndUpdateUser(message1, p.getUser(), "DropDerivativePostStatus");
                 }
             }
-            //block bài ăn theo
 
-
-//            messageDTO.setMessage("Bài viết của bạn mã số " + post.getPostId() + " đã bị chặn vì có người tố cáo !");
-            String s = "Bài viết của bạn mã số " + post.getPostId() + " đã bị chặn vì có người tố cáo !";
-//            template.convertAndSend("/topic/message/" + post.getUser().getId(), messageDTO);
-            Pusher pusher = new Pusher("1465234", "242a962515021986a8d8", "61b1284a169f5231d7d3");
-            pusher.setCluster("ap1");
-            pusher.setEncrypted(true);
-            pusher.trigger("my-channel-" + post.getUser().getId(), "my-event", Collections.singletonMap("message", s));
-
-            saveNotificationAndUpdateUser("Bài viết của bạn: '" + post.getTitle() + "' đã bị chặn vì có người tố cáo !", post.getUser());
-
-            List<Integer> listUserReportId = detailRepository.getDetailReportByReportId(reportedPost.getReportId());
-            for (int userReportId: listUserReportId) {
-//                messageDTO.setMessage("Tố cáo của bạn được chấp nhận. Cảm ơn bạn vì đã tố cáo !");
-//                template.convertAndSend("/topic/message/" + userReportId, messageDTO);
-                pusher.setCluster("ap1");
-                pusher.setEncrypted(true);
-                pusher.trigger("my-channel-" + userReportId, "my-event", Collections.singletonMap("message", "Tố cáo của bạn được chấp nhận. Cảm ơn bạn vì đã tố cáo !"));
-
-                User user = userRepository.findById(userReportId)
-                        .orElseThrow(() -> new ResourceNotFoundException("User", "id", userReportId));
-                saveNotificationAndUpdateUser("Tố cáo của bạn được chấp nhận. Cảm ơn bạn vì đã tố cáo !", user);
-            }
+//            List<Integer> listUserReportId = detailRepository.getDetailReportByReportId(reportedPost.getReportId());
+//            for (int userReportId: listUserReportId) {
+////                messageDTO.setMessage("Tố cáo của bạn được chấp nhận. Cảm ơn bạn vì đã tố cáo !");
+////                template.convertAndSend("/topic/message/" + userReportId, messageDTO);
+//                pusher.setCluster("ap1");
+//                pusher.setEncrypted(true);
+//                pusher.trigger("my-channel-" + userReportId, "my-event", Collections.singletonMap("message", "Tố cáo của bạn được chấp nhận. Cảm ơn bạn vì đã tố cáo !"));
+//
+//                User user = userRepository.findById(userReportId)
+//                        .orElseThrow(() -> new ResourceNotFoundException("User", "id", userReportId));
+//                saveNotificationAndUpdateUser("Tố cáo của bạn được chấp nhận. Cảm ơn bạn vì đã tố cáo !", user);
+//            }
 
             return true;
         }else{
@@ -338,12 +332,12 @@ public class ReportServiceImpl implements ReportService {
         }
     }
 
-    private void saveNotificationAndUpdateUser(String message, User user){
+    private void saveNotificationAndUpdateUser(String message, User user, String type){
         NotificationDTO notificationDTO = new NotificationDTO();
         notificationDTO.setUserId(user.getId());
         notificationDTO.setContent(message);
         notificationDTO.setPhone(user.getPhone());
-        notificationDTO.setType("Report");
+        notificationDTO.setType(type);
         notificationService.createContactNotification(notificationDTO);
 
         int numberUnread = user.getUnreadNotification();
@@ -360,19 +354,19 @@ public class ReportServiceImpl implements ReportService {
             reportRepository.save(reportedPost);
 
 //            TextMessageDTO messageDTO = new TextMessageDTO();
-            List<Integer> listUserReportId = detailRepository.getDetailReportByReportId(reportedPost.getReportId());
-            for (int userReportId: listUserReportId) {
-//                messageDTO.setMessage("Chúng tôi đã hủy báo cáo của bạn. Nếu có thắc mắc xin liên hệ SĐT: 0834117442");
-//                template.convertAndSend("/topic/message/" + userReportId, messageDTO);
-                Pusher pusher = new Pusher("1465234", "242a962515021986a8d8", "61b1284a169f5231d7d3");
-                pusher.setCluster("ap1");
-                pusher.setEncrypted(true);
-                pusher.trigger("my-channel-" + userReportId, "my-event", Collections.singletonMap("message", "Chúng tôi đã hủy báo cáo của bạn. Nếu có thắc mắc xin liên hệ SĐT: 0834117442"));
-
-                User user = userRepository.findById(userReportId)
-                        .orElseThrow(() -> new ResourceNotFoundException("User", "id", userReportId));
-                saveNotificationAndUpdateUser("Chúng tôi đã hủy báo cáo của bạn. Nếu có thắc mắc xin liên hệ SĐT: 0834117442", user);
-            }
+//            List<Integer> listUserReportId = detailRepository.getDetailReportByReportId(reportedPost.getReportId());
+//            for (int userReportId: listUserReportId) {
+////                messageDTO.setMessage("Chúng tôi đã hủy báo cáo của bạn. Nếu có thắc mắc xin liên hệ SĐT: 0834117442");
+////                template.convertAndSend("/topic/message/" + userReportId, messageDTO);
+//                Pusher pusher = new Pusher("1465234", "242a962515021986a8d8", "61b1284a169f5231d7d3");
+//                pusher.setCluster("ap1");
+//                pusher.setEncrypted(true);
+//                pusher.trigger("my-channel-" + userReportId, "my-event", Collections.singletonMap("message", "Chúng tôi đã hủy báo cáo của bạn. Nếu có thắc mắc xin liên hệ SĐT: 0834117442"));
+//
+//                User user = userRepository.findById(userReportId)
+//                        .orElseThrow(() -> new ResourceNotFoundException("User", "id", userReportId));
+//                saveNotificationAndUpdateUser("Chúng tôi đã hủy báo cáo của bạn. Nếu có thắc mắc xin liên hệ SĐT: 0834117442", user);
+//            }
             return true;
         }else{
             return false;
@@ -394,6 +388,11 @@ public class ReportServiceImpl implements ReportService {
             user.setBlockDate(date);
             userRepository.save(user);
 
+            Pusher pusher = new Pusher("1465234", "242a962515021986a8d8", "61b1284a169f5231d7d3");
+            pusher.setCluster("ap1");
+            pusher.setEncrypted(true);
+            pusher.trigger("my-channel-" + user.getId(), "my-event", Collections.singletonMap("block", true));
+
             //block bài viết của user
             List<Post> listPost = postRepository.getAllPostUnBlockByUserId(user.getId());
             List<Post> listDerivative = new ArrayList<>();
@@ -404,17 +403,17 @@ public class ReportServiceImpl implements ReportService {
                 postRepository.save(post);
 
 //                TextMessageDTO messageDTO = new TextMessageDTO();
-                String message = "Chúng tôi đã ẩn bài viết của bạn. Nếu có thắc mắc xin liên hệ số 0397975445.";
-//                messageDTO.setMessage(message);
-//                template.convertAndSend("/topic/message/" + post.getUser().getId(), messageDTO);
-                Pusher pusher = new Pusher("1465234", "242a962515021986a8d8", "61b1284a169f5231d7d3");
-                pusher.setCluster("ap1");
-                pusher.setEncrypted(true);
-                pusher.trigger("my-channel-" + post.getUser().getId(), "my-event", Collections.singletonMap("message", message));
+//                String message = "Chúng tôi đã ẩn bài viết của bạn. Nếu có thắc mắc xin liên hệ số 0397975445.";
+////                messageDTO.setMessage(message);
+////                template.convertAndSend("/topic/message/" + post.getUser().getId(), messageDTO);
+//                Pusher pusher = new Pusher("1465234", "242a962515021986a8d8", "61b1284a169f5231d7d3");
+//                pusher.setCluster("ap1");
+//                pusher.setEncrypted(true);
+//                pusher.trigger("my-channel-" + post.getUser().getId(), "my-event", Collections.singletonMap("message", message));
+//
+//                saveNotificationAndUpdateUser(message, post.getUser());
 
-                saveNotificationAndUpdateUser(message, post.getUser());
-
-                listDerivative = postRepository.getDerivativePostOfOriginalPost(post.getPostId());
+                listDerivative = postRepository.getPostOfOriginalPost(post.getPostId());
                 for(Post p: listDerivative){
                     if(!p.isBlock()){
                         p.setBlock(true);
@@ -428,25 +427,25 @@ public class ReportServiceImpl implements ReportService {
                         pusher.setEncrypted(true);
                         pusher.trigger("my-channel-" + p.getUser().getId(), "my-event", Collections.singletonMap("message", message1));
 
-                        saveNotificationAndUpdateUser(message1, p.getUser());
+                        saveNotificationAndUpdateUser(message1, p.getUser(), "DropDerivativePostStatus");
                     }
                 }
             }
 
-            TextMessageDTO messageDTO = new TextMessageDTO();
-            List<Integer> listUserReportId = detailRepository.getDetailReportByReportId(report.getReportId());
-            for (int userReportId: listUserReportId) {
-//                messageDTO.setMessage("Tố cáo của bạn được chấp nhận. Cảm ơn bạn vì đã tố cáo !");
-//                template.convertAndSend("/topic/message/" + userReportId, messageDTO);
-                Pusher pusher = new Pusher("1465234", "242a962515021986a8d8", "61b1284a169f5231d7d3");
-                pusher.setCluster("ap1");
-                pusher.setEncrypted(true);
-                pusher.trigger("my-channel-" + userReportId, "my-event", Collections.singletonMap("message", "Tố cáo của bạn được chấp nhận. Cảm ơn bạn vì đã tố cáo !"));
-
-                User userReport = userRepository.findById(userReportId)
-                        .orElseThrow(() -> new ResourceNotFoundException("User", "id", userReportId));
-                saveNotificationAndUpdateUser("Tố cáo của bạn được chấp nhận. Cảm ơn bạn vì đã tố cáo !", userReport);
-            }
+//            TextMessageDTO messageDTO = new TextMessageDTO();
+//            List<Integer> listUserReportId = detailRepository.getDetailReportByReportId(report.getReportId());
+//            for (int userReportId: listUserReportId) {
+////                messageDTO.setMessage("Tố cáo của bạn được chấp nhận. Cảm ơn bạn vì đã tố cáo !");
+////                template.convertAndSend("/topic/message/" + userReportId, messageDTO);
+////                Pusher pusher = new Pusher("1465234", "242a962515021986a8d8", "61b1284a169f5231d7d3");
+//                pusher.setCluster("ap1");
+//                pusher.setEncrypted(true);
+//                pusher.trigger("my-channel-" + userReportId, "my-event", Collections.singletonMap("message", "Tố cáo của bạn được chấp nhận. Cảm ơn bạn vì đã tố cáo !"));
+//
+//                User userReport = userRepository.findById(userReportId)
+//                        .orElseThrow(() -> new ResourceNotFoundException("User", "id", userReportId));
+//                saveNotificationAndUpdateUser("Tố cáo của bạn được chấp nhận. Cảm ơn bạn vì đã tố cáo !", userReport);
+//            }
             return true;
         }else{
             return false;
@@ -461,19 +460,19 @@ public class ReportServiceImpl implements ReportService {
             reportRepository.save(reportedPost);
 
 //            TextMessageDTO messageDTO = new TextMessageDTO();
-            List<Integer> listUserReportId = detailRepository.getDetailReportByReportId(reportedPost.getReportId());
-            for (int userReportId: listUserReportId) {
-//                messageDTO.setMessage("Chúng tôi đã hủy báo cáo của bạn. Nếu có thắc mắc xin liên hệ SĐT: 0834117442");
-//                template.convertAndSend("/topic/message/" + userReportId, messageDTO);
-                Pusher pusher = new Pusher("1465234", "242a962515021986a8d8", "61b1284a169f5231d7d3");
-                pusher.setCluster("ap1");
-                pusher.setEncrypted(true);
-                pusher.trigger("my-channel-" + userReportId, "my-event", Collections.singletonMap("message", "Chúng tôi đã hủy báo cáo của bạn. Nếu có thắc mắc xin liên hệ SĐT: 0834117442"));
-
-                User user = userRepository.findById(userReportId)
-                        .orElseThrow(() -> new ResourceNotFoundException("User", "id", userReportId));
-                saveNotificationAndUpdateUser("Chúng tôi đã hủy báo cáo của bạn. Nếu có thắc mắc xin liên hệ SĐT: 0834117442", user);
-            }
+//            List<Integer> listUserReportId = detailRepository.getDetailReportByReportId(reportedPost.getReportId());
+//            for (int userReportId: listUserReportId) {
+////                messageDTO.setMessage("Chúng tôi đã hủy báo cáo của bạn. Nếu có thắc mắc xin liên hệ SĐT: 0834117442");
+////                template.convertAndSend("/topic/message/" + userReportId, messageDTO);
+//                Pusher pusher = new Pusher("1465234", "242a962515021986a8d8", "61b1284a169f5231d7d3");
+//                pusher.setCluster("ap1");
+//                pusher.setEncrypted(true);
+//                pusher.trigger("my-channel-" + userReportId, "my-event", Collections.singletonMap("message", "Chúng tôi đã hủy báo cáo của bạn. Nếu có thắc mắc xin liên hệ SĐT: 0834117442"));
+//
+//                User user = userRepository.findById(userReportId)
+//                        .orElseThrow(() -> new ResourceNotFoundException("User", "id", userReportId));
+//                saveNotificationAndUpdateUser("Chúng tôi đã hủy báo cáo của bạn. Nếu có thắc mắc xin liên hệ SĐT: 0834117442", user);
+//            }
             return true;
         }else{
             return false;

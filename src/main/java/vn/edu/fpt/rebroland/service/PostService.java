@@ -40,6 +40,13 @@ public interface PostService {
 
     PostDTO getPostByPostId(int postId);
 
+    PostDTO findPostByPostId(int postId);
+
+    PostDTO getAllPostByPostId(int postId);
+
+    PostDTO getDerivativePostByPostId(int postId);
+
+    PostDTO getDerivativePostOfUser(int userId, int postId);
 
     void deletePost(int postId);
 
@@ -93,7 +100,9 @@ public interface PostService {
 
     void changeStatusOfDerivativePostOfPost(int postId);
 
-    SearchResponse getAllOriginalPostByUserId(int userId, int pageNo, int pageSize, String sortValue);
+    SearchResponse getAllOriginalPostByUserId(int userId, int pageNo, int pageSize, String sortValue, String propertyType);
+
+    SearchResponse getOriginalPostByUserId(int userId, int pageNo, int pageSize, String sortValue, String propertyType);
 
     List<SearchDTO> getOutstandingPost();
 }

@@ -768,7 +768,13 @@ public class PostServiceImpl implements PostService {
                 break;
         }
         List<SearchDTO> listSearchDto = new ArrayList<>();
+
+
         for (PostDTO postDto : listDto) {
+//            Post p = postRepository.getAllDerivativeByUserId(userId, postDto.getPostId());
+//            if(p != null){
+//                break;
+//            }
             SearchDTO dto = new SearchDTO();
             if(postDto.getDirection() != null){
                 dto.setDirectionId(postDto.getDirection().getId());
@@ -815,7 +821,52 @@ public class PostServiceImpl implements PostService {
     @Override
     public PostDTO getPostByPostId(int postId) {
         Post post = postRepository.findPostByPostId(postId);
-        return mapToDTO(post);
+        if(post != null){
+            return mapToDTO(post);
+        }else{
+            return null;
+        }
+
+    }
+
+    @Override
+    public PostDTO findPostByPostId(int postId) {
+        Post post = postRepository.findPostById(postId);
+        if(post != null){
+            return mapToDTO(post);
+        }else{
+            return null;
+        }
+    }
+
+    @Override
+    public PostDTO getAllPostByPostId(int postId) {
+        Post post = postRepository.findAllPostByPostId(postId);
+        if(post != null){
+            return mapToDTO(post);
+        }else{
+            return null;
+        }
+    }
+
+    @Override
+    public PostDTO getDerivativePostByPostId(int postId) {
+        Post post = postRepository.findDerivativePostByPostId(postId);
+        if(post != null){
+            return mapToDTO(post);
+        }else{
+            return null;
+        }
+    }
+
+    @Override
+    public PostDTO getDerivativePostOfUser(int userId, int postId) {
+        Post post = postRepository.findDerivativePostByUserId(userId, postId);
+        if(post != null){
+            return mapToDTO(post);
+        }else{
+            return null;
+        }
     }
 
     @Override
@@ -860,7 +911,7 @@ public class PostServiceImpl implements PostService {
         post.setDistrict(generalPostDTO.getDistrict());
         post.setProvince(generalPostDTO.getProvince());
         post.setAddress(generalPostDTO.getAddress());
-        if (imageLink == null) {
+        if ((imageLink == null) || (imageLink.size() ==0)) {
             post.setThumbnail(null);
         } else {
             post.setThumbnail(imageLink.get(0));
@@ -1359,7 +1410,7 @@ public class PostServiceImpl implements PostService {
         postDTO.setDistrict(generalPostDTO.getDistrict());
         postDTO.setProvince(generalPostDTO.getProvince());
         postDTO.setAddress(generalPostDTO.getAddress());
-        if (generalPostDTO.getImages() != null) {
+        if ((generalPostDTO.getImages() != null) &&(generalPostDTO.getImages().size() != 0)) {
             postDTO.setThumbnail(generalPostDTO.getImages().get(0));
         } else {
             postDTO.setThumbnail(null);
@@ -1412,6 +1463,7 @@ public class PostServiceImpl implements PostService {
             apartmentDTO.setOwner(null);
             apartmentDTO.setOwnerPhone(null);
         } else {
+            apartmentDTO.setPlotNumber(generalPostDTO.getPlotNumber());
             apartmentDTO.setBarcode(generalPostDTO.getBarcode());
             apartmentDTO.setBuildingName(generalPostDTO.getBuildingName());
             apartmentDTO.setFloorNumber(generalPostDTO.getFloorNumber());
@@ -1524,7 +1576,7 @@ public class PostServiceImpl implements PostService {
 
     @Override
     public int changeStatusOfPost(int postId) {
-        Post post = postRepository.findPostByPostId(postId);
+        Post post = postRepository.findPostById(postId);
         long millis = System.currentTimeMillis();
         Date date = new Date(millis);
         if (post != null) {
@@ -1550,9 +1602,9 @@ public class PostServiceImpl implements PostService {
                     pusher.setEncrypted(true);
                     pusher.trigger("my-channel-" + post.getUser().getId(), "my-event", Collections.singletonMap("message", message));
 
-                    saveNotificationAndUpdateUser(message, post.getUser().getId(), postId);
+                    saveNotificationAndUpdateUser(message, post.getUser().getId(), postId, "OpenOriginalPostStatus");
 
-                    List<Post> listPost = postRepository.getDerivativePostOfOriginalPost(postId);
+                    List<Post> listPost = postRepository.getPostOfOriginalPost(postId);
                     for(Post p: listPost){
                         if(p.getBlockDate().compareTo(blockDate) == 0){
                             p.setBlock(false);
@@ -1566,7 +1618,7 @@ public class PostServiceImpl implements PostService {
                             pusher.setEncrypted(true);
                             pusher.trigger("my-channel-" + p.getUser().getId(), "my-event", Collections.singletonMap("message", message1));
 
-                            saveNotificationAndUpdateUser(message1, p.getUser().getId(), p.getPostId());
+                            saveNotificationAndUpdateUser(message1, p.getUser().getId(), p.getPostId(), "OpenDerivativePostStatus");
                         }
                     }
                 }else{
@@ -1583,9 +1635,9 @@ public class PostServiceImpl implements PostService {
                     pusher.setEncrypted(true);
                     pusher.trigger("my-channel-" + post.getUser().getId(), "my-event", Collections.singletonMap("message", message));
 
-                    saveNotificationAndUpdateUser(message, post.getUser().getId(), post.getPostId());
+                    saveNotificationAndUpdateUser(message, post.getUser().getId(), post.getPostId(), "DropOriginalPostStatus");
 
-                    List<Post> listPost = postRepository.getDerivativePostOfOriginalPost(postId);
+                    List<Post> listPost = postRepository.getPostOfOriginalPost(postId);
                     for(Post p: listPost){
                         if(!p.isBlock()){
                             p.setBlock(true);
@@ -1598,7 +1650,7 @@ public class PostServiceImpl implements PostService {
                             pusher.setEncrypted(true);
                             pusher.trigger("my-channel-" + p.getUser().getId(), "my-event", Collections.singletonMap("message", message1));
 
-                            saveNotificationAndUpdateUser(message1, p.getUser().getId(), p.getPostId());
+                            saveNotificationAndUpdateUser(message1, p.getUser().getId(), p.getPostId(), "DropDerivativePostStatus");
                         }
                     }
                 }
@@ -1668,7 +1720,7 @@ public class PostServiceImpl implements PostService {
                     pusher.setEncrypted(true);
                     pusher.trigger("my-channel-" + p.getUser().getId(), "my-event", Collections.singletonMap("message", message));
 
-                    saveNotificationAndUpdateUser(message, p.getUser().getId(), p.getPostId());
+                    saveNotificationAndUpdateUser(message, p.getUser().getId(), p.getPostId(), "Extend");
                 }
 
             }
@@ -1683,7 +1735,7 @@ public class PostServiceImpl implements PostService {
         post.setStatus(status);
         postRepository.save(post);
 
-        List<Post> listPost = postRepository.getDerivativePostOfOriginalPost(postId);
+        List<Post> listPost = postRepository.getPostOfOriginalPost(postId);
         if(listPost.size() != 0){
             for (Post p: listPost) {
                 if(statusId == 2 || statusId == 6){
@@ -1699,7 +1751,7 @@ public class PostServiceImpl implements PostService {
                     pusher.setEncrypted(true);
                     pusher.trigger("my-channel-" + p.getUser().getId(), "my-event", Collections.singletonMap("message", message));
 
-                    saveNotificationAndUpdateUser(message, p.getUser().getId(), p.getPostId());
+                    saveNotificationAndUpdateUser(message, p.getUser().getId(), p.getPostId(), "DropDerivativePostStatus");
                 }
                 if(statusId == 1){
                     p.setBlock(false);
@@ -1714,7 +1766,7 @@ public class PostServiceImpl implements PostService {
                     pusher.setEncrypted(true);
                     pusher.trigger("my-channel-" + p.getUser().getId(), "my-event", Collections.singletonMap("message", message));
 
-                    saveNotificationAndUpdateUser(message, p.getUser().getId(), p.getPostId());
+                    saveNotificationAndUpdateUser(message, p.getUser().getId(), p.getPostId(), "OpenDerivativePostStatus");
                 }
 
             }
@@ -1722,7 +1774,7 @@ public class PostServiceImpl implements PostService {
 
     }
 
-    private void saveNotificationAndUpdateUser(String message, int userId, int postId){
+    private void saveNotificationAndUpdateUser(String message, int userId, int postId, String type){
         NotificationDTO notificationDTO = new NotificationDTO();
         notificationDTO.setUserId(userId);
         if(message == null){
@@ -1732,7 +1784,7 @@ public class PostServiceImpl implements PostService {
         }
 //        notificationDTO.setPhone(userRequest.getPhone());
         notificationDTO.setPostId(postId);
-        notificationDTO.setType("PostStatus");
+        notificationDTO.setType(type);
         notificationService.createContactNotification(notificationDTO);
 
         //update unread notification user
@@ -1754,9 +1806,9 @@ public class PostServiceImpl implements PostService {
     }
 
     @Override
-    public SearchResponse getAllOriginalPostByUserId(int userId, int pageNo, int pageSize, String option) {
+    public SearchResponse getAllOriginalPostByUserId(int userId, int pageNo, int pageSize, String option, String propertyType) {
         int sortOption = Integer.parseInt(option);
-
+        int typeId = Integer.parseInt(propertyType);
         String sortOpt = "";
         String sortDir = "";
         Sort sort = null;
@@ -1771,33 +1823,33 @@ public class PostServiceImpl implements PostService {
                 sort = sortDir.equalsIgnoreCase(Sort.Direction.ASC.name()) ?
                         Sort.by(sortOpt).ascending() : Sort.by(sortOpt).descending();
                 pageable = PageRequest.of(pageNo, pageSize, sort);
-                listPosts = postRepository.getAllOriginalPostByUserId(userId, pageable);
+                listPosts = postRepository.getAllOriginalPostByUserId(userId, typeId, pageable);
                 list = listPosts.getContent();
                 listDto = list.stream().map(post -> mapToDTO(post)).collect(Collectors.toList());
                 break;
             case 1:
                 pageable = PageRequest.of(pageNo, pageSize);
-                listPosts = postRepository.getAllOriginalPostByUserIdOrderByPriceAsc(userId, pageable);
+                listPosts = postRepository.getAllOriginalPostByUserIdOrderByPriceAsc(userId, typeId, pageable);
                 list = listPosts.getContent();
                 listDto = list.stream().map(post -> mapToDTO(post)).collect(Collectors.toList());
 
                 break;
             case 2:
                 pageable = PageRequest.of(pageNo, pageSize);
-                listPosts = postRepository.getAllOriginalPostByUserIdOrderByPriceDesc(userId, pageable);
+                listPosts = postRepository.getAllOriginalPostByUserIdOrderByPriceDesc(userId, typeId, pageable);
                 list = listPosts.getContent();
                 listDto = list.stream().map(post -> mapToDTO(post)).collect(Collectors.toList());
                 break;
             case 3:
                 //giá trên m2 từ thấp đến cao
                 pageable = PageRequest.of(pageNo, pageSize);
-                listPosts = postRepository.getAllOriginalPostByUserIdOrderByPricePerSquareAsc(userId, pageable);
+                listPosts = postRepository.getAllOriginalPostByUserIdOrderByPricePerSquareAsc(userId, typeId, pageable);
                 list = listPosts.getContent();
                 listDto = list.stream().map(post -> mapToDTO(post)).collect(Collectors.toList());
                 break;
             case 4:
                 pageable = PageRequest.of(pageNo, pageSize);
-                listPosts = postRepository.getAllOriginalPostByUserIdOrderByPricePerSquareDesc(userId, pageable);
+                listPosts = postRepository.getAllOriginalPostByUserIdOrderByPricePerSquareDesc(userId, typeId, pageable);
                 list = listPosts.getContent();
                 listDto = list.stream().map(post -> mapToDTO(post)).collect(Collectors.toList());
                 break;
@@ -1807,7 +1859,7 @@ public class PostServiceImpl implements PostService {
                 sort = sortDir.equalsIgnoreCase(Sort.Direction.ASC.name()) ?
                         Sort.by(sortOpt).ascending() : Sort.by(sortOpt).descending();
                 pageable = PageRequest.of(pageNo, pageSize, sort);
-                listPosts = postRepository.getAllOriginalPostByUserId(userId, pageable);
+                listPosts = postRepository.getAllOriginalPostByUserId(userId, typeId, pageable);
                 list = listPosts.getContent();
                 listDto = list.stream().map(post -> mapToDTO(post)).collect(Collectors.toList());
                 break;
@@ -1817,7 +1869,7 @@ public class PostServiceImpl implements PostService {
                 sort = sortDir.equalsIgnoreCase(Sort.Direction.ASC.name()) ?
                         Sort.by(sortOpt).ascending() : Sort.by(sortOpt).descending();
                 pageable = PageRequest.of(pageNo, pageSize, sort);
-                listPosts = postRepository.getAllOriginalPostByUserId(userId, pageable);
+                listPosts = postRepository.getAllOriginalPostByUserId(userId, typeId, pageable);
                 list = listPosts.getContent();
                 listDto = list.stream().map(post -> mapToDTO(post)).collect(Collectors.toList());
                 break;
@@ -1862,6 +1914,113 @@ public class PostServiceImpl implements PostService {
 //        List<Post> listPost = postRepository.getAllOriginalPostByUserId(userId);
 //        return listPost.stream().map(post -> mapper.map(post, PostDTO.class)).collect(Collectors.toList());
 //
+    }
+
+    @Override
+    public SearchResponse getOriginalPostByUserId(int userId, int pageNo, int pageSize, String option, String propertyType) {
+        int sortOption = Integer.parseInt(option);
+        int typeId = Integer.parseInt(propertyType);
+        String sortOpt = "";
+        String sortDir = "";
+        Sort sort = null;
+        Pageable pageable = null;
+        Page<Post> listPosts = null;
+        List<Post> list = null;
+        List<PostDTO> listDto = null;
+        switch (sortOption) {
+            case 0:
+                sortOpt = "start_date";
+                sortDir = "desc";
+                sort = sortDir.equalsIgnoreCase(Sort.Direction.ASC.name()) ?
+                        Sort.by(sortOpt).ascending() : Sort.by(sortOpt).descending();
+                pageable = PageRequest.of(pageNo, pageSize, sort);
+                listPosts = postRepository.getOriginalPostByUserId(userId, typeId, pageable);
+                list = listPosts.getContent();
+                listDto = list.stream().map(post -> mapToDTO(post)).collect(Collectors.toList());
+                break;
+            case 1:
+                pageable = PageRequest.of(pageNo, pageSize);
+                listPosts = postRepository.getOriginalPostByUserIdOrderByPriceAsc(userId, typeId, pageable);
+                list = listPosts.getContent();
+                listDto = list.stream().map(post -> mapToDTO(post)).collect(Collectors.toList());
+
+                break;
+            case 2:
+                pageable = PageRequest.of(pageNo, pageSize);
+                listPosts = postRepository.getOriginalPostByUserIdOrderByPriceDesc(userId, typeId, pageable);
+                list = listPosts.getContent();
+                listDto = list.stream().map(post -> mapToDTO(post)).collect(Collectors.toList());
+                break;
+            case 3:
+                //giá trên m2 từ thấp đến cao
+                pageable = PageRequest.of(pageNo, pageSize);
+                listPosts = postRepository.getOriginalPostByUserIdOrderByPricePerSquareAsc(userId, typeId, pageable);
+                list = listPosts.getContent();
+                listDto = list.stream().map(post -> mapToDTO(post)).collect(Collectors.toList());
+                break;
+            case 4:
+                pageable = PageRequest.of(pageNo, pageSize);
+                listPosts = postRepository.getOriginalPostByUserIdOrderByPricePerSquareDesc(userId, typeId, pageable);
+                list = listPosts.getContent();
+                listDto = list.stream().map(post -> mapToDTO(post)).collect(Collectors.toList());
+                break;
+            case 5:
+                sortOpt = "area";
+                sortDir = "asc";
+                sort = sortDir.equalsIgnoreCase(Sort.Direction.ASC.name()) ?
+                        Sort.by(sortOpt).ascending() : Sort.by(sortOpt).descending();
+                pageable = PageRequest.of(pageNo, pageSize, sort);
+                listPosts = postRepository.getOriginalPostByUserId(userId, typeId, pageable);
+                list = listPosts.getContent();
+                listDto = list.stream().map(post -> mapToDTO(post)).collect(Collectors.toList());
+                break;
+            case 6:
+                sortOpt = "area";
+                sortDir = "desc";
+                sort = sortDir.equalsIgnoreCase(Sort.Direction.ASC.name()) ?
+                        Sort.by(sortOpt).ascending() : Sort.by(sortOpt).descending();
+                pageable = PageRequest.of(pageNo, pageSize, sort);
+                listPosts = postRepository.getOriginalPostByUserId(userId, typeId, pageable);
+                list = listPosts.getContent();
+                listDto = list.stream().map(post -> mapToDTO(post)).collect(Collectors.toList());
+                break;
+        }
+
+        List<SearchDTO> listSearchDto = new ArrayList<>();
+        for (PostDTO postDto : listDto) {
+            SearchDTO dto = new SearchDTO();
+            if(postDto.getDirection() != null){
+                dto.setDirectionId(postDto.getDirection().getId());
+            }else{
+                dto.setDirectionId(0);
+            }
+            setDataToSearchDTO(dto, postDto);
+            int postId = postDto.getPostId();
+            switch (postDto.getPropertyType().getId()) {
+                case 1: // view residential house
+                    ResidentialHouse residentialHouse = houseRepository.findByPostId(postId);
+                    dto.setNumberOfBedroom(residentialHouse.getNumberOfBedroom());
+                    dto.setNumberOfBathroom(residentialHouse.getNumberOfBathroom());
+                    break;
+                case 2:// view apartment
+                    Apartment apartment = apartmentRepository.findByPostId(postId);
+                    dto.setNumberOfBedroom(apartment.getNumberOfBedroom());
+                    dto.setNumberOfBathroom(apartment.getNumberOfBathroom());
+                    break;
+                case 3:// view residential land
+                    dto.setNumberOfBedroom(0);
+                    dto.setNumberOfBathroom(0);
+                    break;
+            }
+
+            listSearchDto.add(dto);
+        }
+        SearchResponse searchResponse = new SearchResponse();
+        searchResponse.setPosts(listSearchDto);
+        searchResponse.setPageNo(pageNo + 1);
+        searchResponse.setTotalPages(listPosts.getTotalPages());
+        searchResponse.setTotalResult(listPosts.getTotalElements());
+        return searchResponse;
     }
 
     @Override

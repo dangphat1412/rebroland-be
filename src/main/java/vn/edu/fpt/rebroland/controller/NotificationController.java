@@ -51,9 +51,24 @@ public class NotificationController {
         int notificationId = Integer.parseInt(id);
         NotificationDTO dto = notificationService.getNotificationById(notificationId);
         NotificationDTO notificationDTO = notificationService.getDetailNotificationById(notificationId);
+        int userId = notificationDTO.getUserId();
+        User user = userRepository.getUserById(userId);
+        if(user == null){
+            return new ResponseEntity<>("Người dùng không tồn tại!", HttpStatus.BAD_REQUEST);
+        }
+        String type = notificationDTO.getType();
+        if(type.equals("Contact")){
+            if(user.getRoles().size() == 1){
+                type = "ContactCustomer";
+            }
+            if(user.getRoles().size() == 2){
+                type = "ContactBroker";
+            }
+        }
+
         Map<String, Object> map = new HashMap<>();
         map.put("postId", notificationDTO.getPostId());
-        map.put("type", notificationDTO.getType());
+        map.put("type", type);
         map.put("sender", notificationDTO.getSender());
         map.put("unread", dto.isUnRead());
         return new ResponseEntity<>(map, HttpStatus.OK);

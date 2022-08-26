@@ -19,8 +19,8 @@ public class ResidentialLandDTO extends RealEstatePostDTO {
     private Integer plotNumber;
 
 
-    @Min(value = 0)
-    @Max(value = 1000)
+    @Min(value = 0,message = "Diện tích mặt tiền tối thiểu là 0")
+    @Max(value = 1000,message = "Diện tích mặt tiền tối đa là 1000")
     private float frontispiece;
 
     @Size(max = 50)

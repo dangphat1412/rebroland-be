@@ -77,7 +77,7 @@ public class UserCareController {
     @Transactional
     public ResponseEntity<?> createUserCareForBroker(@PathVariable int contactId,
                                                      @RequestHeader(name = "Authorization") String token) {
-//        try {
+//
         int userId = getUserIdFromToken(token);
         int check = 0;
         User broker = userRepository.findById(userId).orElseThrow(() -> new ResourceNotFoundException("Broker", "id", userId));
@@ -121,12 +121,7 @@ public class UserCareController {
                 return new ResponseEntity<>(newUserCareDTO, HttpStatus.CREATED);
             }
         }
-//        }
-//        catch (Exception e) {
 //
-//        }
-
-//        return new ResponseEntity<>("Insert user care fail", HttpStatus.BAD_REQUEST);
 
     }
 

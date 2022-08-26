@@ -18,9 +18,9 @@ public interface UserService {
     List<UserDTO> searchBroker(String fullName, String ward, String district, String province,
                                List<String> listPropertyType, int pageNo, int pageSize, String sortValue, int userId);
     int changePassword(User user, ChangePasswordDTO changePasswordDTO);
-    List<UserDTO> getAllUserForAdminPaging(int userId, int pageNo, int pageSize, String keyword, String sortValue);
+    List<UserDTO> getAllUserForAdminPaging(int userId, int pageNo, int pageSize, String keyword, String sortValue, int role);
 
-    List<UserDTO> getAllUserForAdmin(int userId, String keyword, String sortValue);
+    List<UserDTO> getAllUserForAdmin(int userId, String keyword, String sortValue, int roleId);
 
     boolean changeStatusOfUser(int userId);
 

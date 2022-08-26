@@ -12,18 +12,19 @@ public class ApartmentDTO extends  RealEstatePostDTO{
     private int id;
 
 
-    @Min(value = 0)
-    @Max(value = 10)
+    @Min(value = 1,message = "Số phòng ngủ tối thiểu là 1")
+    @Max(value = 50,message = "Số phòng ngủ tối đa là 50")
     private int numberOfBedroom;
 
-    @Min(value = 0)
-    @Max(value = 10)
+
+    @Min(value = 1,message = "Số phòng tắm tối thiểu là 1")
+    @Max(value = 50,message = "Số phòng tắm tối đa là 50")
     private int numberOfBathroom;
 
 
 
-    @Min(value = 0)
-    @Max(value = 100)
+    @Min(value = 1,message = "Tầng số tối thiểu là 1")
+    @Max(value = 100,message = "Tầng số tối đa là 100")
     private Integer floorNumber;
 
 
@@ -33,7 +34,7 @@ public class ApartmentDTO extends  RealEstatePostDTO{
 
     @Pattern(regexp = "(^\\d{13}$)|(^\\d{15}$)", message = "Mã vạch chỉ nhập số 13 hoặc 15 kí tự")
     private String barcode;
-    @Size(max = 50)
+    @Size(max = 50,message = "Tên tòa nhà tối đa là 50")
     private String buildingName;
 
     @Size(max = 50)

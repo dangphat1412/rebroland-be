@@ -19,23 +19,23 @@ public class ResidentialHouseDTO extends RealEstatePostDTO{
     private Integer plotNumber;
 
 
-    @Min(value = 0)
-    @Max(value = 10)
+    @Min(value = 1,message = "Số phòng ngủ tối thiểu là 1")
+    @Max(value = 50,message = "Số phòng ngủ tối đa là 50")
     private int numberOfBedroom;
 
 
-    @Min(value = 0)
-    @Max(value = 10)
+    @Min(value = 1,message = "Số phòng tắm tối thiểu là 1")
+    @Max(value = 50,message = "Số phòng tắm tối đa là 50")
     private int numberOfBathroom;
 
 
-    @Min(value = 0)
-    @Max(value = 100)
+    @Min(value = 1,message = "Số tầng tối thiểu là 1")
+    @Max(value = 100,message = "Số tầng tối đa là 100")
     private int numberOfFloor;
 
 
-    @Min(value = 0)
-    @Max(value = 1000)
+    @Min(value = 0,message = "Diện tích mặt tiền tối thiểu là 0")
+    @Max(value = 1000,message = "Diện tích mặt tiền tối đa là 1000")
     private float frontispiece;
 
     @Size(max = 50)

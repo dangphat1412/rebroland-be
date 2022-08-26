@@ -216,19 +216,19 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
-    public List<UserDTO> getAllUserForAdminPaging(int userId, int pageNo, int pageSize, String keyword, String sortValue) {
+    public List<UserDTO> getAllUserForAdminPaging(int userId, int pageNo, int pageSize, String keyword, String sortValue, int roleId) {
         Pageable pageable = PageRequest.of(pageNo, pageSize);
         int sortOption = Integer.parseInt(sortValue);
         Page<User> page = null;
         switch (sortOption){
             case 0:
-                page = userRepository.getAllUserForAdminPaging(userId, keyword, pageable);
+                page = userRepository.getAllUserForAdminPaging(userId, keyword, roleId, pageable);
                 break;
             case 1:
-                page = userRepository.getAllActiveUserForAdminPaging(userId, keyword, pageable);
+                page = userRepository.getAllActiveUserForAdminPaging(userId, keyword, roleId, pageable);
                 break;
             case 2:
-                page = userRepository.getAllBlockUserForAdminPaging(userId, keyword, pageable);
+                page = userRepository.getAllBlockUserForAdminPaging(userId, keyword, roleId, pageable);
                 break;
         }
 
@@ -251,18 +251,18 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
-    public List<UserDTO> getAllUserForAdmin(int userId, String keyword, String sortValue) {
+    public List<UserDTO> getAllUserForAdmin(int userId, String keyword, String sortValue, int roleId) {
         int sortOption = Integer.parseInt(sortValue);
         List<User> listUser = null;
         switch (sortOption){
             case 0:
-                listUser = userRepository.getAllUserForAdmin(userId, keyword);
+                listUser = userRepository.getAllUserForAdmin(userId, keyword, roleId);
                 break;
             case 1:
-                listUser = userRepository.getAllActiveUserForAdmin(userId, keyword);
+                listUser = userRepository.getAllActiveUserForAdmin(userId, keyword, roleId);
                 break;
             case 2:
-                listUser = userRepository.getAllBlockUserForAdmin(userId, keyword);
+                listUser = userRepository.getAllBlockUserForAdmin(userId, keyword, roleId);
                 break;
         }
 
@@ -295,17 +295,17 @@ public class UserServiceImpl implements UserService {
                             post.setBlockDate(null);
                             postRepository.save(post);
 //                            TextMessageDTO messageDTO = new TextMessageDTO();
-                            String message = "Chúng tôi đã hiển thị lại bài viết của bạn, mã bài viết: " + post.getPostId();
-//                            messageDTO.setMessage(message);
-//                            template.convertAndSend("/topic/message/" + post.getUser().getId(), messageDTO);
-                            Pusher pusher = new Pusher("1465234", "242a962515021986a8d8", "61b1284a169f5231d7d3");
-                            pusher.setCluster("ap1");
-                            pusher.setEncrypted(true);
-                            pusher.trigger("my-channel-" + post.getUser().getId(), "my-event", Collections.singletonMap("message", message));
+//                            String message = "Chúng tôi đã hiển thị lại bài viết của bạn, mã bài viết: " + post.getPostId();
+////                            messageDTO.setMessage(message);
+////                            template.convertAndSend("/topic/message/" + post.getUser().getId(), messageDTO);
+//                            Pusher pusher = new Pusher("1465234", "242a962515021986a8d8", "61b1284a169f5231d7d3");
+//                            pusher.setCluster("ap1");
+//                            pusher.setEncrypted(true);
+//                            pusher.trigger("my-channel-" + post.getUser().getId(), "my-event", Collections.singletonMap("message", message));
+//
+//                            saveNotificationAndUpdateUser(message, post.getUser().getId(), post.getPostId());
 
-                            saveNotificationAndUpdateUser(message, post.getUser().getId(), post.getPostId());
-
-                            listDerivative = postRepository.getDerivativePostOfOriginalPost(post.getPostId());
+                            listDerivative = postRepository.getPostOfOriginalPost(post.getPostId());
                             for (Post p : listDerivative) {
                                 if (p.getBlockDate().compareTo(blockDate) == 0 && p.isBlock()) {
                                     p.setBlock(false);
@@ -313,13 +313,11 @@ public class UserServiceImpl implements UserService {
                                     postRepository.save(p);
 
                                     String message1 = "Chúng tôi đã hiển thị lại bài viết của bạn, mã bài viết: " + p.getPostId();
-//                                    messageDTO.setMessage(message1);
-//                                    template.convertAndSend("/topic/message/" + p.getUser().getId(), messageDTO);
-//                                    Pusher pusher = new Pusher("1465234", "242a962515021986a8d8", "61b1284a169f5231d7d3");
+                                    Pusher pusher = new Pusher("1465234", "242a962515021986a8d8", "61b1284a169f5231d7d3");
                                     pusher.setCluster("ap1");
                                     pusher.setEncrypted(true);
                                     pusher.trigger("my-channel-" + p.getUser().getId(), "my-event", Collections.singletonMap("message", message1));
-                                    saveNotificationAndUpdateUser(message1, p.getUser().getId(), p.getPostId());
+                                    saveNotificationAndUpdateUser(message1, p.getUser().getId(), p.getPostId(), "OpenDerivativePostStatus");
                                 }
                             }
                         }
@@ -333,26 +331,26 @@ public class UserServiceImpl implements UserService {
                 user.setBlock(true);
                 user.setBlockDate(date);
                 userRepository.save(user);
+
+//                String message = "Chúng tôi đã khóa tài khoản của bạn. Nếu có thắc mắc xin liên hệ số 0397975445.";
+//                    messageDTO.setMessage(message);
+//                    template.convertAndSend("/topic/message/" + post.getUser().getId(), messageDTO);
+                Pusher pusher = new Pusher("1465234", "242a962515021986a8d8", "61b1284a169f5231d7d3");
+                pusher.setCluster("ap1");
+                pusher.setEncrypted(true);
+                pusher.trigger("my-channel-" + user.getId(), "my-event", Collections.singletonMap("block", true));
+
+//                saveNotificationAndUpdateUser(message, user.getId(), post.getPostId());
+
+
                 List<Post> listPost = postRepository.getAllPostUnBlockByUserId(user.getId());
                 List<Post> listDerivative = new ArrayList<>();
-
                 for(Post post: listPost){
                     post.setBlock(true);
                     post.setBlockDate(date);
                     postRepository.save(post);
 
-                    TextMessageDTO messageDTO = new TextMessageDTO();
-                    String message = "Chúng tôi đã ẩn bài viết mã số " + post.getPostId() + " của bạn. Nếu có thắc mắc xin liên hệ số 0397975445.";
-//                    messageDTO.setMessage(message);
-//                    template.convertAndSend("/topic/message/" + post.getUser().getId(), messageDTO);
-                    Pusher pusher = new Pusher("1465234", "242a962515021986a8d8", "61b1284a169f5231d7d3");
-                    pusher.setCluster("ap1");
-                    pusher.setEncrypted(true);
-                    pusher.trigger("my-channel-" + post.getUser().getId(), "my-event", Collections.singletonMap("message", message));
-
-                    saveNotificationAndUpdateUser(message, post.getUser().getId(), post.getPostId());
-
-                    listDerivative = postRepository.getDerivativePostOfOriginalPost(post.getPostId());
+                    listDerivative = postRepository.getPostOfOriginalPost(post.getPostId());
                     for(Post p: listDerivative){
                         if(!p.isBlock()){
                             p.setBlock(true);
@@ -365,7 +363,7 @@ public class UserServiceImpl implements UserService {
                             pusher.setEncrypted(true);
                             pusher.trigger("my-channel-" + p.getUser().getId(), "my-event", Collections.singletonMap("message", message1));
 
-                            saveNotificationAndUpdateUser(message1, p.getUser().getId(), p.getPostId());
+                            saveNotificationAndUpdateUser(message1, p.getUser().getId(), p.getPostId(), "DropDerivativePostStatus");
                         }
                     }
                 }
@@ -407,7 +405,7 @@ public class UserServiceImpl implements UserService {
 //        }
     }
 
-    private void saveNotificationAndUpdateUser(String message, int userId, int postId){
+    private void saveNotificationAndUpdateUser(String message, int userId, int postId, String type){
         NotificationDTO notificationDTO = new NotificationDTO();
         notificationDTO.setUserId(userId);
         if(message == null){
@@ -417,7 +415,7 @@ public class UserServiceImpl implements UserService {
         }
 //        notificationDTO.setPhone(userRequest.getPhone());
         notificationDTO.setPostId(postId);
-        notificationDTO.setType("PostStatus");
+        notificationDTO.setType(type);
         notificationService.createContactNotification(notificationDTO);
 
         //update unread notification user

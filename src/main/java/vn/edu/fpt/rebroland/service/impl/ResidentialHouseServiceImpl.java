@@ -63,6 +63,8 @@ public class ResidentialHouseServiceImpl implements ResidentialHouseService {
         ResidentialHouse residentialHouse = residentialHouseRepository.findById(id).orElseThrow(() -> new ResourceNotFoundException("House", "ID", id));
         Post post = postRepository.findById(postId).orElseThrow(() -> new ResourceNotFoundException("Post", "ID", postId));
         residentialHouse.setPost(post);
+        residentialHouse.setOwner(residentialHouseDTO.getOwner());
+        residentialHouse.setOwnerPhone(residentialHouseDTO.getOwnerPhone());
         residentialHouse.setBarcode(residentialHouseDTO.getBarcode());
         residentialHouse.setPlotNumber(residentialHouseDTO.getPlotNumber());
         residentialHouse.setNumberOfBathroom(residentialHouseDTO.getNumberOfBathroom());

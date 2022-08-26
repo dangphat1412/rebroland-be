@@ -20,6 +20,7 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.*;
 
 import javax.validation.Valid;
+import java.text.DecimalFormat;
 import java.text.SimpleDateFormat;
 import java.util.*;
 import java.util.regex.Pattern;
@@ -91,27 +92,180 @@ public class PostController {
     @GetMapping("/{postId}")
     public ResponseEntity<?> getDetailPost(@PathVariable int postId) {
         RealEstatePostDTO realEstatePostDTO = new RealEstatePostDTO();
-        PostDTO postDTO = postService.getPostByPostId(postId);
-        switch (postDTO.getPropertyType().getId()) {
-            case 1: // view residential house
-                ResidentialHouseDTO residentialHouseDTO = residentialHouseService.getResidentialHouseByPostId(postId);
-                realEstatePostDTO = residentialHouseDTO;
-                break;
-            case 2:// view apartment
-                ApartmentDTO apartmentDTO = apartmentService.getApartmentByPostId(postId);
-                realEstatePostDTO = apartmentDTO;
-                break;
-            case 3:// view residential land
-                ResidentialLandDTO residentialLandDTO = residentialLandService.getResidentialLandByPostId(postId);
-                realEstatePostDTO = residentialLandDTO;
-                break;
+        PostDTO postDTO = postService.findPostByPostId(postId);
+        if ((postDTO != null) && (!postDTO.isBlock())) {
+            switch (postDTO.getPropertyType().getId()) {
+                case 1: // view residential house
+                    ResidentialHouseDTO residentialHouseDTO = residentialHouseService.getResidentialHouseByPostId(postId);
+                    realEstatePostDTO = residentialHouseDTO;
+                    break;
+                case 2:// view apartment
+                    ApartmentDTO apartmentDTO = apartmentService.getApartmentByPostId(postId);
+                    realEstatePostDTO = apartmentDTO;
+                    break;
+                case 3:// view residential land
+                    ResidentialLandDTO residentialLandDTO = residentialLandService.getResidentialLandByPostId(postId);
+                    realEstatePostDTO = residentialLandDTO;
+                    break;
+            }
+            postService.setDataToRealEstateDTO(realEstatePostDTO, postDTO, postId);
+            List<BrokerInfoOfPostDTO> list = postService.getDerivativePostOfOriginalPost(postId);
+            Map<String, Object> map = new HashMap<>();
+            map.put("post", realEstatePostDTO);
+            map.put("brokers", list);
+            return new ResponseEntity<>(map, HttpStatus.OK);
+        } else {
+            return new ResponseEntity<>("Bài viết không tồn tại!", HttpStatus.BAD_REQUEST);
         }
-        postService.setDataToRealEstateDTO(realEstatePostDTO, postDTO, postId);
-        List<BrokerInfoOfPostDTO> list = postService.getDerivativePostOfOriginalPost(postId);
-        Map<String, Object> map = new HashMap<>();
-        map.put("post", realEstatePostDTO);
-        map.put("brokers", list);
-        return new ResponseEntity<>(map, HttpStatus.OK);
+
+    }
+
+    @GetMapping("/my-property/{postId}")
+    public ResponseEntity<?> checkDetailPostOfUser(@PathVariable(name = "postId") int postId,
+                                                   @RequestHeader(name = "Authorization") String token) {
+        RealEstatePostDTO realEstatePostDTO = new RealEstatePostDTO();
+        int userId = getUserIdFromToken(token);
+        PostDTO postDTO = postService.getAllPostByPostId(postId);
+        if ((postDTO != null) && (!postDTO.isBlock())) {
+            if (postDTO.getUser().getId() == userId) {
+                switch (postDTO.getPropertyType().getId()) {
+                    case 1: // view residential house
+                        ResidentialHouseDTO residentialHouseDTO = residentialHouseService.getResidentialHouseByPostId(postId);
+                        realEstatePostDTO = residentialHouseDTO;
+                        break;
+                    case 2:// view apartment
+                        ApartmentDTO apartmentDTO = apartmentService.getApartmentByPostId(postId);
+                        realEstatePostDTO = apartmentDTO;
+                        break;
+                    case 3:// view residential land
+                        ResidentialLandDTO residentialLandDTO = residentialLandService.getResidentialLandByPostId(postId);
+                        realEstatePostDTO = residentialLandDTO;
+                        break;
+                }
+                postService.setDataToRealEstateDTO(realEstatePostDTO, postDTO, postId);
+                List<BrokerInfoOfPostDTO> list = postService.getDerivativePostOfOriginalPost(postId);
+                Map<String, Object> map = new HashMap<>();
+                map.put("post", realEstatePostDTO);
+                map.put("brokers", list);
+                return new ResponseEntity<>(map, HttpStatus.OK);
+            } else {
+                return new ResponseEntity<>("Bài viết không phải của người dùng!", HttpStatus.BAD_REQUEST);
+            }
+        } else {
+            return new ResponseEntity<>("Bài viết không tồn tại!", HttpStatus.BAD_REQUEST);
+        }
+
+    }
+
+    @GetMapping("/original-detail/{postId}")
+    public ResponseEntity<?> getDetailOriginalPost(@PathVariable(name = "postId") int postId,
+                                                   @RequestHeader(name = "Authorization") String token) {
+        RealEstatePostDTO realEstatePostDTO = new RealEstatePostDTO();
+        int userId = getUserIdFromToken(token);
+        PostDTO postDTO = postService.getPostByPostId(postId);
+        if ((postDTO != null) && (!postDTO.isBlock())) {
+            if (postDTO.getUser().getId() == userId) {
+                return new ResponseEntity<>("Bài viết này đã thuộc về khách hàng!", HttpStatus.BAD_REQUEST);
+            }
+            if (postDTO.getOriginalPost() == null) {
+                PostDTO dto = postService.getDerivativePostOfUser(userId, postId);
+                if (dto == null) {
+                    switch (postDTO.getPropertyType().getId()) {
+                        case 1: // view residential house
+                            ResidentialHouseDTO residentialHouseDTO = residentialHouseService.getResidentialHouseByPostId(postId);
+                            realEstatePostDTO = residentialHouseDTO;
+                            break;
+                        case 2:// view apartment
+                            ApartmentDTO apartmentDTO = apartmentService.getApartmentByPostId(postId);
+                            realEstatePostDTO = apartmentDTO;
+                            break;
+                        case 3:// view residential land
+                            ResidentialLandDTO residentialLandDTO = residentialLandService.getResidentialLandByPostId(postId);
+                            realEstatePostDTO = residentialLandDTO;
+                            break;
+                    }
+                    postService.setDataToRealEstateDTO(realEstatePostDTO, postDTO, postId);
+
+                    List<BrokerInfoOfPostDTO> list = postService.getDerivativePostOfOriginalPost(postId);
+                    Map<String, Object> map = new HashMap<>();
+                    map.put("post", realEstatePostDTO);
+                    map.put("brokers", list);
+                    map.put("isAllowDerivative", true);
+                    return new ResponseEntity<>(map, HttpStatus.OK);
+                } else {
+                    switch (postDTO.getPropertyType().getId()) {
+                        case 1: // view residential house
+                            ResidentialHouseDTO residentialHouseDTO = residentialHouseService.getResidentialHouseByPostId(postId);
+                            realEstatePostDTO = residentialHouseDTO;
+                            break;
+                        case 2:// view apartment
+                            ApartmentDTO apartmentDTO = apartmentService.getApartmentByPostId(postId);
+                            realEstatePostDTO = apartmentDTO;
+                            break;
+                        case 3:// view residential land
+                            ResidentialLandDTO residentialLandDTO = residentialLandService.getResidentialLandByPostId(postId);
+                            realEstatePostDTO = residentialLandDTO;
+                            break;
+                    }
+                    postService.setDataToRealEstateDTO(realEstatePostDTO, postDTO, postId);
+
+                    List<BrokerInfoOfPostDTO> list = postService.getDerivativePostOfOriginalPost(postId);
+                    Map<String, Object> map = new HashMap<>();
+                    map.put("post", realEstatePostDTO);
+                    map.put("brokers", list);
+                    map.put("isAllowDerivative", false);
+                    return new ResponseEntity<>(map, HttpStatus.OK);
+                }
+            } else {
+                return new ResponseEntity<>("Bài viết không phải là bài gốc!", HttpStatus.BAD_REQUEST);
+            }
+        } else {
+            return new ResponseEntity<>("Bài viết không tồn tại!", HttpStatus.BAD_REQUEST);
+        }
+
+    }
+
+    @GetMapping("/my-derivative/{postId}")
+    public ResponseEntity<?> getDetailDerivativePost(@PathVariable(name = "postId") int postId,
+                                                     @RequestHeader(name = "Authorization") String token) {
+        RealEstatePostDTO realEstatePostDTO = new RealEstatePostDTO();
+        int userId = getUserIdFromToken(token);
+        PostDTO postDTO = postService.getDerivativePostByPostId(postId);
+//        if ((postDTO != null) && (!postDTO.isBlock())) {
+        if ((postDTO != null)) {
+            if (postDTO.getOriginalPost() != null) {
+                if (postDTO.getUser().getId() == userId) {
+                    switch (postDTO.getPropertyType().getId()) {
+                        case 1: // view residential house
+                            ResidentialHouseDTO residentialHouseDTO = residentialHouseService.getResidentialHouseByPostId(postId);
+                            realEstatePostDTO = residentialHouseDTO;
+                            break;
+                        case 2:// view apartment
+                            ApartmentDTO apartmentDTO = apartmentService.getApartmentByPostId(postId);
+                            realEstatePostDTO = apartmentDTO;
+                            break;
+                        case 3:// view residential land
+                            ResidentialLandDTO residentialLandDTO = residentialLandService.getResidentialLandByPostId(postId);
+                            realEstatePostDTO = residentialLandDTO;
+                            break;
+                    }
+                    postService.setDataToRealEstateDTO(realEstatePostDTO, postDTO, postId);
+
+                    List<BrokerInfoOfPostDTO> list = postService.getDerivativePostOfOriginalPost(postId);
+                    Map<String, Object> map = new HashMap<>();
+                    map.put("post", realEstatePostDTO);
+                    map.put("brokers", list);
+                    return new ResponseEntity<>(map, HttpStatus.OK);
+                } else {
+                    return new ResponseEntity<>("Bài viết không phải của người dùng!", HttpStatus.BAD_REQUEST);
+                }
+            } else {
+                return new ResponseEntity<>("Bài viết không phải là bài phái sinh!", HttpStatus.BAD_REQUEST);
+            }
+        } else {
+            return new ResponseEntity<>("Bài viết không tồn tại!", HttpStatus.BAD_REQUEST);
+        }
+
     }
 
     //  create derivative post
@@ -125,20 +279,77 @@ public class PostController {
         java.sql.Date date = new java.sql.Date(millis);
         User user = userRepository.findById(userId).orElseThrow(() -> new ResourceNotFoundException("User", "id", userId));
         Post post = postRepository.findPostByPostId(postId);
+        if(post == null){
+            return new ResponseEntity<>("Bài viết không tồn tại", HttpStatus.BAD_REQUEST);
+        }
         Post checkPost = postRepository.getPostByUserIdAndOriginalId(postId, userId);
         if (checkPost != null) {
             return new ResponseEntity<>("Bạn đã tạo bài phái sinh cho bài viết này", HttpStatus.BAD_REQUEST);
         }
 
+
         if (post.isAllowDerivative() && post.getOriginalPost() == null) {
             if (user.getCurrentRole() == 3) {
                 if (user.getId() != post.getUser().getId()) {
                     Pattern pattern = Pattern.compile("[$&+,:;=\\\\?@#|/'<>.^*()%!-1234567890]");
-                    if (pattern.matcher(generalPostDTO.getContactName()).find()) {
+                    if (pattern.matcher(generalPostDTO.getContactName().trim()).find()) {
                         return new ResponseEntity<>("Tên liên lạc không chứa ký tự đặc biệt và số", HttpStatus.BAD_REQUEST);
                     }
+
+                    if (generalPostDTO.isCertification()) {
+                        if (generalPostDTO.getPropertyTypeId() == 2) {
+                            if ((generalPostDTO.getBarcode() == null || generalPostDTO.getBarcode().equals("")) &&
+                                    (generalPostDTO.getPlotNumber() == null) &&
+                                    (generalPostDTO.getOwner() == null || generalPostDTO.getOwner().equals("")) &&
+                                    (generalPostDTO.getOwnerPhone() == null || generalPostDTO.getOwnerPhone().equals("")) &&
+                                    (generalPostDTO.getBuildingName() == null || generalPostDTO.getBuildingName().equals("")) &&
+                                    (generalPostDTO.getRoomNumber() == null || generalPostDTO.getRoomNumber().equals(""))) {
+                                generalPostDTO.setBarcode(null);
+                                generalPostDTO.setPlotNumber(null);
+                                generalPostDTO.setOwner(null);
+                                generalPostDTO.setOwnerPhone(null);
+                                generalPostDTO.setBuildingName(null);
+                                generalPostDTO.setRoomNumber(null);
+                            } else if ((generalPostDTO.getBarcode() != null || !generalPostDTO.getBarcode().equals("")) &&
+                                    (generalPostDTO.getPlotNumber() != null) &&
+                                    (generalPostDTO.getOwner() != null || !generalPostDTO.getOwner().equals("")) &&
+                                    (generalPostDTO.getOwnerPhone() != null || !generalPostDTO.getOwnerPhone().equals("")) &&
+                                    (generalPostDTO.getBuildingName() != null || !generalPostDTO.getBuildingName().equals("")) &&
+                                    (generalPostDTO.getRoomNumber() != null || !generalPostDTO.getRoomNumber().equals(""))) {
+                                generalPostDTO.setBarcode(generalPostDTO.getBarcode());
+                                generalPostDTO.setPlotNumber(generalPostDTO.getPlotNumber());
+                                generalPostDTO.setOwner(generalPostDTO.getOwner());
+                                generalPostDTO.setOwnerPhone(generalPostDTO.getOwnerPhone());
+                                generalPostDTO.setBuildingName(generalPostDTO.getBuildingName());
+                                generalPostDTO.setRoomNumber(generalPostDTO.getRoomNumber());
+                            } else {
+                                return new ResponseEntity<>("Bạn phải điền đủ 6 trường ở trên.", HttpStatus.BAD_REQUEST);
+                            }
+                        } else {
+                            if ((generalPostDTO.getBarcode() == null || generalPostDTO.getBarcode().equals("")) &&
+                                    (generalPostDTO.getPlotNumber() == null) &&
+                                    (generalPostDTO.getOwner() == null || generalPostDTO.getOwner().equals("")) &&
+                                    (generalPostDTO.getOwnerPhone() == null || generalPostDTO.getOwnerPhone().equals(""))) {
+                                generalPostDTO.setBarcode(null);
+                                generalPostDTO.setPlotNumber(null);
+                                generalPostDTO.setOwner(null);
+                                generalPostDTO.setOwnerPhone(null);
+                            } else if ((generalPostDTO.getBarcode() != null || !generalPostDTO.getBarcode().equals("")) &&
+                                    (generalPostDTO.getPlotNumber() != null) &&
+                                    (generalPostDTO.getOwner() != null || !generalPostDTO.getOwner().equals("")) &&
+                                    (generalPostDTO.getOwnerPhone() != null || !generalPostDTO.getOwnerPhone().equals(""))) {
+                                generalPostDTO.setBarcode(generalPostDTO.getBarcode());
+                                generalPostDTO.setPlotNumber(generalPostDTO.getPlotNumber());
+                                generalPostDTO.setOwner(generalPostDTO.getOwner());
+                                generalPostDTO.setOwnerPhone(generalPostDTO.getOwnerPhone());
+                            } else {
+                                return new ResponseEntity<>("Bạn phải điền đủ 4 trường ở trên.", HttpStatus.BAD_REQUEST);
+                            }
+                        }
+
+                    }
                     if (generalPostDTO.getOwner() != null) {
-                        if (pattern.matcher(generalPostDTO.getOwner()).find()) {
+                        if (pattern.matcher(generalPostDTO.getOwner().trim()).find()) {
                             return new ResponseEntity<>("Tên chủ hộ không chứa ký tự đặc biệt và số", HttpStatus.BAD_REQUEST);
                         }
                     }
@@ -146,12 +357,12 @@ public class PostController {
                     postDTO.setOriginalPost(postId);
                     postDTO.setTransactionStartDate(post.getTransactionStartDate());
                     postDTO.setTransactionEndDate(post.getTransactionEndDate());
-                    if(generalPostDTO.getUnitPriceId() ==3 ){
+                    if (generalPostDTO.getUnitPriceId() == 3) {
                         postDTO.setPrice(null);
-                    }else {
-                        if(generalPostDTO.getPrice()==null){
+                    } else {
+                        if (generalPostDTO.getPrice() == null) {
                             return new ResponseEntity<>("Giá cả không được để trống", HttpStatus.BAD_REQUEST);
-                        }else{
+                        } else {
                             postDTO.setPrice(generalPostDTO.getPrice());
                         }
                     }
@@ -159,10 +370,10 @@ public class PostController {
                     PostDTO newPostDTO = postService.createPost(postDTO, userId, generalPostDTO.getDirectionId(), generalPostDTO.getPropertyTypeId(),
                             generalPostDTO.getUnitPriceId(), 1, generalPostDTO.getLongevityId());
 
-                    if (generalPostDTO.getImages() != null) {
+                    if ((generalPostDTO.getImages() != null) && (generalPostDTO.getImages().size() != 0)) {
                         imageService.createImage(generalPostDTO.getImages(), newPostDTO.getPostId());
                     }
-                    if (generalPostDTO.getCoordinates() != null) {
+                    if ((generalPostDTO.getCoordinates() != null) && (generalPostDTO.getCoordinates().size() != 0)) {
                         coordinateService.createCoordinate(generalPostDTO.getCoordinates(), newPostDTO.getPostId());
                     }
                     switch (generalPostDTO.getPropertyTypeId()) {
@@ -244,16 +455,68 @@ public class PostController {
                 userRepository.save(user);
                 Pattern pattern = Pattern.compile("[$&+,:;=\\\\?@#|/'<>.^*()%!-1234567890]");
 
-                if (pattern.matcher(generalPostDTO.getContactName()).find()) {
+                if (pattern.matcher(generalPostDTO.getContactName().trim()).find()) {
                     return new ResponseEntity<>("Tên liên lạc không chứa ký tự đặc biệt và số", HttpStatus.BAD_REQUEST);
                 }
 
+
+                if (generalPostDTO.isCertification()) {
+                    if (generalPostDTO.getPropertyTypeId() == 2) {
+                        if ((generalPostDTO.getBarcode() == null || generalPostDTO.getBarcode().equals("")) &&
+                                (generalPostDTO.getPlotNumber() == null) &&
+                                (generalPostDTO.getOwner() == null || generalPostDTO.getOwner().equals("")) &&
+                                (generalPostDTO.getOwnerPhone() == null || generalPostDTO.getOwnerPhone().equals("")) &&
+                                (generalPostDTO.getBuildingName() == null || generalPostDTO.getBuildingName().equals("")) &&
+                                (generalPostDTO.getRoomNumber() == null || generalPostDTO.getRoomNumber().equals(""))) {
+                            generalPostDTO.setBarcode(null);
+                            generalPostDTO.setPlotNumber(null);
+                            generalPostDTO.setOwner(null);
+                            generalPostDTO.setOwnerPhone(null);
+                            generalPostDTO.setBuildingName(null);
+                            generalPostDTO.setRoomNumber(null);
+                        } else if ((generalPostDTO.getBarcode() != null || !generalPostDTO.getBarcode().equals("")) &&
+                                (generalPostDTO.getPlotNumber() != null) &&
+                                (generalPostDTO.getOwner() != null || !generalPostDTO.getOwner().equals("")) &&
+                                (generalPostDTO.getOwnerPhone() != null || !generalPostDTO.getOwnerPhone().equals("")) &&
+                                (generalPostDTO.getBuildingName() != null || !generalPostDTO.getBuildingName().equals("")) &&
+                                (generalPostDTO.getRoomNumber() != null || !generalPostDTO.getRoomNumber().equals(""))) {
+                            generalPostDTO.setBarcode(generalPostDTO.getBarcode());
+                            generalPostDTO.setPlotNumber(generalPostDTO.getPlotNumber());
+                            generalPostDTO.setOwner(generalPostDTO.getOwner());
+                            generalPostDTO.setOwnerPhone(generalPostDTO.getOwnerPhone());
+                            generalPostDTO.setBuildingName(generalPostDTO.getBuildingName());
+                            generalPostDTO.setRoomNumber(generalPostDTO.getRoomNumber());
+                        } else {
+                            return new ResponseEntity<>("Bạn phải điền đủ 6 trường ở trên.", HttpStatus.BAD_REQUEST);
+                        }
+                    } else {
+                        if ((generalPostDTO.getBarcode() == null || generalPostDTO.getBarcode().equals("")) &&
+                                (generalPostDTO.getPlotNumber() == null) &&
+                                (generalPostDTO.getOwner() == null || generalPostDTO.getOwner().equals("")) &&
+                                (generalPostDTO.getOwnerPhone() == null || generalPostDTO.getOwnerPhone().equals(""))) {
+                            generalPostDTO.setBarcode(null);
+                            generalPostDTO.setPlotNumber(null);
+                            generalPostDTO.setOwner(null);
+                            generalPostDTO.setOwnerPhone(null);
+                        } else if ((generalPostDTO.getBarcode() != null || !generalPostDTO.getBarcode().equals("")) &&
+                                (generalPostDTO.getPlotNumber() != null) &&
+                                (generalPostDTO.getOwner() != null || !generalPostDTO.getOwner().equals("")) &&
+                                (generalPostDTO.getOwnerPhone() != null || !generalPostDTO.getOwnerPhone().equals(""))) {
+                            generalPostDTO.setBarcode(generalPostDTO.getBarcode());
+                            generalPostDTO.setPlotNumber(generalPostDTO.getPlotNumber());
+                            generalPostDTO.setOwner(generalPostDTO.getOwner());
+                            generalPostDTO.setOwnerPhone(generalPostDTO.getOwnerPhone());
+                        } else {
+                            return new ResponseEntity<>("Bạn phải điền đủ 4 trường ở trên.", HttpStatus.BAD_REQUEST);
+                        }
+                    }
+
+                }
                 if (generalPostDTO.getOwner() != null) {
-                    if (pattern.matcher(generalPostDTO.getOwner()).find()) {
+                    if (pattern.matcher(generalPostDTO.getOwner().trim()).find()) {
                         return new ResponseEntity<>("Tên chủ hộ không chứa ký tự đặc biệt và số", HttpStatus.BAD_REQUEST);
                     }
                 }
-
                 TransactionDTO transactionDTO = new TransactionDTO();
                 transactionDTO.setAmount(totalPayment);
                 transactionDTO.setDescription("Thanh toán bài đăng");
@@ -262,22 +525,22 @@ public class PostController {
                 transactionDTO.setDiscount(priceDTO.getDiscount());
                 paymentService.createTransaction(transactionDTO);
                 PostDTO postDTO = postService.setDataToPostDTO(generalPostDTO, userId, date, true);
-                if(generalPostDTO.getUnitPriceId() ==3 ){
+                if (generalPostDTO.getUnitPriceId() == 3) {
                     postDTO.setPrice(null);
-                }else {
-                    if(generalPostDTO.getPrice()==null){
+                } else {
+                    if (generalPostDTO.getPrice() == null) {
                         return new ResponseEntity<>("Giá cả không được để trống", HttpStatus.BAD_REQUEST);
-                    }else{
+                    } else {
                         postDTO.setPrice(generalPostDTO.getPrice());
                     }
                 }
                 postDTO.setSpendMoney(totalPayment);
                 PostDTO newPostDTO = postService.createPost(postDTO, userId, generalPostDTO.getDirectionId(), generalPostDTO.getPropertyTypeId(),
                         generalPostDTO.getUnitPriceId(), 1, generalPostDTO.getLongevityId());
-                if (generalPostDTO.getImages() != null) {
+                if ((generalPostDTO.getImages() != null) && (generalPostDTO.getImages().size() != 0)) {
                     imageService.createImage(generalPostDTO.getImages(), newPostDTO.getPostId());
                 }
-                if (generalPostDTO.getCoordinates() != null) {
+                if ((generalPostDTO.getCoordinates() != null) && (generalPostDTO.getCoordinates().size() != 0)) {
                     coordinateService.createCoordinate(generalPostDTO.getCoordinates(), newPostDTO.getPostId());
                 }
                 switch (generalPostDTO.getPropertyTypeId()) {
@@ -371,15 +634,15 @@ public class PostController {
             switch (postDTO.getPropertyType().getId()) {
                 case 1:
                     residentialHouseService.deleteResidentialHouseByPostId(postId);
-                    result = "delete house successfull";
+                    result = "Xóa nhà thành công";
                     break;
                 case 2:
                     apartmentService.deleteApartmentByPostId(postId);
-                    result = "delete apartment successfull";
+                    result = "Xóa chung cư thành công";
                     break;
                 case 3:
                     residentialLandService.deleteResidentialLandByPostId(postId);
-                    result = "delete land successfull";
+                    result = "Xóa đất thành công";
                     break;
             }
             coordinateService.deleteCoordinateByPostId(postId);
@@ -391,7 +654,7 @@ public class PostController {
             postService.deletePost(postId);
             return new ResponseEntity<>(result, HttpStatus.NO_CONTENT);
         } else {
-            return new ResponseEntity<>("You are not owner this post", HttpStatus.BAD_REQUEST);
+            return new ResponseEntity<>("Bạn Không phải là chủ bài đăng này", HttpStatus.BAD_REQUEST);
         }
 
     }
@@ -455,8 +718,8 @@ public class PostController {
                                               @RequestHeader(name = "Authorization") String token) {
         int userId = getUserIdFromToken(token);
 
-        Post post = postRepository.findPostByPostId(postId);
-        if (post != null) {
+        Post post = postRepository.findById(postId).orElseThrow(() -> new ResourceNotFoundException("Post", "id", postId));
+        if (post != null && post.getStatus().getId() == 2) {
             if (userId == post.getUser().getId()) {
                 postService.changeStatus(postId, 1);
                 return new ResponseEntity<>("Cập nhập bài đăng thành công", HttpStatus.CREATED);
@@ -475,7 +738,7 @@ public class PostController {
     public ResponseEntity<String> deleteStatusPost(@PathVariable int postId,
                                                    @RequestHeader(name = "Authorization") String token) {
         int userId = getUserIdFromToken(token);
-        Post post = postRepository.findPostByPostId(postId);
+        Post post = postRepository.findById(postId).orElseThrow(() -> new ResourceNotFoundException("Post", "id", postId));
         if (post != null) {
             if (userId == post.getUser().getId()) {
                 postService.changeStatus(postId, 6);
@@ -501,9 +764,12 @@ public class PostController {
         int userId = getUserIdFromToken(token);
         User user = userRepository.findById(userId).orElseThrow(() -> new ResourceNotFoundException("User", "id", userId));
         PriceDTO priceDTO = priceService.getPriceByTypeIdAndStatus(1);
-        Post post = postRepository.findPostByPostId(postId);
+        Post post = postRepository.findPostById(postId);
+        if(post == null){
+            return new ResponseEntity<>("Bài viết không tồn tại", HttpStatus.BAD_REQUEST);
+        }
         long totalPayment = numberOfPostedDayDTO.getNumberOfPostedDay() * (priceDTO.getPrice() * (100 - priceDTO.getDiscount()) / 100);
-        try {
+
             if (user.getAccountBalance() < totalPayment) {
                 return new ResponseEntity<>("Số tiền trong tài khoản không đủ để gia hạn!", HttpStatus.BAD_REQUEST);
             } else {
@@ -539,14 +805,8 @@ public class PostController {
 
                 }
 
-
             }
 
-
-        } catch (Exception e) {
-
-        }
-        return new ResponseEntity<>("Không gia hạn thành công", HttpStatus.BAD_REQUEST);
 
     }
 
@@ -559,23 +819,77 @@ public class PostController {
         int userId = getUserIdFromToken(token);
 
 
-        Post post = postRepository.findById(postId).orElseThrow(() -> new ResourceNotFoundException("Post", "id", postId));
-
+        Post post = postRepository.findPostById(postId);
+        if(post == null){
+            return new ResponseEntity<>("Bài viết không tồn tại", HttpStatus.BAD_REQUEST);
+        }
         int propertyId = post.getPropertyType().getId();
         if (userId == post.getUser().getId()) {
             Pattern pattern = Pattern.compile("[$&+,:;=\\\\?@#|/'<>.^*()%!-1234567890]");
-            if (pattern.matcher(generalPostDTO.getContactName()).find()) {
+            if (pattern.matcher(generalPostDTO.getContactName().trim()).find()) {
                 return new ResponseEntity<>("Tên liên lạc không chứa ký tự đặc biệt và số", HttpStatus.BAD_REQUEST);
             }
+            if (generalPostDTO.isCertification()) {
+                if (generalPostDTO.getPropertyTypeId() == 2) {
+                    if ((generalPostDTO.getBarcode() == null || generalPostDTO.getBarcode().equals("")) &&
+                            (generalPostDTO.getPlotNumber() == null) &&
+                            (generalPostDTO.getOwner() == null || generalPostDTO.getOwner().equals("")) &&
+                            (generalPostDTO.getOwnerPhone() == null || generalPostDTO.getOwnerPhone().equals("")) &&
+                            (generalPostDTO.getBuildingName() == null || generalPostDTO.getBuildingName().equals("")) &&
+                            (generalPostDTO.getRoomNumber() == null || generalPostDTO.getRoomNumber().equals(""))) {
+                        generalPostDTO.setBarcode(null);
+                        generalPostDTO.setPlotNumber(null);
+                        generalPostDTO.setOwner(null);
+                        generalPostDTO.setOwnerPhone(null);
+                        generalPostDTO.setBuildingName(null);
+                        generalPostDTO.setRoomNumber(null);
+                    } else if ((generalPostDTO.getBarcode() != null || !generalPostDTO.getBarcode().equals("")) &&
+                            (generalPostDTO.getPlotNumber() != null) &&
+                            (generalPostDTO.getOwner() != null || !generalPostDTO.getOwner().equals("")) &&
+                            (generalPostDTO.getOwnerPhone() != null || !generalPostDTO.getOwnerPhone().equals("")) &&
+                            (generalPostDTO.getBuildingName() != null || !generalPostDTO.getBuildingName().equals("")) &&
+                            (generalPostDTO.getRoomNumber() != null || !generalPostDTO.getRoomNumber().equals(""))) {
+                        generalPostDTO.setBarcode(generalPostDTO.getBarcode());
+                        generalPostDTO.setPlotNumber(generalPostDTO.getPlotNumber());
+                        generalPostDTO.setOwner(generalPostDTO.getOwner());
+                        generalPostDTO.setOwnerPhone(generalPostDTO.getOwnerPhone());
+                        generalPostDTO.setBuildingName(generalPostDTO.getBuildingName());
+                        generalPostDTO.setRoomNumber(generalPostDTO.getRoomNumber());
+                    } else {
+                        return new ResponseEntity<>("Bạn phải điền đủ 6 trường ở trên.", HttpStatus.BAD_REQUEST);
+                    }
+                } else {
+                    if ((generalPostDTO.getBarcode() == null || generalPostDTO.getBarcode().equals("")) &&
+                            (generalPostDTO.getPlotNumber() == null) &&
+                            (generalPostDTO.getOwner() == null || generalPostDTO.getOwner().equals("")) &&
+                            (generalPostDTO.getOwnerPhone() == null || generalPostDTO.getOwnerPhone().equals(""))) {
+                        generalPostDTO.setBarcode(null);
+                        generalPostDTO.setPlotNumber(null);
+                        generalPostDTO.setOwner(null);
+                        generalPostDTO.setOwnerPhone(null);
+                    } else if ((generalPostDTO.getBarcode() != null || !generalPostDTO.getBarcode().equals("")) &&
+                            (generalPostDTO.getPlotNumber() != null) &&
+                            (generalPostDTO.getOwner() != null || !generalPostDTO.getOwner().equals("")) &&
+                            (generalPostDTO.getOwnerPhone() != null || !generalPostDTO.getOwnerPhone().equals(""))) {
+                        generalPostDTO.setBarcode(generalPostDTO.getBarcode());
+                        generalPostDTO.setPlotNumber(generalPostDTO.getPlotNumber());
+                        generalPostDTO.setOwner(generalPostDTO.getOwner());
+                        generalPostDTO.setOwnerPhone(generalPostDTO.getOwnerPhone());
+                    } else {
+                        return new ResponseEntity<>("Bạn phải điền đủ 4 trường ở trên.", HttpStatus.BAD_REQUEST);
+                    }
+                }
+
+            }
             if (generalPostDTO.getOwner() != null) {
-                if (pattern.matcher(generalPostDTO.getOwner()).find()) {
+                if (pattern.matcher(generalPostDTO.getOwner().trim()).find()) {
                     return new ResponseEntity<>("Tên chủ hộ không chứa ký tự đặc biệt và số", HttpStatus.BAD_REQUEST);
                 }
             }
-            if(generalPostDTO.getUnitPriceId() == 3 ){
+            if (generalPostDTO.getUnitPriceId() == 3) {
                 generalPostDTO.setPrice(null);
-            }else {
-                if(generalPostDTO.getPrice()==null){
+            } else {
+                if (generalPostDTO.getPrice() == null) {
                     return new ResponseEntity<>("Giá cả không được để trống", HttpStatus.BAD_REQUEST);
                 }
             }
@@ -598,13 +912,21 @@ public class PostController {
                     break;
 
             }
+            if ((generalPostDTO.getImages() != null) && (generalPostDTO.getImages().size() != 0)) {
+                imageService.updateImage(generalPostDTO.getImages(), postId);
+            } else {
+                imageService.deleteImageByPostId(postId);
+            }
+            if ((generalPostDTO.getCoordinates() != null) && (generalPostDTO.getCoordinates().size() != 0)) {
+                coordinateService.updateCoordinate(generalPostDTO.getCoordinates(), postId);
 
-            imageService.updateImage(generalPostDTO.getImages(), postId);
-            coordinateService.updateCoordinate(generalPostDTO.getCoordinates(), postId);
+            } else {
+                coordinateService.deleteCoordinateByPostId(postId);
+            }
 
-            return new ResponseEntity<>("update success", HttpStatus.OK);
+            return new ResponseEntity<>("Cập nhập thành công bài viết", HttpStatus.CREATED);
         } else {
-            return new ResponseEntity<>("Bạn Không phải là chủ bài đăng", HttpStatus.BAD_REQUEST);
+            return new ResponseEntity<>("Bạn không phải là chủ bài đăng", HttpStatus.BAD_REQUEST);
         }
 
     }
@@ -768,28 +1090,37 @@ public class PostController {
         int pageSize = 6;
 
         SearchResponse searchResponse = postService.getAllPostByUserId(pageNumber, pageSize, userId, propertyTypeId, sortValue);
-        User user = userRepository.findById(userId).orElseThrow(() -> new ResourceNotFoundException("User", "id", userId));
+        User user = userRepository.getUserById(userId);
 
-//        userDTO.setBroker(true);
-        Boolean isBroker = false;
-        Set<Role> setRole = user.getRoles();
-        Role role = roleRepository.findByName("BROKER").get();
-        if (setRole.contains(role)) {
-            isBroker = true;
-        }
-        UserDTO userDTO = mapper.map(user, UserDTO.class);
-        userDTO.setBroker(isBroker);
-        AvgRate avgRate = rateRepository.getAvgRateByUserIdAndRoleId(user.getId(), 3);
-        if (avgRate != null) {
-            userDTO.setAvgRate(avgRate.getAvgRate());
+        if ((user != null)) {
+            if (user.isBlock() == true) {
+                return new ResponseEntity<>("Người dùng đã bị chặn!", HttpStatus.BAD_REQUEST);
+            }
+            //        userDTO.setBroker(true);
+            Boolean isBroker = false;
+            Set<Role> setRole = user.getRoles();
+            Role role = roleRepository.findByName("BROKER").get();
+            if (setRole.contains(role)) {
+//                isBroker = true;
+                UserDTO userDTO = mapper.map(user, UserDTO.class);
+//            userDTO.setBroker(isBroker);
+                AvgRate avgRate = rateRepository.getAvgRateByUserIdAndRoleId(user.getId(), 3);
+                if (avgRate != null) {
+                    userDTO.setAvgRate(avgRate.getAvgRate());
+                } else {
+                    userDTO.setAvgRate(0);
+                }
+
+                Map<String, Object> map = new HashMap<>();
+                map.put("lists", searchResponse);
+                map.put("user", userDTO);
+                return new ResponseEntity<>(map, HttpStatus.OK);
+            } else {
+                return new ResponseEntity<>("Người dùng không phải broker!", HttpStatus.BAD_REQUEST);
+            }
         } else {
-            userDTO.setAvgRate(0);
+            return new ResponseEntity<>("Người dùng không tồn tại!", HttpStatus.BAD_REQUEST);
         }
-
-        Map<String, Object> map = new HashMap<>();
-        map.put("lists", searchResponse);
-        map.put("user", userDTO);
-        return new ResponseEntity<>(map, HttpStatus.OK);
     }
 
     //get list original post for broker choose
@@ -853,10 +1184,10 @@ public class PostController {
 
     @PostMapping("/history/send-otp/{postId}")
     public ResponseEntity<?> sendOtpToOwnerPhone(@PathVariable(name = "postId") int postId,
-                                                     @Valid @RequestBody HistoryDTO historyDTO) {
+                                                 @Valid @RequestBody HistoryDTO historyDTO) {
         Post post = postRepository.findPostByPostId(postId);
         if (post != null && post.getStatus().getId() == 1 && post.getOriginalPost() == null) {
-            if(historyDTO.getOwner() != null){
+            if (historyDTO.getOwner() != null) {
                 Pattern pattern = Pattern.compile("[$&+,:;=\\\\?@#|/'<>.^*()%!-1234567890]");
                 if (pattern.matcher(historyDTO.getOwner()).find()) {
                     return new ResponseEntity<>("Họ và tên không chứa ký tự đặc biệt và số!", HttpStatus.BAD_REQUEST);
@@ -871,10 +1202,10 @@ public class PostController {
                         }
                         break;
                     case 2:
-                        if(historyDTO.getRoomNumber() == null || historyDTO.getRoomNumber().isEmpty()){
+                        if (historyDTO.getRoomNumber() == null || historyDTO.getRoomNumber().isEmpty()) {
                             return new ResponseEntity<>("Số phòng không được để trống!", HttpStatus.BAD_REQUEST);
                         }
-                        if(historyDTO.getBuildingName() == null || historyDTO.getBuildingName().isEmpty()){
+                        if (historyDTO.getBuildingName() == null || historyDTO.getBuildingName().isEmpty()) {
                             return new ResponseEntity<>("Tên tòa nhà không được để trống!", HttpStatus.BAD_REQUEST);
                         }
                         ApartmentHistoryDTO dto = apartmentHistoryService.getApartmentHistoryByBarcode(historyDTO.getBarcode());
@@ -909,7 +1240,7 @@ public class PostController {
     public ResponseEntity<?> createRealEstateHistory(@PathVariable(name = "postId") int postId,
                                                      @Valid @RequestBody HistoryDTO historyDTO) {
         Post post = postRepository.findPostByPostId(postId);
-        if(post.getOriginalPost() != null){
+        if (post.getOriginalPost() != null) {
             return new ResponseEntity<>("Không được kết thúc giao dịch ở bài phái sinh!", HttpStatus.BAD_REQUEST);
         }
         if (post != null && post.getStatus().getId() == 1) {
@@ -920,21 +1251,21 @@ public class PostController {
             refundMoney = spendMoney * (100 - refundPercentDTO.getPercent()) / 100;
             if (historyDTO.isProvideInfo()) {
                 int remainTime = 3;
-                if(otpService.getCount(historyDTO.getPhone()) != null){
+                if (otpService.getCount(historyDTO.getPhone()) != null) {
                     remainTime = otpService.getCount(historyDTO.getPhone());
                 }
-                if(remainTime == 0){
+                if (remainTime == 0) {
                     otpService.clearCount(historyDTO.getPhone());
                     otpService.clearOtp(historyDTO.getPhone());
                     return new ResponseEntity<>("Nhập sai quá số lần quy định!", HttpStatus.BAD_REQUEST);
                 }
-                if(historyDTO.getOwner() != null) {
+                if (historyDTO.getOwner() != null) {
                     Pattern pattern = Pattern.compile("[$&+,:;=\\\\?@#|/'<>.^*()%!-1234567890]");
                     if (pattern.matcher(historyDTO.getOwner()).find()) {
                         return new ResponseEntity<>("Họ và tên không chứa ký tự đặc biệt và số!", HttpStatus.BAD_REQUEST);
                     }
                 }
-                if(otpService.getOtp(historyDTO.getPhone()) == null){
+                if (otpService.getOtp(historyDTO.getPhone()) == null) {
                     return new ResponseEntity<>("Mã OTP đã hết hạn!", HttpStatus.BAD_REQUEST);
                 }
                 int otp = Integer.parseInt(historyDTO.getToken());
@@ -953,10 +1284,10 @@ public class PostController {
                         break;
                     case 2:
                         ApartmentHistoryDTO apartmentHistoryDTO = new ApartmentHistoryDTO();
-                        if(historyDTO.getRoomNumber() == null || historyDTO.getRoomNumber().isEmpty()){
+                        if (historyDTO.getRoomNumber() == null || historyDTO.getRoomNumber().isEmpty()) {
                             return new ResponseEntity<>("Số phòng không được để trống!", HttpStatus.BAD_REQUEST);
                         }
-                        if(historyDTO.getBuildingName() == null || historyDTO.getBuildingName().isEmpty()){
+                        if (historyDTO.getBuildingName() == null || historyDTO.getBuildingName().isEmpty()) {
                             return new ResponseEntity<>("Tên tòa nhà không được để trống!", HttpStatus.BAD_REQUEST);
                         }
                         apartmentHistoryService.setDataToApartmentHistoryDTO(apartmentHistoryDTO, historyDTO);
@@ -982,12 +1313,10 @@ public class PostController {
             postRepository.save(post);
             postService.changeStatusOfDerivativePostOfPost(postId);
 
-            //tinh tien hoan tra cho nguoi dung dang bai
-
-
             int userId = post.getUser().getId();
 //            TextMessageDTO messageDTO = new TextMessageDTO();
-            String message = "Bạn được hoàn lại " + refundMoney + " VNĐ";
+            DecimalFormat formatter = new DecimalFormat("###,###,###");
+            String message = "Bạn được hoàn lại " + formatter.format(refundMoney) + " VNĐ";
 //            messageDTO.setMessage(message);
 //            template.convertAndSend("/topic/message/" + userId, messageDTO);
             Pusher pusher = new Pusher("1465234", "242a962515021986a8d8", "61b1284a169f5231d7d3");
@@ -1015,13 +1344,9 @@ public class PostController {
             userRepository.save(user);
 
             List<Post> listPostDto = postRepository.getDerivativePostOfOriginalPost(postId);
-            for(Post p: listPostDto){
+            for (Post p : listPostDto) {
                 User u = p.getUser();
-//                TextMessageDTO messageDTO1 = new TextMessageDTO();
                 String message1 = "Giao dịch đã kết thúc. Vui lòng đánh giá người đăng bài!";
-//                messageDTO.setMessage(message1);
-//                template.convertAndSend("/topic/message/" + u.getId(), messageDTO1);
-
                 pusher.setCluster("ap1");
                 pusher.setEncrypted(true);
                 pusher.trigger("my-channel-" + u.getId(), "my-event", Collections.singletonMap("message", message1));
@@ -1039,7 +1364,7 @@ public class PostController {
                 userRepository.save(u);
             }
 
-            return new ResponseEntity<>("Hoàn thành giao dịch!", HttpStatus.OK);
+            return new ResponseEntity<>("Hoàn thành giao dịch!", HttpStatus.CREATED);
         } else {
             return new ResponseEntity<>("Bài viết không tồn tại hoặc không hoạt động!", HttpStatus.BAD_REQUEST);
         }
@@ -1048,14 +1373,40 @@ public class PostController {
     @GetMapping("/original/{userId}")
     public ResponseEntity<?> getAllOriginalPostOfUser(@PathVariable(name = "userId") int userId,
                                                       @RequestParam(name = "pageNo", defaultValue = "0") String pageNo,
-                                                      @RequestParam(name = "sortValue", defaultValue = "0") String sortValue) {
+                                                      @RequestParam(name = "sortValue", defaultValue = "0") String sortValue,
+                                                      @RequestHeader(name = "Authorization", required = false) String token,
+                                                      @RequestParam(name = "propertyType", defaultValue = "0") String propertyType) {
+        User user = userRepository.getUserById(userId);
         int pageNumber = Integer.parseInt(pageNo);
         int pageSize = 6;
+        SearchResponse searchResponse = new SearchResponse();
+        if(user == null){
+            return new ResponseEntity<>("Người dùng không tồn tại!", HttpStatus.BAD_REQUEST);
+        }
+        if(user.isBlock()){
+            return new ResponseEntity<>("Người dùng không tồn tại!", HttpStatus.BAD_REQUEST);
+        }
+        if (token == null) {
+            if (user.getRoles().size() == 2) {
+                return new ResponseEntity<>("Không thể truy cập!", HttpStatus.BAD_REQUEST);
+            } else {
+                searchResponse = postService.getAllOriginalPostByUserId(userId, pageNumber, pageSize, sortValue, propertyType);
 
-        SearchResponse searchResponse = postService.getAllOriginalPostByUserId(userId, pageNumber, pageSize, sortValue);
-        User user = userRepository.findById(userId).orElseThrow(() -> new ResourceNotFoundException("User", "id", userId));
+            }
+        } else {
+            int userToken = getUserIdFromToken(token);
+            if (userToken == userId) {
+                return new ResponseEntity<>("Người dùng không tồn tại!", HttpStatus.BAD_REQUEST);
+            }
+            User u = userRepository.getUserById(userToken);
+            if (u.getCurrentRole() == 3) {
+                searchResponse = postService.getOriginalPostByUserId(userId, pageNumber, pageSize, sortValue, propertyType);
+            }
+            if (u.getCurrentRole() == 2) {
+                searchResponse = postService.getAllOriginalPostByUserId(userId, pageNumber, pageSize, sortValue, propertyType);
+            }
 
-//        userDTO.setBroker(true);
+        }
         Boolean isBroker = false;
         Set<Role> setRole = user.getRoles();
         Role role = roleRepository.findByName("BROKER").get();
@@ -1064,7 +1415,7 @@ public class PostController {
         }
         UserDTO userDTO = mapper.map(user, UserDTO.class);
         userDTO.setBroker(isBroker);
-        AvgRate avgRate = rateRepository.getAvgRateByUserIdAndRoleId(user.getId(), user.getCurrentRole());
+        AvgRate avgRate = rateRepository.getAvgRateByUserIdAndRoleId(user.getId(), 2);
         if (avgRate != null) {
             userDTO.setAvgRate(avgRate.getAvgRate());
         } else {
@@ -1075,10 +1426,11 @@ public class PostController {
         map.put("lists", searchResponse);
         map.put("user", userDTO);
         return new ResponseEntity<>(map, HttpStatus.OK);
+
     }
 
     @GetMapping("/outstanding")
-    public ResponseEntity<?> getOutstandingPost(){
+    public ResponseEntity<?> getOutstandingPost() {
         List<SearchDTO> list = postService.getOutstandingPost();
         return new ResponseEntity<>(list, HttpStatus.OK);
     }

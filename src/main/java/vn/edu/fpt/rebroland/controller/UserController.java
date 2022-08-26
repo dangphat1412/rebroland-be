@@ -531,8 +531,10 @@ public class UserController {
         String[] parts = token.split("\\.");
         JSONObject payload = new JSONObject(decode(parts[1]));
         String phone = payload.getString("sub");
-        User newUser = userRepository.findByPhone(phone).
-                orElseThrow(() -> new UsernameNotFoundException("User not found with phone: " + phone));
+        User newUser = userRepository.getUserByPhone(phone);
+        if(newUser == null){
+            return new ResponseEntity<>("Số điện thoại không tồn tại trong hệ thống!", HttpStatus.BAD_REQUEST);
+        }
         int remainTime = 3;
         if(otpService.getCount(registerDTO.getPhone()) != null){
             remainTime = otpService.getCount(registerDTO.getPhone());
@@ -545,7 +547,7 @@ public class UserController {
         if(otpService.getOtp(registerDTO.getPhone()) == null){
             return new ResponseEntity<>("Mã OTP hết hạn!", HttpStatus.BAD_REQUEST);
         }
-        if(registerDTO.getToken().isEmpty() || registerDTO.getToken() == null){
+        if((registerDTO.getToken() == null) || (registerDTO.getToken().isEmpty())){
             return new ResponseEntity<>("Mã OTP sai!", HttpStatus.BAD_REQUEST);
         }
         int otp = Integer.parseInt(registerDTO.getToken());

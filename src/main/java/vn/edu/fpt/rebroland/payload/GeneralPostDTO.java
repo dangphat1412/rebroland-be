@@ -65,7 +65,7 @@ public class GeneralPostDTO {
     @Size(max = 100, message = "địa chỉ liên hệ không quá 100 ký tự")
     private String contactAddress;
 
-    @Email(regexp = "^[_A-Za-z0-9-\\+]+(\\.[_A-Za-z0-9-]+)*@[A-Za-z0-9-]+(\\.[A-Za-z0-9]+)*(\\.[A-Za-z]{2,})$", message = "Email không hợp lệ!")
+    @Email(regexp = "(^$|^[_A-Za-z0-9-\\+]+(\\.[_A-Za-z0-9-]+)*@[A-Za-z0-9-]+(\\.[A-Za-z0-9]+)*(\\.[A-Za-z]{2,})$)", message = "Email không hợp lệ!")
     private String contactEmail;
 
     @NotEmpty(message = "phường xã không để trống")
@@ -122,7 +122,7 @@ public class GeneralPostDTO {
     private float frontispiece;
 
     // barcode
-    @Pattern(regexp = "(^\\d{13}$)|(^\\d{15}$)", message = "Mã vạch chỉ nhập số 13 hoặc 15 kí tự")
+    @Pattern(regexp = "(^$|(^\\d{13}$)|(^\\d{15}$))", message = "Mã vạch chỉ nhập số 13 hoặc 15 kí tự")
     private String barcode;
 
 
@@ -130,7 +130,7 @@ public class GeneralPostDTO {
     @Size(max = 100, message = "ký tự không quá 100")
     private String owner;
 
-    @Pattern(regexp = "(84|0[3|5|7|8|9])+([0-9]{8})\\b", message = "Số điện thoại không hợp lệ.")
+    @Pattern(regexp = "(^$|(84|0[3|5|7|8|9])+([0-9]{8})\\b)", message = "Số điện thoại không hợp lệ.")
     private String ownerPhone;
 
 

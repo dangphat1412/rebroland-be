@@ -56,6 +56,8 @@ public class ResidentialLandServiceImpl implements ResidentialLandService {
         ResidentialLand residentialLand = residentialLandRepository.findById(id).orElseThrow(() -> new ResourceNotFoundException("ResidentialLand", "ID", id));
         Post post = postRepository.findById(postId).orElseThrow(() -> new ResourceNotFoundException("Post", "ID", postId));
         residentialLand.setPost(post);
+        residentialLand.setOwner(residentialLandDTO.getOwner());
+        residentialLand.setOwnerPhone(residentialLandDTO.getOwnerPhone());
         residentialLand.setBarcode(residentialLandDTO.getBarcode());
         residentialLand.setPlotNumber(residentialLandDTO.getPlotNumber());
         residentialLand.setFrontispiece(residentialLandDTO.getFrontispiece());

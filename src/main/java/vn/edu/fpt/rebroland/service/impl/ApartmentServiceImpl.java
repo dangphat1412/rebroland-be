@@ -42,14 +42,10 @@ public class ApartmentServiceImpl implements ApartmentService {
     @Override
     public void deleteApartmentByPostId(int postId) {
         try {
-//            Apartment apartment = apartmentRepository.findByPostId(postId);
-//            apartmentRepository.delete(apartment);
             apartmentRepository.deleteByPostId(postId);
         } catch (Exception e) {
 
         }
-
-
     }
 
     @Override
@@ -58,6 +54,8 @@ public class ApartmentServiceImpl implements ApartmentService {
         Post post = postRepository.findById(postId).orElseThrow(() -> new ResourceNotFoundException("Post", "ID", postId));
         apartment.setPost(post);
         apartment.setBarcode(apartmentDTO.getBarcode());
+        apartment.setOwner(apartmentDTO.getOwner());
+        apartment.setOwnerPhone(apartmentDTO.getOwnerPhone());
         apartment.setNumberOfBathroom(apartmentDTO.getNumberOfBathroom());
         apartment.setNumberOfBedroom(apartmentDTO.getNumberOfBedroom());
         apartment.setFloorNumber(apartmentDTO.getFloorNumber());

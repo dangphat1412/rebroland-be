@@ -33,7 +33,7 @@ public class HistoryDTO {
     private String buildingName;
 
 //    @NotEmpty(message = "Cập nhập thông tin này.")
-    @Pattern(regexp = "^[a-zA-Z0-9]*$", message = "Số phòng không chứa kí tự đặc biệt!")
+//    @Pattern(regexp = "^[a-zA-Z0-9]*$", message = "Số phòng không chứa kí tự đặc biệt!")
     @Size(max = 10)
     private String roomNumber;
 
