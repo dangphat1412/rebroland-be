@@ -62,7 +62,7 @@ public class SearchDTO {
 
     private int numberOfBathroom;
 
-    @JsonFormat(pattern = "dd-MM-yyyy HH:mm:ss")
+    @JsonFormat(pattern = "dd-MM-yyyy", timezone = "Asia/Kolkata")
     private Date endDate;
 
     private boolean block;

@@ -2,6 +2,7 @@ package vn.edu.fpt.rebroland.payload;
 
 
 
+import com.fasterxml.jackson.annotation.JsonFormat;
 import lombok.Data;
 
 import javax.validation.constraints.*;
@@ -27,8 +28,10 @@ public class RealEstatePostDTO {
     @NotNull(message = "Cập nhập thông tin này.")
     private boolean certification;
 
+    @JsonFormat(pattern = "dd-MM-yyyy")
     private String startDate;
     private String transactionStartDate;
+    @JsonFormat(pattern = "dd-MM-yyyy")
     private String transactionEndDate;
 
     @Min(value = 0)

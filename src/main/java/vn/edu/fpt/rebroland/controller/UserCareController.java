@@ -3,14 +3,8 @@ package vn.edu.fpt.rebroland.controller;
 import vn.edu.fpt.rebroland.entity.*;
 import vn.edu.fpt.rebroland.exception.ResourceNotFoundException;
 import vn.edu.fpt.rebroland.payload.*;
-import vn.edu.fpt.rebroland.repository.ContactRepository;
-import vn.edu.fpt.rebroland.repository.RoleRepository;
-import vn.edu.fpt.rebroland.repository.UserCareRepository;
-import vn.edu.fpt.rebroland.repository.UserRepository;
-import vn.edu.fpt.rebroland.service.ContactService;
-import vn.edu.fpt.rebroland.service.UserCareDetailService;
-import vn.edu.fpt.rebroland.service.UserCareService;
-import vn.edu.fpt.rebroland.service.UserService;
+import vn.edu.fpt.rebroland.repository.*;
+import vn.edu.fpt.rebroland.service.*;
 import com.twilio.Twilio;
 import com.twilio.rest.api.v2010.account.Message;
 import com.twilio.type.PhoneNumber;
@@ -27,7 +21,7 @@ import java.util.*;
 
 @RestController
 @RequestMapping("/api/user-care")
-@CrossOrigin(origins = "https://rebroland.vercel.app")
+@CrossOrigin(origins = "https://rebroland-frontend.vercel.app")
 public class UserCareController {
     private UserCareService userCareService;
 
@@ -37,6 +31,8 @@ public class UserCareController {
 
     private UserCareDetailService userCareDetailService;
 
+    private UserCareDetailRepository userCareDetailRepository;
+
     private ContactService contactService;
 
     private ContactRepository contactRepository;
@@ -44,18 +40,30 @@ public class UserCareController {
     private UserService userService;
     private RoleRepository roleRepository;
 
-    public UserCareController(UserCareService userCareService, UserRepository userRepository,
-                              UserCareRepository userCareRepository, UserCareDetailService userCareDetailService,
-                              ContactService contactService,ContactRepository contactRepository,
-                              UserService userService, RoleRepository roleRepository) {
+    private PostService postService;
+
+    private ResidentialLandService residentialLandService;
+    private ResidentialHouseService residentialHouseService;
+    private ApartmentService apartmentService;
+
+    public UserCareController(UserCareService userCareService, UserRepository userRepository, UserCareRepository userCareRepository,
+                              UserCareDetailService userCareDetailService, UserCareDetailRepository userCareDetailRepository,
+                              ContactService contactService, ContactRepository contactRepository, UserService userService,
+                              RoleRepository roleRepository, PostService postService, ResidentialLandService residentialLandService,
+                              ResidentialHouseService residentialHouseService, ApartmentService apartmentService) {
         this.userCareService = userCareService;
         this.userRepository = userRepository;
         this.userCareRepository = userCareRepository;
         this.userCareDetailService = userCareDetailService;
+        this.userCareDetailRepository = userCareDetailRepository;
         this.contactService = contactService;
         this.contactRepository = contactRepository;
         this.userService = userService;
         this.roleRepository = roleRepository;
+        this.postService = postService;
+        this.residentialLandService = residentialLandService;
+        this.residentialHouseService = residentialHouseService;
+        this.apartmentService = apartmentService;
     }
 
     private static String decode(String encodedString) {
@@ -72,6 +80,41 @@ public class UserCareController {
         return user.getId();
     }
 
+    @GetMapping("/detail-post/{postId}")
+    public ResponseEntity<?> getDetailPost(@PathVariable int postId,
+                                           @RequestHeader(name = "Authorization") String token) {
+        RealEstatePostDTO realEstatePostDTO = new RealEstatePostDTO();
+        int userId = getUserIdFromToken(token);
+        PostDTO postDTO = postService.findPostByPostId(postId);
+        if(userId != postDTO.getUser().getId()){
+            return new ResponseEntity<>("Bạn không phải là chủ bài viết này.", HttpStatus.BAD_REQUEST);
+        }
+        if ((postDTO != null) && (!postDTO.isBlock())) {
+            switch (postDTO.getPropertyType().getId()) {
+                case 1: // view residential house
+                    ResidentialHouseDTO residentialHouseDTO = residentialHouseService.getResidentialHouseByPostId(postId);
+                    realEstatePostDTO = residentialHouseDTO;
+                    break;
+                case 2:// view apartment
+                    ApartmentDTO apartmentDTO = apartmentService.getApartmentByPostId(postId);
+                    realEstatePostDTO = apartmentDTO;
+                    break;
+                case 3:// view residential land
+                    ResidentialLandDTO residentialLandDTO = residentialLandService.getResidentialLandByPostId(postId);
+                    realEstatePostDTO = residentialLandDTO;
+                    break;
+            }
+            postService.setDataToRealEstateDTO(realEstatePostDTO, postDTO, postId);
+//            List<BrokerInfoOfPostDTO> list = postService.getDerivativePostOfOriginalPost(postId);
+//            Map<String, Object> map = new HashMap<>();
+//            map.put("post", realEstatePostDTO);
+//            map.put("brokers", list);
+            return new ResponseEntity<>(realEstatePostDTO, HttpStatus.OK);
+        } else {
+            return new ResponseEntity<>("Bài viết không tồn tại!", HttpStatus.BAD_REQUEST);
+        }
+
+    }
 
     @PostMapping("/add-customer/{contactId}")
     @Transactional
@@ -84,9 +127,9 @@ public class UserCareController {
         Contact contact = contactRepository.findById(contactId).orElseThrow(() -> new ResourceNotFoundException("Contact", "id", contactId));
         UserCareDTO userCareDTO = new UserCareDTO();
         userCareDTO.setUserCaredId(contact.getUserRequestId());
-        if(contact.getPost() == null){
+        if (contact.getPost() == null) {
             userCareDTO.setPostId(null);
-        }else {
+        } else {
             userCareDTO.setPostId(contact.getPost().getPostId());
         }
         if (userCareDTO.getPostId() != null) {
@@ -127,22 +170,23 @@ public class UserCareController {
 
     @GetMapping("/add-customer/get-info/{phone}")
     public ResponseEntity<?> checkCustomerPhone(@PathVariable(name = "phone") String phone,
-                                            @RequestHeader(name = "Authorization") String token) {
+                                                @RequestHeader(name = "Authorization") String token) {
         int userId = getUserIdFromToken(token);
 
         User userCared = userRepository.getUserByPhone(phone);
-        Role role = roleRepository.findByName("ADMIN").get();
-        if(userCared.getRoles().contains(role)){
-            return new ResponseEntity<>("Số điện thoại không hợp lệ!", HttpStatus.BAD_REQUEST);
-        }
-        if(userCared.getId() == userId){
-            return new ResponseEntity<>("Người dùng không thể chăm sóc chính mình!", HttpStatus.BAD_REQUEST);
-        }
-        if(userCared != null){
+
+        if (userCared != null) {
+            Role role = roleRepository.findByName("ADMIN").get();
+            if (userCared.getRoles().contains(role)) {
+                return new ResponseEntity<>("Số điện thoại không hợp lệ!", HttpStatus.BAD_REQUEST);
+            }
+            if (userCared.getId() == userId) {
+                return new ResponseEntity<>("Người dùng không thể chăm sóc chính mình!", HttpStatus.BAD_REQUEST);
+            }
             UserCare userCare = userCareRepository.getUserCareByUserIdAndStatusFalse(userId, userCared.getId());
-            if(userCare != null){
+            if (userCare != null) {
                 return new ResponseEntity<>("Số điện thoại này đang được chăm sóc!", HttpStatus.BAD_REQUEST);
-            }else{
+            } else {
                 Map<String, Object> map = new HashMap<>();
                 map.put("id", userCared.getId());
                 map.put("fullName", userCared.getFullName());
@@ -151,31 +195,32 @@ public class UserCareController {
                 map.put("avatar", userCared.getAvatar());
                 return new ResponseEntity<>(map, HttpStatus.OK);
             }
-        }else{
+        } else {
             return new ResponseEntity<>("Số điện thoại không tồn tại trong hệ thống!", HttpStatus.BAD_REQUEST);
         }
     }
 
     @PostMapping("/add-usercare/{userCaredId}")
     public ResponseEntity<?> createUserCare(@PathVariable(name = "userCaredId") int userCaredId,
-                                                @RequestHeader(name = "Authorization") String token) {
+                                            @RequestHeader(name = "Authorization") String token) {
         int userId = getUserIdFromToken(token);
         UserDTO userDTO = userService.getUserById(userId);
 
         User userCared = userRepository.getUserById(userCaredId);
-        Role role = roleRepository.findByName("ADMIN").get();
-        if(userCared.getRoles().contains(role)){
-            return new ResponseEntity<>("Số điện thoại không hợp lệ!", HttpStatus.BAD_REQUEST);
-        }
+
         UserCare userCareWithOnlyUserCaredId = userCareRepository.findUserCareByUserCaredId(userCaredId, userId);
-        if(userCareWithOnlyUserCaredId != null){
+        if (userCareWithOnlyUserCaredId != null) {
             return new ResponseEntity<>("Người dùng đã ở trong danh sách chăm sóc!", HttpStatus.BAD_REQUEST);
         }
 
-        if(userCaredId == userId){
+        if (userCaredId == userId) {
             return new ResponseEntity<>("Người dùng không thể chăm sóc chính mình!", HttpStatus.BAD_REQUEST);
         }
-        if(userCared != null){
+        if (userCared != null) {
+            Role role = roleRepository.findByName("ADMIN").get();
+            if (userCared.getRoles().contains(role)) {
+                return new ResponseEntity<>("Số điện thoại không hợp lệ!", HttpStatus.BAD_REQUEST);
+            }
             UserCareDTO dto = new UserCareDTO();
             dto.setUserCaredId(userCaredId);
             UserDTO userCaredDTO = userService.getUserById(userCaredId);
@@ -184,11 +229,10 @@ public class UserCareController {
             UserCareDTO userCareDTO = userCareService.createNewUserCare(dto, userCaredDTO);
 
             return new ResponseEntity<>(userCareDTO, HttpStatus.OK);
-        }else{
+        } else {
             return new ResponseEntity<>("Người dùng không tồn tại trong hệ thống!", HttpStatus.BAD_REQUEST);
         }
     }
-
 
 
     @PostMapping("/{careId}")
@@ -199,10 +243,15 @@ public class UserCareController {
 
         try {
             int userId = getUserIdFromToken(token);
+            UserCare userCare = userCareRepository.findById(careId).orElseThrow(() -> new ResourceNotFoundException("UserCare", "id", careId));
             User user = userRepository.findById(userId).orElseThrow(() -> new ResourceNotFoundException("Broker", "id", userId));
             String appointmentDate = null;
             SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+
             if (user.getCurrentRole() == 3) {
+                if (userCare.isStatus()) {
+                    return new ResponseEntity<>("Việc chăm sóc khách hàng đã kết thúc.", HttpStatus.BAD_REQUEST);
+                }
                 if (userCareDetailDTO.getDateAppointment() != null && userCareDetailDTO.getTimeAppointment() != null) {
                     appointmentDate = userCareDetailDTO.getDateAppointment() + " " + userCareDetailDTO.getTimeAppointment() + ":00";
                     Date date = new Date();
@@ -210,10 +259,10 @@ public class UserCareController {
                     if (date.compareTo(date1) > 0) {
                         return new ResponseEntity<>("Thời gian hẹn trước không đúng !", HttpStatus.BAD_REQUEST);
                     } else {
-                        if(userCareDetailDTO.getAlertTime()!=null){
+                        if (userCareDetailDTO.getAlertTime() != null) {
                             Calendar cal = Calendar.getInstance();
                             cal.setTime(date1);
-                            cal.add(Calendar.SECOND, - userCareDetailDTO.getAlertTime() * 60);
+                            cal.add(Calendar.SECOND, -userCareDetailDTO.getAlertTime() * 60);
                             Date dateAlert = cal.getTime();
                             if (date.compareTo(dateAlert) > 0) {
                                 return new ResponseEntity<>("Thời gian hẹn trước không đúng !", HttpStatus.BAD_REQUEST);
@@ -234,7 +283,7 @@ public class UserCareController {
                 }
 
             } else {
-                return new ResponseEntity<>("you need change to broker !", HttpStatus.BAD_REQUEST);
+                return new ResponseEntity<>("Bạn phải chuyển sang chế độ nhà môi giới", HttpStatus.BAD_REQUEST);
             }
         } catch (Exception e) {
             e.printStackTrace();
@@ -287,7 +336,7 @@ public class UserCareController {
             CareResponse careResponse = userCareService.getUserCareByUserId(userId, keyword, status, pageNumber, pageSize);
             return new ResponseEntity<>(careResponse, HttpStatus.OK);
         } else {
-            return new ResponseEntity<>("Người dùng không phải broker! !", HttpStatus.BAD_REQUEST);
+            return new ResponseEntity<>("Bạn phải chuyển sang chế độ nhà môi giới", HttpStatus.BAD_REQUEST);
         }
 
     }
@@ -305,7 +354,7 @@ public class UserCareController {
 
             return new ResponseEntity<>(userCare, HttpStatus.OK);
         } else {
-            return new ResponseEntity<>("you need change to broker !", HttpStatus.BAD_REQUEST);
+            return new ResponseEntity<>("Bạn phải chuyển sang chế độ nhà môi giới", HttpStatus.BAD_REQUEST);
         }
 
     }
@@ -326,7 +375,7 @@ public class UserCareController {
             map.put("posts", listPostCare);
             return new ResponseEntity<>(map, HttpStatus.OK);
         } else {
-            return new ResponseEntity<>("you need change to broker !", HttpStatus.BAD_REQUEST);
+            return new ResponseEntity<>("Bạn phải chuyển sang chế độ nhà môi giới", HttpStatus.BAD_REQUEST);
         }
     }
 
@@ -344,7 +393,7 @@ public class UserCareController {
             UserCareDTO newCareDTO = userCareService.updateUserCare(userCareDTO, careId);
             return new ResponseEntity<>("Cập nhật thành công !", HttpStatus.CREATED);
         } else {
-            return new ResponseEntity<>("You need to change broker role!", HttpStatus.BAD_REQUEST);
+            return new ResponseEntity<>("Bạn phải chuyển sang chế độ nhà môi giới", HttpStatus.BAD_REQUEST);
         }
     }
 
@@ -359,7 +408,7 @@ public class UserCareController {
             UserCareDetailDTO userCareDetailDTO = userCareDetailService.updateUserCareDetail(detailId);
             return new ResponseEntity<>(userCareDetailDTO, HttpStatus.OK);
         } else {
-            return new ResponseEntity<>("You need to change broker role!", HttpStatus.OK);
+            return new ResponseEntity<>("Bạn phải chuyển sang chế độ nhà môi giới", HttpStatus.OK);
         }
     }
 
@@ -373,10 +422,9 @@ public class UserCareController {
                 .orElseThrow(() -> new ResourceNotFoundException("User", "id", userId));
         if (user.getCurrentRole() == 3) {
             UserCareDTO newCareDTO = userCareService.finishTransactionUserCare(careId);
-
-            return new ResponseEntity<>("Finish transaction!!!", HttpStatus.OK);
+            return new ResponseEntity<>("Kết thúc chăm sóc khách hàng", HttpStatus.OK);
         } else {
-            return new ResponseEntity<>("You need to change broker role!", HttpStatus.BAD_REQUEST);
+            return new ResponseEntity<>("Bạn phải chuyển sang chế độ nhà môi giới", HttpStatus.BAD_REQUEST);
         }
     }
 
@@ -387,7 +435,7 @@ public class UserCareController {
         int userId = getUserIdFromToken(token);
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new ResourceNotFoundException("User", "id", userId));
-        UserCare care = userCareRepository.findById(careId)  .orElseThrow(() -> new ResourceNotFoundException("UserCare", "id", careId));
+        UserCare care = userCareRepository.findById(careId).orElseThrow(() -> new ResourceNotFoundException("UserCare", "id", careId));
         if (user.getCurrentRole() == 3) {
             userCareService.deleteRequiredWithUserCare(careId);
             return new ResponseEntity<>("Delete successfully !!!", HttpStatus.NO_CONTENT);
@@ -399,15 +447,22 @@ public class UserCareController {
     @DeleteMapping("/detail/{detailId}")
     @Transactional
     public ResponseEntity<String> deleteUserCareDetail(@PathVariable(name = "detailId") int detailId,
-                                                 @RequestHeader(name = "Authorization") String token) {
+                                                       @RequestHeader(name = "Authorization") String token) {
         int userId = getUserIdFromToken(token);
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new ResourceNotFoundException("User", "id", userId));
+        UserCareDetail userCareDetail = userCareDetailRepository.findById(detailId).orElseThrow(() -> new ResourceNotFoundException("Detail", "id", detailId));
+        UserCare userCare = userCareRepository.findById(userCareDetail.getUserCare().getCareId()).orElseThrow(() -> new ResourceNotFoundException("UserCare", "id", userCareDetail.getUserCare().getCareId()));
+
         if (user.getCurrentRole() == 3) {
-            userCareService.deleteUserCareDetailById(detailId);
-            return new ResponseEntity<>("Delete successfully !!!", HttpStatus.NO_CONTENT);
+            if (userCare.isStatus()) {
+                return new ResponseEntity<>("Bạn không thể xóa lịch trình này.", HttpStatus.BAD_REQUEST);
+            } else {
+                userCareService.deleteUserCareDetailById(detailId);
+                return new ResponseEntity<>("Xóa lịch thành công.", HttpStatus.NO_CONTENT);
+            }
         } else {
-            return new ResponseEntity<>("You need to change customer role!", HttpStatus.BAD_REQUEST);
+            return new ResponseEntity<>("Bạn phải chuyển sang chế độ môi giới", HttpStatus.BAD_REQUEST);
         }
     }
 

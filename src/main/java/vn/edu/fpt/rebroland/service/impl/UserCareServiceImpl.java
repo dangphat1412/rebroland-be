@@ -1,10 +1,12 @@
 package vn.edu.fpt.rebroland.service.impl;
 
+import vn.edu.fpt.rebroland.entity.AvgRate;
 import vn.edu.fpt.rebroland.entity.Post;
 import vn.edu.fpt.rebroland.entity.User;
 import vn.edu.fpt.rebroland.entity.UserCare;
 import vn.edu.fpt.rebroland.exception.ResourceNotFoundException;
 import vn.edu.fpt.rebroland.payload.*;
+import vn.edu.fpt.rebroland.repository.AvgRateRepository;
 import vn.edu.fpt.rebroland.repository.PostRepository;
 import vn.edu.fpt.rebroland.repository.UserCareRepository;
 import vn.edu.fpt.rebroland.repository.UserRepository;
@@ -16,7 +18,6 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
-import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
@@ -33,15 +34,17 @@ public class UserCareServiceImpl implements UserCareService {
 
     private PostRepository postRepository;
     private NotificationService notificationService;
+    private AvgRateRepository rateRepository;
 
     public UserCareServiceImpl(UserCareRepository userCareRepository, ModelMapper modelMapper,
                                UserRepository userRepository, PostRepository postRepository,
-                               NotificationService notificationService) {
+                               NotificationService notificationService, AvgRateRepository rateRepository) {
         this.userCareRepository = userCareRepository;
         this.modelMapper = modelMapper;
         this.userRepository = userRepository;
         this.postRepository = postRepository;
         this.notificationService = notificationService;
+        this.rateRepository = rateRepository;
     }
 
     private UserCareDTO mapToDTO(UserCare userCare) {
@@ -127,7 +130,6 @@ public class UserCareServiceImpl implements UserCareService {
         UserCare userCare = userCareRepository.findById(careId).orElseThrow(() -> new ResourceNotFoundException("UserCare", "id", careId));
         userCare.setStatus(true);
         UserCareDTO dto = mapToDTO(userCareRepository.save(userCare));
-
         int userId = userCare.getUser().getId();
         int userCaredId = userCare.getUserCaredId();
         User userCared = userRepository.getUserById(userCaredId);
@@ -189,9 +191,19 @@ public class UserCareServiceImpl implements UserCareService {
         for(UserCare userCare: userCares){
             UserCareDTO userCareDTO = mapToDTO(userCare);
             int userCaredId = userCareDTO.getUserCaredId();
-            User userCared =  userRepository.findById(userCaredId).orElseThrow(
-                    () -> new UsernameNotFoundException("User not found with id: " + userCaredId));
-            userCareDTO.setUser(modelMapper.map(userCared, UserDTO.class));
+            User userCared =  userRepository.getUserById(userCaredId);
+            if(userCared != null){
+                UserDTO userDTO = modelMapper.map(userCared, UserDTO.class);
+                AvgRate avgRate = rateRepository.getAvgRateByUserIdAndRoleId(userCaredId, 2);
+                if (avgRate != null) {
+                    userDTO.setAvgRate(avgRate.getAvgRate());
+                } else {
+                    userDTO.setAvgRate(0);
+                }
+                userCareDTO.setUser(userDTO);
+            }else{
+                userCareDTO.setUser(null);
+            }
             userCareDTOList.add(userCareDTO);
         }
 
@@ -216,7 +228,14 @@ public class UserCareServiceImpl implements UserCareService {
         UserCareDTO userCareDTO = mapToDTO(userCare);
 
         User userCared = userRepository.findById(userCare.getUserCaredId()).orElseThrow(() -> new ResourceNotFoundException("User", "id", userCare.getUserCaredId()));
-        userCareDTO.setUser(modelMapper.map(userCared, UserDTO.class));
+        AvgRate avgRate = rateRepository.getAvgRateByUserIdAndRoleId(userCared.getId(), 2);
+        UserDTO dto = modelMapper.map(userCared, UserDTO.class);
+        if (avgRate != null) {
+            dto.setAvgRate(avgRate.getAvgRate());
+        } else {
+            dto.setAvgRate(0);
+        }
+        userCareDTO.setUser(dto);
         return userCareDTO;
 
     }

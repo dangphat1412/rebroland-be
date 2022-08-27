@@ -305,7 +305,7 @@ public interface PostRepository extends JpaRepository<Post, Integer> {
             "AND u.role_id = :roleId) " +
             "AND IF(:check IS NULL OR :propertyId = 0, 1 = 1, p.property_id = :propertyId) " +
             "AND p.block = false " +
-            "AND (p.status_id = 1 OR p.status_id = 3) " +
+            "AND p.status_id = 1 " +
             "ORDER BY Total ASC"
             , nativeQuery = true)
     Page<Post> getFollowPostIdByUserPagingOrderByPriceAsc(int userId, int roleId, int propertyId, String check, Pageable pageable);
@@ -316,7 +316,7 @@ public interface PostRepository extends JpaRepository<Post, Integer> {
             "AND u.role_id = :roleId) " +
             "AND IF(:check IS NULL OR :propertyId = 0, 1 = 1, p.property_id = :propertyId) " +
             "AND p.block = false " +
-            "AND (p.status_id = 1 OR p.status_id = 3) " +
+            "AND p.status_id = 1 " +
             "ORDER BY Total DESC", nativeQuery = true)
     Page<Post> getFollowPostIdByUserPagingOrderByPriceDesc(int userId, int roleId, int propertyId, String check, Pageable pageable);
 
@@ -326,7 +326,7 @@ public interface PostRepository extends JpaRepository<Post, Integer> {
             "AND u.role_id = :roleId) " +
             "AND IF(:check IS NULL OR :propertyId = 0, 1 = 1, p.property_id = :propertyId) " +
             "AND p.block = false " +
-            "AND (p.status_id = 1 OR p.status_id = 3) " +
+            "AND p.status_id = 1 " +
             "ORDER BY per_m2 ASC"
             , nativeQuery = true)
     Page<Post> getFollowPostIdByUserPagingOrderByPricePerSquareAsc(int userId, int roleId, int propertyId, String check, Pageable pageable);
@@ -337,7 +337,7 @@ public interface PostRepository extends JpaRepository<Post, Integer> {
             "AND u.role_id = :roleId) " +
             "AND IF(:check IS NULL OR :propertyId = 0, 1 = 1, p.property_id = :propertyId) " +
             "AND p.block = false " +
-            "AND (p.status_id = 1 OR p.status_id = 3) " +
+            "AND p.status_id = 1 " +
             "ORDER BY per_m2 DESC"
             , nativeQuery = true)
     Page<Post> getFollowPostIdByUserPagingOrderByPricePerSquareDesc(int userId, int roleId, int propertyId, String check, Pageable pageable);
@@ -349,7 +349,7 @@ public interface PostRepository extends JpaRepository<Post, Integer> {
             "AND u.role_id = :roleId)" +
             "AND IF(:check IS NULL OR :propertyId = 0, 1 = 1, p.property_id = :propertyId)" +
             "AND p.block = false " +
-            "AND (p.status_id = 1 OR p.status_id = 3) ", nativeQuery = true)
+            "AND p.status_id = 1 ", nativeQuery = true)
     Page<Post> getFollowPostIdByUserPaging(int userId, int roleId, int propertyId, String check, Pageable pageable);
 
 
@@ -405,6 +405,11 @@ public interface PostRepository extends JpaRepository<Post, Integer> {
             " WHERE p.status_id = 1 " +
             " AND p.post_id = :postId ", nativeQuery = true)
     Post findPostByPostId(int postId);
+
+    @Query(value = " SELECT * FROM `posts` p " +
+            " WHERE (p.status_id = 1 OR p.status_id = 3) " +
+            " AND p.post_id = :postId ", nativeQuery = true)
+    Post getActiveOrFinishPostById(int postId);
 
 
     @Query(value = " SELECT * FROM `posts` p " +

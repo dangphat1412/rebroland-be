@@ -31,7 +31,7 @@ import java.util.regex.Pattern;
 
 @RestController
 @RequestMapping("/api/users")
-@CrossOrigin(origins = "https://rebroland.vercel.app")
+@CrossOrigin(origins = "https://rebroland-frontend.vercel.app")
 public class UserController {
     private UserService userService;
 

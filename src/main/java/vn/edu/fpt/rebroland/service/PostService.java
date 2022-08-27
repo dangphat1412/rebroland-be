@@ -40,6 +40,8 @@ public interface PostService {
 
     PostDTO getPostByPostId(int postId);
 
+    PostDTO getActiveOrFinishPostById(int postId);
+
     PostDTO findPostByPostId(int postId);
 
     PostDTO getAllPostByPostId(int postId);

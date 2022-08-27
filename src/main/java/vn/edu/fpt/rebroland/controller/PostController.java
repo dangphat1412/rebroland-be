@@ -26,7 +26,7 @@ import java.util.*;
 import java.util.regex.Pattern;
 
 @RestController
-@CrossOrigin(origins = "https://rebroland.vercel.app")
+@CrossOrigin(origins = "https://rebroland-frontend.vercel.app")
 @RequestMapping("/api/posts")
 public class PostController {
 
@@ -126,7 +126,7 @@ public class PostController {
         RealEstatePostDTO realEstatePostDTO = new RealEstatePostDTO();
         int userId = getUserIdFromToken(token);
         PostDTO postDTO = postService.getAllPostByPostId(postId);
-        if ((postDTO != null) && (!postDTO.isBlock())) {
+        if (postDTO != null) {
             if (postDTO.getUser().getId() == userId) {
                 switch (postDTO.getPropertyType().getId()) {
                     case 1: // view residential house
@@ -162,7 +162,7 @@ public class PostController {
                                                    @RequestHeader(name = "Authorization") String token) {
         RealEstatePostDTO realEstatePostDTO = new RealEstatePostDTO();
         int userId = getUserIdFromToken(token);
-        PostDTO postDTO = postService.getPostByPostId(postId);
+        PostDTO postDTO = postService.getActiveOrFinishPostById(postId);
         if ((postDTO != null) && (!postDTO.isBlock())) {
             if (postDTO.getUser().getId() == userId) {
                 return new ResponseEntity<>("Bài viết này đã thuộc về khách hàng!", HttpStatus.BAD_REQUEST);
@@ -220,7 +220,7 @@ public class PostController {
                 return new ResponseEntity<>("Bài viết không phải là bài gốc!", HttpStatus.BAD_REQUEST);
             }
         } else {
-            return new ResponseEntity<>("Bài viết không tồn tại!", HttpStatus.BAD_REQUEST);
+            return new ResponseEntity<>("Bài viết không tồn tại hoặc là bị chặn!", HttpStatus.BAD_REQUEST);
         }
 
     }
@@ -1194,6 +1194,22 @@ public class PostController {
                 }
             }
             if (historyDTO.isProvideInfo()) {
+                String startDate = "";
+                if (historyDTO.getBarcode().length() == 13) {
+                    startDate = "20" + historyDTO.getBarcode().substring(5, 7);
+                } else {
+                    startDate = "20" + historyDTO.getBarcode().substring(7, 9);
+                }
+                try{
+                    int year = Integer.parseInt(startDate);
+                    Calendar instance = Calendar.getInstance();
+                    int yearNow = instance.get(Calendar.YEAR);
+                    if(year > yearNow){
+                        return new ResponseEntity<>("Mã vạch sai!", HttpStatus.BAD_REQUEST);
+                    }
+                }catch (Exception e){
+                    return new ResponseEntity<>("Mã vạch không hợp lệ!", HttpStatus.BAD_REQUEST);
+                }
                 switch (historyDTO.getTypeId()) {
                     case 1:
                         ResidentialHouseHistoryDTO houseDto = residentialHouseHistoryService.getResidentialHouseHistoryByBarcode(historyDTO.getBarcode());
@@ -1329,6 +1345,7 @@ public class PostController {
             NotificationDTO notificationDTO = new NotificationDTO();
             notificationDTO.setUserId(userId);
             notificationDTO.setContent(message);
+            notificationDTO.setPostId(postId);
 //            notificationDTO.setPhone(userRequest.getPhone());
             notificationDTO.setType("Refund");
             notificationService.createContactNotification(notificationDTO);

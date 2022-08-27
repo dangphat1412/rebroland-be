@@ -25,7 +25,7 @@ import java.util.Base64;
 import java.util.Collections;
 
 @RestController
-@CrossOrigin(origins = "https://rebroland.vercel.app")
+@CrossOrigin(origins = "https://rebroland-frontend.vercel.app")
 @RequestMapping("/api/contact")
 public class ContactController {
     private ContactService contactService;

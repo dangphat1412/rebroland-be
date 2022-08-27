@@ -17,7 +17,7 @@ public class UserDTO {
  //   @Pattern(regexp = ("^[a-zA-Z]+(([^\\s][a-zA-Z ])?[a-zA-Z]*)*$"), message = "Tên không đúng định dạng!")
     private String fullName;
 
-    @JsonFormat(pattern="dd-MM-yyyy")
+    @JsonFormat(pattern = "dd-MM-yyyy", timezone = "Asia/Kolkata")
     private Date dob;
 
 //    @NotNull(message = "You must choose gender")

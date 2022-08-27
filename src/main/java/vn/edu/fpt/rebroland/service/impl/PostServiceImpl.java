@@ -830,6 +830,16 @@ public class PostServiceImpl implements PostService {
     }
 
     @Override
+    public PostDTO getActiveOrFinishPostById(int postId) {
+        Post post = postRepository.getActiveOrFinishPostById(postId);
+        if(post != null){
+            return mapToDTO(post);
+        }else{
+            return null;
+        }
+    }
+
+    @Override
     public PostDTO findPostByPostId(int postId) {
         Post post = postRepository.findPostById(postId);
         if(post != null){
@@ -1535,7 +1545,7 @@ public class PostServiceImpl implements PostService {
         realEstatePostDTO.setAddress(postDTO.getAddress());
         realEstatePostDTO.setCertification(postDTO.isCertification());
         Date date = postDTO.getStartDate();
-        SimpleDateFormat simpleDateFormat = new SimpleDateFormat("dd-MM-yyyy HH:mm:ss");
+        SimpleDateFormat simpleDateFormat = new SimpleDateFormat("dd-MM-yyyy");
         realEstatePostDTO.setStartDate(simpleDateFormat.format(date));
         if (postDTO.getTransactionStartDate() == null && postDTO.getTransactionEndDate() == null) {
             realEstatePostDTO.setTransactionStartDate(null);

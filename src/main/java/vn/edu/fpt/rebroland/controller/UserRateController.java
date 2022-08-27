@@ -20,7 +20,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 @RestController
-@CrossOrigin(origins = "https://rebroland.vercel.app")
+@CrossOrigin(origins = "https://rebroland-frontend.vercel.app")
 @RequestMapping("/api/rating")
 public class UserRateController {
     private UserRateService userRateService;
@@ -244,12 +244,12 @@ public class UserRateController {
                 Calendar cal = Calendar.getInstance();
                 Date date = rateDTO.getStartDate();
                 cal.setTime(date);
-                cal.add(Calendar.DATE, 7);
+                cal.add(Calendar.SECOND, 30);
                 Date newDate = cal.getTime();
                 long millis = System.currentTimeMillis();
                 java.sql.Date now = new java.sql.Date(millis);
                 if (now.compareTo(newDate) < 0) {
-                    return new ResponseEntity<>("Không thể đánh giá !", HttpStatus.BAD_REQUEST);
+                    return new ResponseEntity<>("Không thể đánh giá!", HttpStatus.BAD_REQUEST);
                 }
             }
 

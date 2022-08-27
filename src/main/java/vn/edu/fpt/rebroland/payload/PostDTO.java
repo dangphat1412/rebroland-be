@@ -1,5 +1,6 @@
 package vn.edu.fpt.rebroland.payload;
 
+import com.fasterxml.jackson.annotation.JsonFormat;
 import lombok.Data;
 
 import javax.validation.constraints.*;
@@ -31,6 +32,7 @@ public class PostDTO {
     private Date startDate;
 
     private java.util.Date transactionStartDate;
+    @JsonFormat(pattern = "dd-MM-yyyy")
     private java.util.Date transactionEndDate;
 
     @NotNull(message = "Cập nhập thông tin này.")
