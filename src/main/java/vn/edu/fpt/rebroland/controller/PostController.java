@@ -92,7 +92,7 @@ public class PostController {
     @GetMapping("/{postId}")
     public ResponseEntity<?> getDetailPost(@PathVariable int postId) {
         RealEstatePostDTO realEstatePostDTO = new RealEstatePostDTO();
-        PostDTO postDTO = postService.findPostByPostId(postId);
+        PostDTO postDTO = postService.getPostByPostId(postId);
         if ((postDTO != null) && (!postDTO.isBlock())) {
             switch (postDTO.getPropertyType().getId()) {
                 case 1: // view residential house
