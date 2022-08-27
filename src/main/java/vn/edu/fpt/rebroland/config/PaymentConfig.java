@@ -23,7 +23,7 @@ public class PaymentConfig {
     public static final String CHECKSUM = "JBNUGXOIQYJZXCVCXYJSRSIDTMAIZOTI";
     //thanh toan xong redirect ve trang nay
 //    public static final String RETURNURL = "https://frontend-rebroland.vercel.app/thanh-toan-thanh-cong";
-    public static final String RETURNURL = "https://api.rebroland.me/payment/recharge";
+    public static final String RETURNURL = "https://api.rebroland.me/api/payment/recharge";
     public static final String VNPAYURL = "https://sandbox.vnpayment.vn/paymentv2/vpcpay.html";
     public static final String LOCALEDEFAULT = "vn";
 
