@@ -60,10 +60,15 @@ public class ReportServiceImpl implements ReportService {
         Integer postId = reportPostDTO.getPostId();
         Integer userReportedId = reportPostDTO.getUserReportedId();
 
-        User userReport = userRepository.findById(reportPostDTO.getUserReportId()).orElseThrow(
-                () -> new UsernameNotFoundException("User not found with id: " + userReportedId));
+//        User userReport = userRepository.findById(reportPostDTO.getUserReportId()).orElseThrow(
+//                () -> new UsernameNotFoundException("User not found with id: " + userReportedId));
 
-        if(postId != null && userReportedId != null){
+        User userReport = userRepository.getUserById(reportPostDTO.getUserReportId());
+        if(userReport == null){
+            return HttpStatus.BAD_REQUEST;
+        }
+
+        if((postId != null) && (userReportedId != null)){
             return HttpStatus.BAD_REQUEST;
         }
 
@@ -75,7 +80,7 @@ public class ReportServiceImpl implements ReportService {
         detailDTO.setUser(mapper.map(userReport, UserDTO.class));
         //report post
         if ((postId != null) && (userReportedId == null)) {
-            Post post = postRepository.findPostByPostId(postId);
+            Post post = postRepository.findPostById(postId);
             if (post.getUser().getId() == reportPostDTO.getUserReportId()) {
                 return HttpStatus.BAD_REQUEST;
             }

@@ -1011,7 +1011,7 @@ public class PostServiceImpl implements PostService {
 
     @Override
     public Map<String, List> getRealEstateHistory(int postId) {
-        Post post = postRepository.findById(postId).orElseThrow(() -> new ResourceNotFoundException("Post", "id", postId));
+        Post post = postRepository.findPostById(postId);
         int propertyType = post.getPropertyType().getId();
         Map<String, List> histories = new HashMap<>();
         if (propertyType == 1) {

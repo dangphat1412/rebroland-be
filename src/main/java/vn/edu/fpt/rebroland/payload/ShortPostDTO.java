@@ -1,5 +1,6 @@
 package vn.edu.fpt.rebroland.payload;
 
+import com.fasterxml.jackson.annotation.JsonFormat;
 import lombok.Data;
 
 import javax.validation.constraints.NotEmpty;
@@ -16,6 +17,7 @@ public class ShortPostDTO {
 
     private String description;
 
+    @JsonFormat(pattern = "dd-MM-yyyy HH:mm:ss")
     private Date startDate;
 
     private Integer originalPost;

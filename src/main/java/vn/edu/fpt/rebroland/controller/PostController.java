@@ -986,7 +986,10 @@ public class PostController {
 
     @GetMapping("/history/{postId}")
     public ResponseEntity<?> getRealEstateHistory(@PathVariable(name = "postId") int postId) {
-
+        Post post = postRepository.findPostById(postId);
+        if(post == null){
+            return new ResponseEntity<>("Bài viết không tồn tại!", HttpStatus.BAD_REQUEST);
+        }
         Map<String, List> history = postService.getRealEstateHistory(postId);
         return new ResponseEntity<>(history, HttpStatus.OK);
     }
@@ -1214,7 +1217,7 @@ public class PostController {
                     case 1:
                         ResidentialHouseHistoryDTO houseDto = residentialHouseHistoryService.getResidentialHouseHistoryByBarcode(historyDTO.getBarcode());
                         if (houseDto != null) {
-                            return new ResponseEntity<>("Mã vạch đã bị trùng!", HttpStatus.BAD_REQUEST);
+                            return new ResponseEntity<>("Thông tin bất động sản đã tồn tại!", HttpStatus.BAD_REQUEST);
                         }
                         break;
                     case 2:
@@ -1226,13 +1229,13 @@ public class PostController {
                         }
                         ApartmentHistoryDTO dto = apartmentHistoryService.getApartmentHistoryByBarcode(historyDTO.getBarcode());
                         if (dto != null) {
-                            return new ResponseEntity<>("Mã vạch đã bị trùng!", HttpStatus.BAD_REQUEST);
+                            return new ResponseEntity<>("Thông tin bất động sản đã tồn tại!", HttpStatus.BAD_REQUEST);
                         }
                         break;
                     case 3:
                         ResidentialLandHistoryDTO landDto = residentialLandHistoryService.getResidentialLandHistoryByBarcode(historyDTO.getBarcode());
                         if (landDto != null) {
-                            return new ResponseEntity<>("Mã vạch đã bị trùng!", HttpStatus.BAD_REQUEST);
+                            return new ResponseEntity<>("Thông tin bất động sản đã tồn tại!", HttpStatus.BAD_REQUEST);
                         }
                         break;
                 }
@@ -1295,7 +1298,7 @@ public class PostController {
                         residentialHouseHistoryService.setDataToResidentialHouseHistoryDTO(houseHistoryDTO, historyDTO);
                         ResidentialHouseHistoryDTO houseDto = residentialHouseHistoryService.createResidentialHouseHistory(houseHistoryDTO);
                         if (houseDto == null) {
-                            return new ResponseEntity<>("Mã vạch đã bị trùng!", HttpStatus.BAD_REQUEST);
+                            return new ResponseEntity<>("Thông tin bất động sản đã tồn tại!", HttpStatus.BAD_REQUEST);
                         }
                         break;
                     case 2:
@@ -1309,7 +1312,7 @@ public class PostController {
                         apartmentHistoryService.setDataToApartmentHistoryDTO(apartmentHistoryDTO, historyDTO);
                         ApartmentHistoryDTO dto = apartmentHistoryService.createApartmentHistory(apartmentHistoryDTO);
                         if (dto == null) {
-                            return new ResponseEntity<>("Mã vạch đã bị trùng!", HttpStatus.BAD_REQUEST);
+                            return new ResponseEntity<>("Thông tin bất động sản đã tồn tại!", HttpStatus.BAD_REQUEST);
                         }
                         break;
                     case 3:
@@ -1317,7 +1320,7 @@ public class PostController {
                         residentialLandHistoryService.setDataToResidentialLandHistoryDTO(landHistoryDTO, historyDTO);
                         ResidentialLandHistoryDTO landDto = residentialLandHistoryService.createResidentialLandHistory(landHistoryDTO);
                         if (landDto == null) {
-                            return new ResponseEntity<>("Mã vạch đã bị trùng!", HttpStatus.BAD_REQUEST);
+                            return new ResponseEntity<>("Thông tin bất động sản đã tồn tại!", HttpStatus.BAD_REQUEST);
                         }
                         break;
                 }

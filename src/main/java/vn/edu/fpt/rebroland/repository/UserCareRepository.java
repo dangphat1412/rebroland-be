@@ -37,13 +37,15 @@ public interface UserCareRepository extends JpaRepository<UserCare, Integer> {
 
     @Query(value = "select * from `user_cares` where user_id =:userId" +
             " AND user_cared_id IN (SELECT u.id FROM `users` u " +
-            "                       WHERE (u.phone LIKE CONCAT('%',:keyword,'%')) OR (u.full_name LIKE CONCAT('%',:keyword,'%'))) ", nativeQuery = true)
+            "                       WHERE ((u.phone LIKE CONCAT('%',:keyword,'%')) OR (u.full_name LIKE CONCAT('%',:keyword,'%')))" +
+            "                       AND u.block = false)", nativeQuery = true)
     Page<UserCare> getUserCareByUserId(Pageable pageable, int userId, String keyword);
 
     @Query(value = "select * from `user_cares` where user_id =:userId" +
             " AND status = false " +
             " AND user_cared_id IN (SELECT u.id FROM `users` u " +
-            "                       WHERE (u.phone LIKE CONCAT('%',:keyword,'%')) OR (u.full_name LIKE CONCAT('%',:keyword,'%'))) ", nativeQuery = true)
+            "                       WHERE ((u.phone LIKE CONCAT('%',:keyword,'%')) OR (u.full_name LIKE CONCAT('%',:keyword,'%')))" +
+            "                       AND u.block = false) ", nativeQuery = true)
     Page<UserCare> getUserCareByUserIdAndStatusFalse(Pageable pageable, int userId, String keyword);
 
     @Query(value = "select * from `user_cares` where user_cared_id =:userCaredId " +
@@ -54,7 +56,8 @@ public interface UserCareRepository extends JpaRepository<UserCare, Integer> {
     @Query(value = "select * from `user_cares` where user_id =:userId" +
             " AND status = true " +
             " AND user_cared_id IN (SELECT u.id FROM `users` u " +
-            "                       WHERE (u.phone LIKE CONCAT('%',:keyword,'%')) OR (u.full_name LIKE CONCAT('%',:keyword,'%'))) ", nativeQuery = true)
+            "                       WHERE ((u.phone LIKE CONCAT('%',:keyword,'%')) OR (u.full_name LIKE CONCAT('%',:keyword,'%')))" +
+            "                       AND u.block = false) ", nativeQuery = true)
     Page<UserCare> getUserCareByUserIdAndStatusTrue(Pageable pageable, int userId, String keyword);
 
 
