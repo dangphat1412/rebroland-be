@@ -19,7 +19,7 @@ import java.util.List;
 import java.util.Map;
 
 @RestController
-@CrossOrigin(origins = "https://rebroland-frontend.vercel.app")
+@CrossOrigin(origins = "https://frontend-rebroland.vercel.app")
 @RequestMapping("/api/admin")
 public class AdminController {
 
