@@ -1267,7 +1267,7 @@ public class PostController {
             long refundMoney = 0;
             RefundPercentDTO refundPercentDTO = new RefundPercentDTO();
             refundPercentDTO = refundPercentService.getActiveRefundPercent(1);
-            refundMoney = spendMoney * (100 - refundPercentDTO.getPercent()) / 100;
+            refundMoney = spendMoney * (refundPercentDTO.getPercent()) / 100;
             if (historyDTO.isProvideInfo()) {
                 int remainTime = 3;
                 if (otpService.getCount(historyDTO.getPhone()) != null) {
@@ -1325,7 +1325,7 @@ public class PostController {
                         break;
                 }
                 refundPercentDTO = refundPercentService.getActiveRefundPercent(2);
-                refundMoney = spendMoney * (100 - refundPercentDTO.getPercent()) / 100;
+                refundMoney = spendMoney * (refundPercentDTO.getPercent()) / 100;
             }
             post.setStatus(new Status(3));
             post.setSpendMoney(spendMoney - refundMoney);
