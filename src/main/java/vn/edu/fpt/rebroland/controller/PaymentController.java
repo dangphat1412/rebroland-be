@@ -39,8 +39,7 @@ public class PaymentController {
     private RoleRepository roleRepository;
     private NotificationService notificationService;
 
-    public PaymentController(PaymentService paymentService, UserRepository userRepository, ModelMapper mapper, UserService userService, WithdrawService withdrawService,
-                             RoleRepository roleRepository, NotificationService notificationService) {
+    public PaymentController(PaymentService paymentService, UserRepository userRepository, ModelMapper mapper, UserService userService, WithdrawService withdrawService, RoleRepository roleRepository, NotificationService notificationService) {
         this.paymentService = paymentService;
         this.userRepository = userRepository;
         this.mapper = mapper;
@@ -54,8 +53,7 @@ public class PaymentController {
     private OtpService otpService;
 
     @PostMapping("/create-payment")
-    public ResponseEntity<?> createPayment(@Valid @RequestBody TransactionDTO transactionDTO,
-                                           @RequestHeader(name = "Authorization") String token) throws UnsupportedEncodingException {
+    public ResponseEntity<?> createPayment(@Valid @RequestBody TransactionDTO transactionDTO, @RequestHeader(name = "Authorization") String token) throws UnsupportedEncodingException {
 
         Map<String, String> vnp_Params = new HashMap<>();
         vnp_Params.put("vnp_Version", PaymentConfig.VERSIONVNPAY);
@@ -146,20 +144,7 @@ public class PaymentController {
 //    }
 
     @RequestMapping("/recharge")
-    public void depositMoneyIntoWallet(@RequestParam(value = "vnp_Amount", required = false) String amount,
-                                       @RequestParam(value = "vnp_BankCode", required = false) String bankCode,
-                                       @RequestParam(value = "vnp_BankTranNo", required = false) String bankTranNo,
-                                       @RequestParam(value = "vnp_CardType", required = false) String cardType,
-                                       @RequestParam(value = "vnp_OrderInfo", required = false) String orderInfo,
-                                       @RequestParam(value = "vnp_PayDate", required = false) String payDate,
-                                       @RequestParam(value = "vnp_ResponseCode", required = false) String responseCode,
-                                       @RequestParam(value = "vnp_TmnCode", required = false) String tmnCode,
-                                       @RequestParam(value = "vnp_TransactionNo", required = false) String transactionNo,
-                                       @RequestParam(value = "vnp_TxnRef", required = false) String txnRef,
-                                       @RequestParam(value = "vnp_SecureHashType", required = false) String secureHashType,
-                                       @RequestParam(value = "vnp_SecureHash", required = false) String secureHash,
-                                       @RequestParam(value = "token") String token,
-                                       HttpServletResponse response) {
+    public void depositMoneyIntoWallet(@RequestParam(value = "vnp_Amount", required = false) String amount, @RequestParam(value = "vnp_BankCode", required = false) String bankCode, @RequestParam(value = "vnp_BankTranNo", required = false) String bankTranNo, @RequestParam(value = "vnp_CardType", required = false) String cardType, @RequestParam(value = "vnp_OrderInfo", required = false) String orderInfo, @RequestParam(value = "vnp_PayDate", required = false) String payDate, @RequestParam(value = "vnp_ResponseCode", required = false) String responseCode, @RequestParam(value = "vnp_TmnCode", required = false) String tmnCode, @RequestParam(value = "vnp_TransactionNo", required = false) String transactionNo, @RequestParam(value = "vnp_TxnRef", required = false) String txnRef, @RequestParam(value = "vnp_SecureHashType", required = false) String secureHashType, @RequestParam(value = "vnp_SecureHash", required = false) String secureHash, @RequestParam(value = "token") String token, HttpServletResponse response) {
         try {
             TransactionDTO transactionDTO = new TransactionDTO();
             User user = getUserFromToken(token);
@@ -196,8 +181,7 @@ public class PaymentController {
                 user.setAccountBalance(accountBalance + transactionDTO.getAmount());
                 userRepository.save(user);
 
-                final String linkRedirect = "https://frontend-rebroland.vercel.app/thanh-toan-thanh-cong?amount=" + money + "&orderInfo="
-                        + orderInfo + "&bankCode=" + bankCode + "&cardType=" + cardType + "&payDate=" + payDate + "&transactionNo=" + transactionNo;
+                final String linkRedirect = "https://frontend-rebroland.vercel.app/thanh-toan-thanh-cong?amount=" + money + "&orderInfo=" + orderInfo + "&bankCode=" + bankCode + "&cardType=" + cardType + "&payDate=" + payDate + "&transactionNo=" + transactionNo;
                 response.sendRedirect(linkRedirect);
             }
         } catch (Exception e) {
@@ -212,8 +196,7 @@ public class PaymentController {
 //    }
 
     @PostMapping("/transfer/send-otp")
-    public ResponseEntity<?> preTransfer(@RequestHeader(name = "Authorization") String token,
-                                         @Valid @RequestBody TransferDTO registerDTO) {
+    public ResponseEntity<?> preTransfer(@RequestHeader(name = "Authorization") String token, @Valid @RequestBody TransferDTO registerDTO) {
         User user = getUserFromToken(token);
         //check admin phone
         Role roles = roleRepository.findByName("ADMIN").get();
@@ -254,8 +237,7 @@ public class PaymentController {
 
     @PostMapping("/transfer")
     @Transactional
-    public ResponseEntity<?> processTransfer(@RequestHeader(name = "Authorization") String token,
-                                             @Valid @RequestBody TransferDTO transferDTO) {
+    public ResponseEntity<?> processTransfer(@RequestHeader(name = "Authorization") String token, @Valid @RequestBody TransferDTO transferDTO) {
         User sender = getUserFromToken(token);
         //check admin phone
         Role roles = roleRepository.findByName("ADMIN").get();
@@ -365,8 +347,7 @@ public class PaymentController {
     }
 
     @PostMapping("/cash-out/send-otp")
-    public ResponseEntity<?> preWithdraw(@RequestHeader(name = "Authorization") String token,
-                                         @Valid @RequestBody WithdrawDTO withdrawDTO) {
+    public ResponseEntity<?> preWithdraw(@RequestHeader(name = "Authorization") String token, @Valid @RequestBody WithdrawDTO withdrawDTO) {
         User user = getUserFromToken(token);
         if (user != null) {
             long amount = withdrawDTO.getMoney();
@@ -391,8 +372,7 @@ public class PaymentController {
 
     @PostMapping("/cash-out")
     @Transactional
-    public ResponseEntity<?> processWithdraw(@RequestHeader(name = "Authorization") String token,
-                                             @Valid @RequestBody WithdrawDTO withdrawDTO) {
+    public ResponseEntity<?> processWithdraw(@RequestHeader(name = "Authorization") String token, @Valid @RequestBody WithdrawDTO withdrawDTO) {
         User sender = getUserFromToken(token);
         int remainTime = 3;
         if (otpService.getCount(sender.getPhone()) != null) {
@@ -445,8 +425,7 @@ public class PaymentController {
         String[] parts = token.split("\\.");
         JSONObject payload = new JSONObject(decode(parts[1]));
         String phone = payload.getString("sub");
-        User user = userRepository.findByPhone(phone).
-                orElseThrow(() -> new UsernameNotFoundException("User not found with phone: " + phone));
+        User user = userRepository.findByPhone(phone).orElseThrow(() -> new UsernameNotFoundException("User not found with phone: " + phone));
         return user;
     }
 }
