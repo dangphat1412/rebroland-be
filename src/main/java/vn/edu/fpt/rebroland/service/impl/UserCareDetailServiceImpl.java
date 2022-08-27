@@ -14,7 +14,6 @@ import org.modelmapper.ModelMapper;
 import org.springframework.stereotype.Service;
 
 import java.sql.Date;
-import java.text.SimpleDateFormat;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -70,7 +69,7 @@ public class UserCareDetailServiceImpl implements UserCareDetailService {
     @Override
     public List<CareDetailResponse> getListUserCareByCareId(int careId) {
         List<UserCareDetail> userCareDetails = userCareDetailRepository.getUserCareDetailsByCareId(careId);
-        SimpleDateFormat simpleDateFormat = new SimpleDateFormat("dd-MM-yyyy HH:mm:ss");
+//        SimpleDateFormat simpleDateFormat = new SimpleDateFormat("dd-MM-yyyy HH:mm:ss");
 
         return userCareDetails.stream().map(post -> modelMapper.map(post, CareDetailResponse.class)).collect(Collectors.toList());
     }

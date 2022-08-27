@@ -408,7 +408,7 @@ public class UserCareController {
             UserCareDetailDTO userCareDetailDTO = userCareDetailService.updateUserCareDetail(detailId);
             return new ResponseEntity<>(userCareDetailDTO, HttpStatus.OK);
         } else {
-            return new ResponseEntity<>("Bạn phải chuyển sang chế độ nhà môi giới", HttpStatus.OK);
+            return new ResponseEntity<>("Bạn phải chuyển sang chế độ nhà môi giới", HttpStatus.BAD_REQUEST);
         }
     }
 

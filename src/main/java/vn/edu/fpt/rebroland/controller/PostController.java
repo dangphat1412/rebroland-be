@@ -1204,7 +1204,7 @@ public class PostController {
                     int year = Integer.parseInt(startDate);
                     Calendar instance = Calendar.getInstance();
                     int yearNow = instance.get(Calendar.YEAR);
-                    if(year > yearNow){
+                    if((year > yearNow) || (year < 2009)){
                         return new ResponseEntity<>("Mã vạch sai!", HttpStatus.BAD_REQUEST);
                     }
                 }catch (Exception e){
@@ -1330,29 +1330,21 @@ public class PostController {
             postService.changeStatusOfDerivativePostOfPost(postId);
 
             int userId = post.getUser().getId();
-//            TextMessageDTO messageDTO = new TextMessageDTO();
             DecimalFormat formatter = new DecimalFormat("###,###,###");
             String message = "Bạn được hoàn lại " + formatter.format(refundMoney) + " VNĐ";
-//            messageDTO.setMessage(message);
-//            template.convertAndSend("/topic/message/" + userId, messageDTO);
-            Pusher pusher = new Pusher("1465234", "242a962515021986a8d8", "61b1284a169f5231d7d3");
-            pusher.setCluster("ap1");
-            pusher.setEncrypted(true);
-            pusher.trigger("my-channel-" + userId, "my-event", Collections.singletonMap("message", message));
+            Pusher push = new Pusher("1465234", "242a962515021986a8d8", "61b1284a169f5231d7d3");
+            push.setCluster("ap1");
+            push.setEncrypted(true);
+            push.trigger("my-channel-" + userId, "my-event", Collections.singletonMap("message", message));
 
-
-            //save notification table
             NotificationDTO notificationDTO = new NotificationDTO();
             notificationDTO.setUserId(userId);
             notificationDTO.setContent(message);
             notificationDTO.setPostId(postId);
-//            notificationDTO.setPhone(userRequest.getPhone());
             notificationDTO.setType("Refund");
             notificationService.createContactNotification(notificationDTO);
 
-            //update unread notification user
-            User user = userRepository.findById(userId)
-                    .orElseThrow(() -> new ResourceNotFoundException("User", "id", userId));
+            User user = userRepository.getUserById(userId);
             int numberUnread = user.getUnreadNotification();
             numberUnread++;
             user.setUnreadNotification(numberUnread);
@@ -1361,24 +1353,27 @@ public class PostController {
             userRepository.save(user);
 
             List<Post> listPostDto = postRepository.getDerivativePostOfOriginalPost(postId);
-            for (Post p : listPostDto) {
-                User u = p.getUser();
-                String message1 = "Giao dịch đã kết thúc. Vui lòng đánh giá người đăng bài!";
-                pusher.setCluster("ap1");
-                pusher.setEncrypted(true);
-                pusher.trigger("my-channel-" + u.getId(), "my-event", Collections.singletonMap("message", message1));
+            if(listPostDto.size() != 0){
+                for (Post p : listPostDto) {
+                    User u = p.getUser();
+                    String message1 = "Giao dịch đã kết thúc. Vui lòng đánh giá người đăng bài!";
 
-                NotificationDTO notification = new NotificationDTO();
-                notification.setUserId(p.getUser().getId());
-                notification.setContent(message);
-                notification.setSender(userId);
-                notification.setType("FinishTransaction");
-                notificationService.createContactNotification(notificationDTO);
+                    push.setCluster("ap1");
+                    push.setEncrypted(true);
+                    push.trigger("my-channel-" + u.getId(), "my-event", Collections.singletonMap("message", message1));
 
-                int unread = u.getUnreadNotification();
-                unread++;
-                u.setUnreadNotification(unread);
-                userRepository.save(u);
+                    NotificationDTO notification = new NotificationDTO();
+                    notification.setUserId(u.getId());
+                    notification.setContent(message1);
+                    notification.setSender(userId);
+                    notification.setType("FinishTransaction");
+                    notificationService.createContactNotification(notification);
+
+                    int unread = u.getUnreadNotification();
+                    unread++;
+                    u.setUnreadNotification(unread);
+                    userRepository.save(u);
+                }
             }
 
             return new ResponseEntity<>("Hoàn thành giao dịch!", HttpStatus.CREATED);
@@ -1403,7 +1398,7 @@ public class PostController {
         if(user.isBlock()){
             return new ResponseEntity<>("Người dùng không tồn tại!", HttpStatus.BAD_REQUEST);
         }
-        if (token == null) {
+        if ((token == null) || (token.isEmpty())) {
             if (user.getRoles().size() == 2) {
                 return new ResponseEntity<>("Không thể truy cập!", HttpStatus.BAD_REQUEST);
             } else {

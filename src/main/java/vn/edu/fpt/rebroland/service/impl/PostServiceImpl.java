@@ -1637,7 +1637,7 @@ public class PostServiceImpl implements PostService {
                     postRepository.save(post);
 
                     TextMessageDTO messageDTO = new TextMessageDTO();
-                    String message = "Chúng tôi đã ẩn bài viết mã số " + post.getPostId() + " của bạn. Nếu có thắc mắc xin liên hệ số 0397975445.";
+                    String message = "Chúng tôi đã ẩn bài viết mã số " + post.getPostId() + " của bạn. Nếu có thắc mắc xin liên hệ email manhdo@gmail.com";
 //                    messageDTO.setMessage(message);
 //                    template.convertAndSend("/topic/message/" + post.getUser().getId(), messageDTO);
                     Pusher pusher = new Pusher("1465234", "242a962515021986a8d8", "61b1284a169f5231d7d3");
@@ -1653,7 +1653,7 @@ public class PostServiceImpl implements PostService {
                             p.setBlock(true);
                             p.setBlockDate(date);
                             postRepository.save(p);
-                            String message1 = "Chúng tôi đã ẩn bài viết mã số " + p.getPostId() + " của bạn. Nếu có thắc mắc xin liên hệ số 0397975445.";
+                            String message1 = "Chúng tôi đã ẩn bài viết mã số " + p.getPostId() + " của bạn. Nếu có thắc mắc xin liên hệ email manhdo@gmail.com";
 //                            messageDTO.setMessage(message1);
 //                            template.convertAndSend("/topic/message/" + p.getUser().getId(), messageDTO);
                             pusher.setCluster("ap1");
