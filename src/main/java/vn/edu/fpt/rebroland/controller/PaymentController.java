@@ -59,7 +59,7 @@ public class PaymentController {
         SimpleDateFormat formater = new SimpleDateFormat("yyyyMMddHHmmss");
 
         Calendar expireDate = Calendar.getInstance(TimeZone.getTimeZone("Etc/GMT+7"));
-        expireDate.add(Calendar.MINUTE, 15);
+        expireDate.add(Calendar.HOUR, 8);
 
         System.out.println(formater.format(expireDate.getTime()));
 
