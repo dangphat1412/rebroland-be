@@ -26,7 +26,7 @@ import java.util.*;
 import java.util.regex.Pattern;
 
 @RestController
-@CrossOrigin(origins = "https://frontend-rebroland.vercel.app")
+@CrossOrigin(origins = "https://rebroland-frontend.vercel.app")
 @RequestMapping("/api/posts")
 public class PostController {
 

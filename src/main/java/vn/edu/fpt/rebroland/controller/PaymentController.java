@@ -27,9 +27,8 @@ import java.text.SimpleDateFormat;
 import java.util.*;
 
 @RestController
-@CrossOrigin(origins = "https://frontend-rebroland.vercel.app")
+@CrossOrigin(origins = "https://rebroland-frontend.vercel.app")
 @RequestMapping("/api/payment")
-@SuppressWarnings("unchecked")
 public class PaymentController {
 
     private PaymentService paymentService;
@@ -54,7 +53,15 @@ public class PaymentController {
     private OtpService otpService;
 
     @PostMapping("/create-payment")
-    public ResponseEntity<?> createPayment(@Valid @RequestBody TransactionDTO transactionDTO, @RequestHeader(name = "Authorization") String token) throws UnsupportedEncodingException {
+    public ResponseEntity<?> createPayment(@RequestBody TransactionDTO transactionDTO,
+                                           @RequestHeader(name = "Authorization") String token) throws UnsupportedEncodingException {
+//        int amount = 0;
+//        if(transactionDTO.getTypeId() == 1){
+//            amount = 55000 * 100;
+//        }else{
+//            amount = 100000 * 100;
+//        }
+//        User user = getUserFromToken(token);
 
         Map<String, String> vnp_Params = new HashMap<>();
         vnp_Params.put("vnp_Version", PaymentConfig.VERSIONVNPAY);
@@ -145,7 +152,20 @@ public class PaymentController {
 //    }
 
     @RequestMapping("/recharge")
-    public void depositMoneyIntoWallet(@RequestParam(value = "vnp_Amount", required = false) String amount, @RequestParam(value = "vnp_BankCode", required = false) String bankCode, @RequestParam(value = "vnp_BankTranNo", required = false) String bankTranNo, @RequestParam(value = "vnp_CardType", required = false) String cardType, @RequestParam(value = "vnp_OrderInfo", required = false) String orderInfo, @RequestParam(value = "vnp_PayDate", required = false) String payDate, @RequestParam(value = "vnp_ResponseCode", required = false) String responseCode, @RequestParam(value = "vnp_TmnCode", required = false) String tmnCode, @RequestParam(value = "vnp_TransactionNo", required = false) String transactionNo, @RequestParam(value = "vnp_TxnRef", required = false) String txnRef, @RequestParam(value = "vnp_SecureHashType", required = false) String secureHashType, @RequestParam(value = "vnp_SecureHash", required = false) String secureHash, @RequestParam(value = "token") String token, HttpServletResponse response) {
+    public void depositMoneyIntoWallet(@RequestParam(value = "vnp_Amount", required = false) String amount,
+                                       @RequestParam(value = "vnp_BankCode", required = false) String bankCode,
+                                       @RequestParam(value = "vnp_BankTranNo", required = false) String bankTranNo,
+                                       @RequestParam(value = "vnp_CardType", required = false) String cardType,
+                                       @RequestParam(value = "vnp_OrderInfo", required = false) String orderInfo,
+                                       @RequestParam(value = "vnp_PayDate", required = false) String payDate,
+                                       @RequestParam(value = "vnp_ResponseCode", required = false) String responseCode,
+                                       @RequestParam(value = "vnp_TmnCode", required = false) String tmnCode,
+                                       @RequestParam(value = "vnp_TransactionNo", required = false) String transactionNo,
+                                       @RequestParam(value = "vnp_TxnRef", required = false) String txnRef,
+                                       @RequestParam(value = "vnp_SecureHashType", required = false) String secureHashType,
+                                       @RequestParam(value = "vnp_SecureHash", required = false) String secureHash,
+                                       @RequestParam(value = "token") String token,
+                                       HttpServletResponse response) {
         try {
             TransactionDTO transactionDTO = new TransactionDTO();
             User user = getUserFromToken(token);
@@ -157,32 +177,11 @@ public class PaymentController {
 
             TransactionDTO newTransactionDTO = paymentService.createTransaction(transactionDTO);
             if (newTransactionDTO != null) {
-//                long accountBalance = user.getAccountBalance();
-//                user.setAccountBalance(accountBalance + transactionDTO.getAmount());
-//                userRepository.save(user);
-                DecimalFormat formatter = new DecimalFormat("###,###,###");
-                String message1 = "Bạn đã nạp vào ví " + formatter.format(transactionDTO.getAmount()) + " VNĐ";
-                Pusher pusher = new Pusher("1465234", "242a962515021986a8d8", "61b1284a169f5231d7d3");
-                pusher.setCluster("ap1");
-                pusher.setEncrypted(true);
-                pusher.trigger("my-channel-" + user.getId(), "my-event", Collections.singletonMap("message", message1));
-
-                NotificationDTO notificationDTO = new NotificationDTO();
-                notificationDTO.setUserId(user.getId());
-                notificationDTO.setContent(message1);
-//            notificationDTO.setPhone(userRequest.getPhone());
-                notificationDTO.setType("Payment");
-                notificationService.createContactNotification(notificationDTO);
-
-                //update unread notification user
-                int numberUnread = user.getUnreadNotification();
-                numberUnread++;
-                user.setUnreadNotification(numberUnread);
                 long accountBalance = user.getAccountBalance();
                 user.setAccountBalance(accountBalance + transactionDTO.getAmount());
                 userRepository.save(user);
-
-                final String linkRedirect = "https://frontend-rebroland.vercel.app/thanh-toan-thanh-cong?amount=" + money + "&orderInfo=" + orderInfo + "&bankCode=" + bankCode + "&cardType=" + cardType + "&payDate=" + payDate + "&transactionNo=" + transactionNo;
+                String linkRedirect = "https://rebroland-frontend.vercel.app/thanh-toan-thanh-cong?amount=" + money + "&orderInfo="
+                        + orderInfo + "&bankCode=" + bankCode + "&cardType=" + cardType + "&payDate=" + payDate + "&transactionNo=" + transactionNo;
                 response.sendRedirect(linkRedirect);
             }
         } catch (Exception e) {

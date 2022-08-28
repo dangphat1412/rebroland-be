@@ -14,7 +14,7 @@ package vn.edu.fpt.rebroland.controller;//package vn.edu.fpt.rebroland.controlle
 //import java.security.Principal;
 //
 //@RestController
-//@CrossOrigin(origins = "https://frontend-rebroland.vercel.app")
+//@CrossOrigin(origins = "https://rebroland-frontend.vercel.app")
 //@RequestMapping("/socket")
 //public class WebSocketController {
 //    @Autowired
