@@ -19,6 +19,7 @@ public interface ContactRepository extends JpaRepository<Contact,Integer> {
             "JOIN `users` u ON c.user_request_id = u.id " +
             "where c.user_id = :userId" +
             " AND ((u.phone LIKE CONCAT('%',:keyword,'%')) OR (u.full_name LIKE CONCAT('%',:keyword,'%'))) " +
+            " AND u.block = false " +
             " ORDER BY c.start_date DESC ", nativeQuery = true)
     Page<Contact> getContactByBrokerId(Pageable pageable, int userId, String keyword);
 
@@ -27,6 +28,7 @@ public interface ContactRepository extends JpaRepository<Contact,Integer> {
             "where c.user_id = :userId" +
             " AND c.role_id = 2 " +
             " AND ((u.phone LIKE CONCAT('%',:keyword,'%')) OR (u.full_name LIKE CONCAT('%',:keyword,'%'))) " +
+            " AND u.block = false " +
             " ORDER BY c.start_date DESC ", nativeQuery = true)
     Page<Contact> getContactByUserId(Pageable pageable, int userId, String keyword);
 

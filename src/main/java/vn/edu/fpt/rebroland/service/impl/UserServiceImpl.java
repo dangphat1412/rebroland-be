@@ -356,7 +356,7 @@ public class UserServiceImpl implements UserService {
                             p.setBlock(true);
                             p.setBlockDate(date);
                             postRepository.save(p);
-                            String message1 = "Chúng tôi đã ẩn bài viết mã số " + p.getPostId() + " của bạn. Nếu có thắc mắc xin liên hệ email manhdo@gmail.com";
+                            String message1 = "Chúng tôi đã ẩn bài viết mã số " + p.getPostId() + " của bạn. Nếu có thắc mắc xin liên hệ email rebroland@gmail.com";
 //                            messageDTO.setMessage(message1);
 //                            template.convertAndSend("/topic/message/" + p.getUser().getId(), messageDTO);
                             pusher.setCluster("ap1");

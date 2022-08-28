@@ -596,6 +596,7 @@ public interface PostRepository extends JpaRepository<Post, Integer> {
             " AND p.block = false" +
             " AND (p.user_id != :userId) " +
             " AND p.original_post IS NULL " +
+            " AND p.allow_derivative = true " +
             " AND p.post_id NOT IN ( SELECT p1.original_post FROM `posts` p1" +
             "                                               WHERE p1.user_id = :userId " +
             "                                               AND p1.original_post = p.post_id " +

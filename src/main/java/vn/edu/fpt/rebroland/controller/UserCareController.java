@@ -125,6 +125,11 @@ public class UserCareController {
         int check = 0;
         User broker = userRepository.findById(userId).orElseThrow(() -> new ResourceNotFoundException("Broker", "id", userId));
         Contact contact = contactRepository.findById(contactId).orElseThrow(() -> new ResourceNotFoundException("Contact", "id", contactId));
+        User userRequest = contact.getUser();
+        if(userRequest.isBlock()){
+            contactService.deleteContact(contactId);
+            return new ResponseEntity<>("Người dùng không tồn tại!", HttpStatus.BAD_REQUEST);
+        }
         UserCareDTO userCareDTO = new UserCareDTO();
         userCareDTO.setUserCaredId(contact.getUserRequestId());
         if (contact.getPost() == null) {

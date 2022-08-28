@@ -167,6 +167,9 @@ public class PostController {
             if (postDTO.getUser().getId() == userId) {
                 return new ResponseEntity<>("Bài viết này đã thuộc về khách hàng!", HttpStatus.BAD_REQUEST);
             }
+            if(!postDTO.isAllowDerivative()){
+                return new ResponseEntity<>("Bài viết không cho phép tạo bài phái sinh!", HttpStatus.BAD_REQUEST);
+            }
             if (postDTO.getOriginalPost() == null) {
                 PostDTO dto = postService.getDerivativePostOfUser(userId, postId);
                 if (dto == null) {

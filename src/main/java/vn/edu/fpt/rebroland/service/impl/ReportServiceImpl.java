@@ -307,7 +307,7 @@ public class ReportServiceImpl implements ReportService {
                     p.setBlockDate(date);
                     postRepository.save(p);
                     String message1 = "Chúng tôi đã ẩn bài viết của bạn. Lý do là: " + comment +
-                            ". Nếu có thắc mắc xin liên hệ email manhdo@gmail.com";
+                            ". Nếu có thắc mắc xin liên hệ email rebroland@gmail.com";
 //                    messageDTO.setMessage(message1);
 //                    template.convertAndSend("/topic/message/" + p.getUser().getId(), messageDTO);
                     pusher.setCluster("ap1");
@@ -424,7 +424,7 @@ public class ReportServiceImpl implements ReportService {
                         p.setBlock(true);
                         p.setBlockDate(date);
                         postRepository.save(p);
-                        String message1 = "Chúng tôi đã ẩn bài viết của bạn. Nếu có thắc mắc xin liên hệ email manhdo@gmail.com.";
+                        String message1 = "Chúng tôi đã ẩn bài viết của bạn. Nếu có thắc mắc xin liên hệ email rebroland@gmail.com";
 //                        messageDTO.setMessage(message1);
 //                        template.convertAndSend("/topic/message/" + p.getUser().getId(), messageDTO);
 
