@@ -27,8 +27,9 @@ import java.text.SimpleDateFormat;
 import java.util.*;
 
 @RestController
-@CrossOrigin(origins = "*")
+@CrossOrigin(origins = "https://frontend-rebroland.vercel.app")
 @RequestMapping("/api/payment")
+@SuppressWarnings("unchecked")
 public class PaymentController {
 
     private PaymentService paymentService;
