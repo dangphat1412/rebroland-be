@@ -58,7 +58,7 @@ public class PaymentController {
                                            @RequestHeader(name = "Authorization") String token) throws UnsupportedEncodingException {
         SimpleDateFormat formater = new SimpleDateFormat("yyyyMMddHHmmss");
 
-        Calendar expireDate = Calendar.getInstance();
+        Calendar expireDate = Calendar.getInstance(TimeZone.getTimeZone("Etc/GMT+7"));
         expireDate.add(Calendar.MINUTE, 15);
 
         Map<String, String> vnp_Params = new HashMap<>();
