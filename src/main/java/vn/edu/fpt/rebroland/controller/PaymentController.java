@@ -61,6 +61,8 @@ public class PaymentController {
         Calendar expireDate = Calendar.getInstance(TimeZone.getTimeZone("Etc/GMT+7"));
         expireDate.add(Calendar.MINUTE, 15);
 
+        System.out.println(formater.format(expireDate.getTime()));
+
         Map<String, String> vnp_Params = new HashMap<>();
         vnp_Params.put("vnp_Version", PaymentConfig.VERSIONVNPAY);
         vnp_Params.put("vnp_Command", PaymentConfig.COMMAND);
