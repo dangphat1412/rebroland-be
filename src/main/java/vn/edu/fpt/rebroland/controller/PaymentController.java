@@ -56,6 +56,10 @@ public class PaymentController {
     @PostMapping("/create-payment")
     public ResponseEntity<?> createPayment(@Valid @RequestBody TransactionDTO transactionDTO,
                                            @RequestHeader(name = "Authorization") String token) throws UnsupportedEncodingException {
+        SimpleDateFormat formater = new SimpleDateFormat("yyyyMMddHHmmss");
+
+        Calendar expireDate = Calendar.getInstance();
+        expireDate.add(Calendar.MINUTE, 15);
 
         Map<String, String> vnp_Params = new HashMap<>();
         vnp_Params.put("vnp_Version", PaymentConfig.VERSIONVNPAY);
@@ -68,11 +72,10 @@ public class PaymentController {
         vnp_Params.put("vnp_OrderInfo", "Nap tien vao vi");
         vnp_Params.put("vnp_Locale", PaymentConfig.LOCALEDEFAULT);
         vnp_Params.put("vnp_ReturnUrl", PaymentConfig.RETURNURL + "?token=" + token);
-//        vnp_Params.put("vnp_ReturnUrl", PaymentConfig.RETURNURL);
+        vnp_Params.put("vnp_ExpireDate", formater.format(expireDate.getTime()));
         vnp_Params.put("vnp_IpAddr", PaymentConfig.IPDEFAULT);
 
         Date dt = new Date();
-        SimpleDateFormat formater = new SimpleDateFormat("yyyyMMddHHmmss");
         String date = formater.format(dt);
         vnp_Params.put("vnp_CreateDate", date);
 
@@ -147,20 +150,20 @@ public class PaymentController {
 
     @RequestMapping("/recharge")
     public void depositMoneyIntoWallet(@RequestParam(value = "vnp_Amount", required = false) String amount,
-                                                    @RequestParam(value = "vnp_BankCode", required = false) String bankCode,
-                                                    @RequestParam(value = "vnp_BankTranNo", required = false) String bankTranNo,
-                                                    @RequestParam(value = "vnp_CardType", required = false) String cardType,
-                                                    @RequestParam(value = "vnp_OrderInfo", required = false) String orderInfo,
-                                                    @RequestParam(value = "vnp_PayDate", required = false) String payDate,
-                                                    @RequestParam(value = "vnp_ResponseCode", required = false) String responseCode,
-                                                    @RequestParam(value = "vnp_TmnCode", required = false) String tmnCode,
-                                                    @RequestParam(value = "vnp_TransactionNo", required = false) String transactionNo,
-                                                    @RequestParam(value = "vnp_TxnRef", required = false) String txnRef,
-                                                    @RequestParam(value = "vnp_SecureHashType", required = false) String secureHashType,
-                                                    @RequestParam(value = "vnp_SecureHash", required = false) String secureHash,
-                                                    @RequestParam(value = "token") String token,
-                                                    HttpServletResponse response){
-        try{
+                                       @RequestParam(value = "vnp_BankCode", required = false) String bankCode,
+                                       @RequestParam(value = "vnp_BankTranNo", required = false) String bankTranNo,
+                                       @RequestParam(value = "vnp_CardType", required = false) String cardType,
+                                       @RequestParam(value = "vnp_OrderInfo", required = false) String orderInfo,
+                                       @RequestParam(value = "vnp_PayDate", required = false) String payDate,
+                                       @RequestParam(value = "vnp_ResponseCode", required = false) String responseCode,
+                                       @RequestParam(value = "vnp_TmnCode", required = false) String tmnCode,
+                                       @RequestParam(value = "vnp_TransactionNo", required = false) String transactionNo,
+                                       @RequestParam(value = "vnp_TxnRef", required = false) String txnRef,
+                                       @RequestParam(value = "vnp_SecureHashType", required = false) String secureHashType,
+                                       @RequestParam(value = "vnp_SecureHash", required = false) String secureHash,
+                                       @RequestParam(value = "token") String token,
+                                       HttpServletResponse response) {
+        try {
             TransactionDTO transactionDTO = new TransactionDTO();
             User user = getUserFromToken(token);
             transactionDTO.setUser(mapper.map(user, UserDTO.class));
@@ -170,7 +173,7 @@ public class PaymentController {
             transactionDTO.setDescription(orderInfo);
 
             TransactionDTO newTransactionDTO = paymentService.createTransaction(transactionDTO);
-            if(newTransactionDTO != null){
+            if (newTransactionDTO != null) {
 //                long accountBalance = user.getAccountBalance();
 //                user.setAccountBalance(accountBalance + transactionDTO.getAmount());
 //                userRepository.save(user);
@@ -196,11 +199,11 @@ public class PaymentController {
                 user.setAccountBalance(accountBalance + transactionDTO.getAmount());
                 userRepository.save(user);
 
-                final String linkRedirect = "https://rebroland-frontend.vercel.app/thanh-toan-thanh-cong?amount=" + money +"&orderInfo="
-                        + orderInfo +"&bankCode=" + bankCode + "&cardType=" + cardType + "&payDate=" + payDate + "&transactionNo=" + transactionNo;
+                final String linkRedirect = "https://rebroland-frontend.vercel.app/thanh-toan-thanh-cong?amount=" + money + "&orderInfo="
+                        + orderInfo + "&bankCode=" + bankCode + "&cardType=" + cardType + "&payDate=" + payDate + "&transactionNo=" + transactionNo;
                 response.sendRedirect(linkRedirect);
             }
-        }catch (Exception e){
+        } catch (Exception e) {
             e.printStackTrace();
         }
     }
@@ -213,27 +216,27 @@ public class PaymentController {
 
     @PostMapping("/transfer/send-otp")
     public ResponseEntity<?> preTransfer(@RequestHeader(name = "Authorization") String token,
-                                         @Valid @RequestBody TransferDTO registerDTO){
+                                         @Valid @RequestBody TransferDTO registerDTO) {
         User user = getUserFromToken(token);
         //check admin phone
         Role roles = roleRepository.findByName("ADMIN").get();
         User receiver = userRepository.getUserByPhone(registerDTO.getPhone());
-        if(receiver == null){
+        if (receiver == null) {
             return new ResponseEntity<>("Số điện thoại không tồn tại trong hệ thống!", HttpStatus.BAD_REQUEST);
         }
-        if(receiver.getRoles().contains(roles)){
+        if (receiver.getRoles().contains(roles)) {
             return new ResponseEntity<>("Số điện thoại không hợp lệ!", HttpStatus.BAD_REQUEST);
         }
-        if(user.getPhone().equals(registerDTO.getPhone())){
+        if (user.getPhone().equals(registerDTO.getPhone())) {
             return new ResponseEntity<>("SĐT nhận tiền trùng với SĐT hiện tại !", HttpStatus.BAD_REQUEST);
-        }else{
+        } else {
             UserDTO userDTO = userService.getUserByPhone(registerDTO.getPhone());
-            if(userDTO != null){
+            if (userDTO != null) {
 //                User sender = userRepository.findByPhone(user.getPhone()).
 //                        orElseThrow(() -> new UsernameNotFoundException("User not found with phone: " + user.getPhone()));
                 long amount = registerDTO.getAmount();
                 long senderAccountBalance = user.getAccountBalance();
-                if(amount > senderAccountBalance){
+                if (amount > senderAccountBalance) {
                     return new ResponseEntity<>("Số dư không đủ để thực hiện giao dịch!", HttpStatus.BAD_REQUEST);
                 }
 
@@ -246,7 +249,7 @@ public class PaymentController {
                 map.put("remainTime", 3);
                 map.put("otp", otp);
                 return new ResponseEntity<>(map, HttpStatus.OK);
-            }else {
+            } else {
                 return new ResponseEntity<>("Số điện thoại nhận tiền không tồn tại!", HttpStatus.BAD_REQUEST);
             }
         }
@@ -255,27 +258,27 @@ public class PaymentController {
     @PostMapping("/transfer")
     @Transactional
     public ResponseEntity<?> processTransfer(@RequestHeader(name = "Authorization") String token,
-                                                @Valid @RequestBody TransferDTO transferDTO){
+                                             @Valid @RequestBody TransferDTO transferDTO) {
         User sender = getUserFromToken(token);
         //check admin phone
         Role roles = roleRepository.findByName("ADMIN").get();
         User receiver = userRepository.getUserByPhone(transferDTO.getPhone());
-        if(receiver.getRoles().contains(roles)){
+        if (receiver.getRoles().contains(roles)) {
             return new ResponseEntity<>("Số điện thoại không hợp lệ!", HttpStatus.BAD_REQUEST);
         }
         int remainTime = 3;
-        if(otpService.getCount(transferDTO.getPhone()) != null){
+        if (otpService.getCount(transferDTO.getPhone()) != null) {
             remainTime = otpService.getCount(transferDTO.getPhone());
         }
-        if(remainTime == 0){
+        if (remainTime == 0) {
             otpService.clearCount(transferDTO.getPhone());
             otpService.clearOtp(transferDTO.getPhone());
             return new ResponseEntity<>("Nhập sai quá số lần quy định!", HttpStatus.BAD_REQUEST);
         }
-        if(otpService.getOtp(sender.getPhone()) == null){
+        if (otpService.getOtp(sender.getPhone()) == null) {
             return new ResponseEntity<>("Mã OTP hết hạn!", HttpStatus.BAD_REQUEST);
         }
-        if((transferDTO.getToken() == null) || (transferDTO.getToken().isEmpty())){
+        if ((transferDTO.getToken() == null) || (transferDTO.getToken().isEmpty())) {
             return new ResponseEntity<>("Mã OTP sai!", HttpStatus.BAD_REQUEST);
         }
         int otp = Integer.parseInt(transferDTO.getToken());
@@ -283,12 +286,12 @@ public class PaymentController {
         if (otp != otpService.getOtp(sender.getPhone())) {
             otpService.remainCount(transferDTO.getPhone(), remainTime);
             return new ResponseEntity<>("Mã OTP sai!", HttpStatus.BAD_REQUEST);
-        }else{
-            if(receiver != null){
+        } else {
+            if (receiver != null) {
 //                User receiver = userRepository.getUserByPhone(transferDTO.getPhone());
                 long amount = transferDTO.getAmount();
 
-                if(amount > sender.getAccountBalance()){
+                if (amount > sender.getAccountBalance()) {
                     return new ResponseEntity<>("Số dư không đủ để thực hiện giao dịch!", HttpStatus.BAD_REQUEST);
                 }
                 long newSenderAccountBalance = sender.getAccountBalance() - amount;
@@ -350,13 +353,13 @@ public class PaymentController {
                 receiver.setUnreadNotification(numberUnread);
                 userRepository.save(receiver);
 
-                if(dto != null && transactionDTO != null){
+                if (dto != null && transactionDTO != null) {
                     transferDTO.setToken(null);
                     return new ResponseEntity<>(transferDTO, HttpStatus.CREATED);
-                }else{
+                } else {
                     return new ResponseEntity<>("Chuyển tiền thất bại!", HttpStatus.BAD_REQUEST);
                 }
-            }else{
+            } else {
                 return new ResponseEntity<>("SĐT nhận tiền không tồn tại trong hệ thống!", HttpStatus.BAD_REQUEST);
             }
 
@@ -366,7 +369,7 @@ public class PaymentController {
 
     @PostMapping("/cash-out/send-otp")
     public ResponseEntity<?> preWithdraw(@RequestHeader(name = "Authorization") String token,
-                                             @Valid @RequestBody WithdrawDTO withdrawDTO){
+                                         @Valid @RequestBody WithdrawDTO withdrawDTO) {
         User user = getUserFromToken(token);
         if (user != null) {
             long amount = withdrawDTO.getMoney();
@@ -392,21 +395,21 @@ public class PaymentController {
     @PostMapping("/cash-out")
     @Transactional
     public ResponseEntity<?> processWithdraw(@RequestHeader(name = "Authorization") String token,
-                                             @Valid @RequestBody WithdrawDTO withdrawDTO){
+                                             @Valid @RequestBody WithdrawDTO withdrawDTO) {
         User sender = getUserFromToken(token);
         int remainTime = 3;
-        if(otpService.getCount(sender.getPhone()) != null){
+        if (otpService.getCount(sender.getPhone()) != null) {
             remainTime = otpService.getCount(sender.getPhone());
         }
-        if(remainTime == 0){
+        if (remainTime == 0) {
             otpService.clearCount(sender.getPhone());
             otpService.clearOtp(sender.getPhone());
             return new ResponseEntity<>("Nhập sai quá số lần quy định!", HttpStatus.BAD_REQUEST);
         }
-        if(otpService.getOtp(sender.getPhone()) == null){
+        if (otpService.getOtp(sender.getPhone()) == null) {
             return new ResponseEntity<>("Mã OTP hết hạn!", HttpStatus.BAD_REQUEST);
         }
-        if((withdrawDTO.getToken() == null) || (withdrawDTO.getToken().isEmpty())){
+        if ((withdrawDTO.getToken() == null) || (withdrawDTO.getToken().isEmpty())) {
             return new ResponseEntity<>("Mã OTP sai!", HttpStatus.BAD_REQUEST);
         }
         int otp = Integer.parseInt(withdrawDTO.getToken());
@@ -427,9 +430,9 @@ public class PaymentController {
             withdrawDTO.setUser(mapper.map(sender, UserDTO.class));
             WithdrawDTO dto = withdrawService.createWithdraw(withdrawDTO);
 
-            if(dto.getType() == 1){
+            if (dto.getType() == 1) {
                 return new ResponseEntity<>("Yêu cầu của bạn được chấp thuận. Mời bạn đến trụ sở của ReBroLand tại Số 1, Lê Đại Hành, Hải Phòng để nhận lại tiền!", HttpStatus.CREATED);
-            }else{
+            } else {
                 return new ResponseEntity<>("Yêu cầu của bạn được chấp thuận. Chúng tôi sẽ gửi tiền cho bạn trong vòng 24h.", HttpStatus.CREATED);
             }
         }
@@ -440,6 +443,7 @@ public class PaymentController {
     private static String decode(String encodedString) {
         return new String(Base64.getUrlDecoder().decode(encodedString));
     }
+
     private User getUserFromToken(String token) {
         String[] parts = token.split("\\.");
         JSONObject payload = new JSONObject(decode(parts[1]));
