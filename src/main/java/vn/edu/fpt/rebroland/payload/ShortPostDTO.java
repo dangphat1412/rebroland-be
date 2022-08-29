@@ -3,9 +3,9 @@ package vn.edu.fpt.rebroland.payload;
 import com.fasterxml.jackson.annotation.JsonFormat;
 import lombok.Data;
 
-import javax.validation.constraints.NotEmpty;
-import javax.validation.constraints.Size;
+import javax.validation.constraints.*;
 import java.util.Date;
+import java.util.Set;
 
 @Data
 public class ShortPostDTO {

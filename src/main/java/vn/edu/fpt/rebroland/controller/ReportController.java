@@ -1,15 +1,24 @@
 package vn.edu.fpt.rebroland.controller;
 
+import vn.edu.fpt.rebroland.entity.AvgRate;
+import vn.edu.fpt.rebroland.entity.Post;
 import vn.edu.fpt.rebroland.entity.User;
 import vn.edu.fpt.rebroland.payload.ReportDTO;
+import vn.edu.fpt.rebroland.payload.UserDTO;
+import vn.edu.fpt.rebroland.payload.UserRateDTO;
 import vn.edu.fpt.rebroland.repository.AvgRateRepository;
+import vn.edu.fpt.rebroland.repository.UserRateRepository;
+import vn.edu.fpt.rebroland.service.PostService;
 import vn.edu.fpt.rebroland.service.ReportService;
 import vn.edu.fpt.rebroland.service.UserRateService;
+import org.cloudinary.json.JSONObject;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.web.bind.annotation.*;
 
 import javax.validation.Valid;
+import java.util.Base64;
 
 @RestController
 @CrossOrigin(origins = "https://rebroland-frontend.vercel.app")

@@ -1,10 +1,10 @@
 package vn.edu.fpt.rebroland.payload;
 
+import vn.edu.fpt.rebroland.entity.User;
 import com.fasterxml.jackson.annotation.JsonFormat;
 import lombok.Data;
 
-import javax.validation.constraints.NotNull;
-import javax.validation.constraints.Size;
+import javax.validation.constraints.*;
 import java.sql.Date;
 
 @Data

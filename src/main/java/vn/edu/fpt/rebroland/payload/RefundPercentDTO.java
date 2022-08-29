@@ -2,6 +2,7 @@ package vn.edu.fpt.rebroland.payload;
 
 import lombok.Data;
 
+import javax.persistence.Column;
 import java.util.Date;
 
 @Data

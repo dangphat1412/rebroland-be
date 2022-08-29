@@ -1,5 +1,6 @@
 package vn.edu.fpt.rebroland.repository;
 
+import vn.edu.fpt.rebroland.entity.Price;
 import vn.edu.fpt.rebroland.entity.RefundPercent;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;

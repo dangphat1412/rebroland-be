@@ -1,5 +1,6 @@
 package vn.edu.fpt.rebroland.service;
 
+import vn.edu.fpt.rebroland.entity.UserFollowPost;
 import vn.edu.fpt.rebroland.payload.DerivativeDTO;
 import vn.edu.fpt.rebroland.payload.SearchDTO;
 import vn.edu.fpt.rebroland.payload.SearchResponse;

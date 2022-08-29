@@ -1,6 +1,7 @@
 package vn.edu.fpt.rebroland.repository;
 
 
+import vn.edu.fpt.rebroland.entity.User;
 import vn.edu.fpt.rebroland.entity.UserRate;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;

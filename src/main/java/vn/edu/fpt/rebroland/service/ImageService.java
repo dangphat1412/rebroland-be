@@ -1,5 +1,9 @@
 package vn.edu.fpt.rebroland.service;
 
+import vn.edu.fpt.rebroland.entity.Image;
+import vn.edu.fpt.rebroland.payload.ImageDTO;
+import org.springframework.web.multipart.MultipartFile;
+
 import java.util.List;
 
 public interface ImageService {

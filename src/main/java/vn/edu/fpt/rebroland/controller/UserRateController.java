@@ -2,6 +2,7 @@ package vn.edu.fpt.rebroland.controller;
 
 import vn.edu.fpt.rebroland.entity.AvgRate;
 import vn.edu.fpt.rebroland.entity.User;
+import vn.edu.fpt.rebroland.entity.UserRate;
 import vn.edu.fpt.rebroland.payload.ListUserRate;
 import vn.edu.fpt.rebroland.payload.UserRateDTO;
 import vn.edu.fpt.rebroland.payload.UserRateResponse;
@@ -11,13 +12,12 @@ import vn.edu.fpt.rebroland.service.ReportService;
 import vn.edu.fpt.rebroland.service.UserRateService;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.*;
 
 import javax.validation.Valid;
-import java.util.Calendar;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.Map;
+import java.util.*;
 
 @RestController
 @CrossOrigin(origins = "https://rebroland-frontend.vercel.app")
@@ -168,13 +168,17 @@ public class UserRateController {
         if(user != null) {
             UserRateDTO rateDTO = userRateService.getUserRateStartDateMax(user.getId(), userRatedId, roleId);
             if (rateDTO != null) {
-                Calendar cal = Calendar.getInstance();
+                Calendar cal = Calendar.getInstance(TimeZone.getTimeZone("Etc/GMT+7"));
                 Date date = rateDTO.getStartDate();
                 cal.setTime(date);
                 cal.add(Calendar.SECOND, 30);
                 Date newDate = cal.getTime();
                 long millis = System.currentTimeMillis();
-                java.sql.Date now = new java.sql.Date(millis);
+                java.sql.Date sqlDate = new java.sql.Date(millis);
+                Calendar c = Calendar.getInstance();
+                c.setTime(sqlDate);
+                c.add(Calendar.HOUR, 7);
+                java.sql.Date now = new java.sql.Date(c.getTimeInMillis());
                 if (now.compareTo(newDate) < 0) {
                     return new ResponseEntity<>("Không thể đánh giá !", HttpStatus.BAD_REQUEST);
                 }
@@ -196,13 +200,17 @@ public class UserRateController {
             int userRatedId = Integer.parseInt(id);
             UserRateDTO rateDTO = userRateService.getUserRateStartDateMax(user.getId(), userRatedId, 2);
             if (rateDTO != null) {
-                Calendar cal = Calendar.getInstance();
+                Calendar cal = Calendar.getInstance(TimeZone.getTimeZone("Etc/GMT+7"));
                 Date date = rateDTO.getStartDate();
                 cal.setTime(date);
                 cal.add(Calendar.SECOND, 30);
                 Date newDate = cal.getTime();
                 long millis = System.currentTimeMillis();
-                java.sql.Date now = new java.sql.Date(millis);
+                java.sql.Date sqlDate = new java.sql.Date(millis);
+                Calendar c = Calendar.getInstance();
+                c.setTime(sqlDate);
+                c.add(Calendar.HOUR, 7);
+                java.sql.Date now = new java.sql.Date(c.getTimeInMillis());
                 if (now.compareTo(newDate) < 0) {
                     return new ResponseEntity<>("Không thể đánh giá !", HttpStatus.BAD_REQUEST);
                 }
@@ -241,13 +249,17 @@ public class UserRateController {
             int userRatedId = Integer.parseInt(id);
             UserRateDTO rateDTO = userRateService.getUserRateStartDateMax(user.getId(), userRatedId, 3);
             if (rateDTO != null) {
-                Calendar cal = Calendar.getInstance();
+                Calendar cal = Calendar.getInstance(TimeZone.getTimeZone("Etc/GMT+7"));
                 Date date = rateDTO.getStartDate();
                 cal.setTime(date);
                 cal.add(Calendar.SECOND, 30);
                 Date newDate = cal.getTime();
                 long millis = System.currentTimeMillis();
-                java.sql.Date now = new java.sql.Date(millis);
+                java.sql.Date sqlDate = new java.sql.Date(millis);
+                Calendar c = Calendar.getInstance();
+                c.setTime(sqlDate);
+                c.add(Calendar.HOUR, 7);
+                java.sql.Date now = new java.sql.Date(c.getTimeInMillis());
                 if (now.compareTo(newDate) < 0) {
                     return new ResponseEntity<>("Không thể đánh giá!", HttpStatus.BAD_REQUEST);
                 }

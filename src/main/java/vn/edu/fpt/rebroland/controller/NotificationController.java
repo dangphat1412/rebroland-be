@@ -5,10 +5,13 @@ import vn.edu.fpt.rebroland.payload.NotificationDTO;
 import vn.edu.fpt.rebroland.repository.UserRepository;
 import vn.edu.fpt.rebroland.service.NotificationService;
 import vn.edu.fpt.rebroland.service.ReportService;
+import org.cloudinary.json.JSONObject;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.Base64;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;

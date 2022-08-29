@@ -9,8 +9,10 @@ import com.twilio.Twilio;
 import com.twilio.rest.api.v2010.account.Message;
 import com.twilio.type.PhoneNumber;
 import org.cloudinary.json.JSONObject;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.*;
@@ -266,10 +268,11 @@ public class UserCareController {
                         return new ResponseEntity<>("Thời gian hẹn trước không đúng !", HttpStatus.BAD_REQUEST);
                     } else {
                         if (userCareDetailDTO.getAlertTime() != null) {
-                            Calendar cal = Calendar.getInstance();
+                            Calendar cal = Calendar.getInstance(TimeZone.getTimeZone("Etc/GMT+7"));
                             cal.setTime(date1);
                             cal.add(Calendar.SECOND, -userCareDetailDTO.getAlertTime() * 60);
                             Date dateAlert = cal.getTime();
+                            System.out.println(dateAlert.toString());
                             if (date.compareTo(dateAlert) > 0) {
                                 return new ResponseEntity<>("Thời gian hẹn trước không đúng !", HttpStatus.BAD_REQUEST);
                             }
@@ -302,7 +305,7 @@ public class UserCareController {
             SimpleDateFormat formater = new SimpleDateFormat("yyyy-MM-dd HH:mm");
             String s = dateAppointment + " " + timeAppointment;
             Date appointmentDate = formater.parse(s);
-            Calendar cal = Calendar.getInstance();
+            Calendar cal = Calendar.getInstance(TimeZone.getTimeZone("Etc/GMT+7"));
             cal.setTime(appointmentDate);
             cal.add(Calendar.SECOND, -alertTime);
             Date dateAlert = cal.getTime();

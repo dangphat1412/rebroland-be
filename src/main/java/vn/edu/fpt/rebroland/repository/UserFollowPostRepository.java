@@ -1,9 +1,12 @@
 package vn.edu.fpt.rebroland.repository;
 
+import vn.edu.fpt.rebroland.entity.Post;
 import vn.edu.fpt.rebroland.entity.UserFollowPost;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
+
+import java.util.List;
 
 public interface UserFollowPostRepository extends JpaRepository<UserFollowPost, Integer> {
 

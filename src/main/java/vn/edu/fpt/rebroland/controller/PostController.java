@@ -4,17 +4,16 @@ package vn.edu.fpt.rebroland.controller;
 import vn.edu.fpt.rebroland.entity.*;
 import vn.edu.fpt.rebroland.exception.ResourceNotFoundException;
 import vn.edu.fpt.rebroland.payload.*;
-import vn.edu.fpt.rebroland.repository.AvgRateRepository;
-import vn.edu.fpt.rebroland.repository.PostRepository;
-import vn.edu.fpt.rebroland.repository.RoleRepository;
-import vn.edu.fpt.rebroland.repository.UserRepository;
+import vn.edu.fpt.rebroland.repository.*;
 import vn.edu.fpt.rebroland.service.*;
 import com.pusher.rest.Pusher;
+import com.twilio.twiml.voice.Sim;
 import org.cloudinary.json.JSONObject;
 import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.*;
@@ -473,6 +472,24 @@ public class PostController {
             return new ResponseEntity<>("Bài viết này không cho phép tạo bài phái sinh! ", HttpStatus.CREATED);
         }
 
+        String message = "SĐT " + user.getPhone() + " đã tạo bài phái sinh cho bài viết mã số " + postId + " của bạn!";
+        Pusher push = new Pusher("1465234", "242a962515021986a8d8", "61b1284a169f5231d7d3");
+        push.setCluster("ap1");
+        push.setEncrypted(true);
+        push.trigger("my-channel-" + post.getUser().getId(), "my-event", Collections.singletonMap("message", message));
+
+        NotificationDTO notification = new NotificationDTO();
+        notification.setUserId(post.getUser().getId());
+        notification.setContent(message);
+        notification.setSender(userId);
+        notification.setPostId(postId);
+        notification.setType("CreateDerivative");
+        notificationService.createContactNotification(notification);
+
+        int unread = post.getUser().getUnreadNotification();
+        unread++;
+        post.getUser().setUnreadNotification(unread);
+        userRepository.save(post.getUser());
 
         return new ResponseEntity<>("Tạo bài phái sinh thành công!", HttpStatus.CREATED);
     }
@@ -1525,5 +1542,15 @@ public class PostController {
     public ResponseEntity<?> getOutstandingPost() {
         List<SearchDTO> list = postService.getOutstandingPost();
         return new ResponseEntity<>(list, HttpStatus.OK);
+    }
+
+    @GetMapping("/active-discount")
+    public ResponseEntity<?> getActiveDiscount(){
+        Map<String, Object> map = new HashMap<>();
+        RefundPercentDTO refundPercentDTO = refundPercentService.getActiveRefundPercent(2);
+        RefundPercentDTO dto = refundPercentService.getActiveRefundPercent(1);
+        map.put("refundWithHistory", refundPercentDTO.getPercent());
+        map.put("refundWithoutHistory", dto.getPercent());
+        return new ResponseEntity<>(map, HttpStatus.OK);
     }
 }

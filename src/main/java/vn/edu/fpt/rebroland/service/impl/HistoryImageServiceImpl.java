@@ -1,6 +1,10 @@
 package vn.edu.fpt.rebroland.service.impl;
 
 import vn.edu.fpt.rebroland.entity.HistoryImage;
+import vn.edu.fpt.rebroland.entity.Image;
+import vn.edu.fpt.rebroland.entity.Post;
+import vn.edu.fpt.rebroland.exception.ResourceNotFoundException;
+import vn.edu.fpt.rebroland.payload.HistoryImageDTO;
 import vn.edu.fpt.rebroland.repository.HistoryImageRepository;
 import vn.edu.fpt.rebroland.service.HistoryImageService;
 import org.modelmapper.ModelMapper;

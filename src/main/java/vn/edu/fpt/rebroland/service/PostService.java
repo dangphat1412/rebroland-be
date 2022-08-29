@@ -1,9 +1,12 @@
 package vn.edu.fpt.rebroland.service;
 
 import vn.edu.fpt.rebroland.entity.Post;
-import vn.edu.fpt.rebroland.payload.*;
+import vn.edu.fpt.rebroland.entity.ResidentialHouseHistory;
 import vn.edu.fpt.rebroland.payload.PostDTO;
 import vn.edu.fpt.rebroland.payload.SearchResponse;
+import vn.edu.fpt.rebroland.payload.*;
+import org.springframework.data.domain.Pageable;
+
 
 import java.sql.Date;
 import java.util.List;

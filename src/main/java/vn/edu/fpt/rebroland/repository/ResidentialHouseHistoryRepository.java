@@ -4,6 +4,7 @@ import vn.edu.fpt.rebroland.entity.ResidentialHouseHistory;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 
+import java.sql.Date;
 import java.util.List;
 
 public interface ResidentialHouseHistoryRepository extends JpaRepository<ResidentialHouseHistory,Integer> {

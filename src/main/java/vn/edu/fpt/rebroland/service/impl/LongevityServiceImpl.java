@@ -1,5 +1,6 @@
 package vn.edu.fpt.rebroland.service.impl;
 
+import vn.edu.fpt.rebroland.entity.Direction;
 import vn.edu.fpt.rebroland.entity.Longevity;
 import vn.edu.fpt.rebroland.exception.ResourceNotFoundException;
 import vn.edu.fpt.rebroland.payload.LongevityDTO;

@@ -2,6 +2,7 @@ package vn.edu.fpt.rebroland.service;
 
 import vn.edu.fpt.rebroland.payload.ApartmentHistoryDTO;
 import vn.edu.fpt.rebroland.payload.HistoryDTO;
+import vn.edu.fpt.rebroland.payload.ResidentialHouseHistoryDTO;
 
 public interface ApartmentHistoryService {
     ApartmentHistoryDTO createApartmentHistory(ApartmentHistoryDTO apartmentHistoryDTO);

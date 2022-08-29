@@ -3,6 +3,7 @@ package vn.edu.fpt.rebroland.payload;
 import lombok.Data;
 
 import javax.validation.constraints.Min;
+import javax.validation.constraints.NotNull;
 
 @Data
 public class NumberOfPostedDayDTO {

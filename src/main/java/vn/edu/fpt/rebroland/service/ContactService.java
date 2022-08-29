@@ -1,5 +1,6 @@
 package vn.edu.fpt.rebroland.service;
 
+import vn.edu.fpt.rebroland.entity.Contact;
 import vn.edu.fpt.rebroland.payload.ContactDTO;
 import vn.edu.fpt.rebroland.payload.ContactResponse;
 

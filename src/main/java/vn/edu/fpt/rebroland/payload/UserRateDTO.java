@@ -1,5 +1,6 @@
 package vn.edu.fpt.rebroland.payload;
 
+import vn.edu.fpt.rebroland.entity.User;
 import com.fasterxml.jackson.annotation.JsonFormat;
 import lombok.Data;
 

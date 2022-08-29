@@ -2,6 +2,7 @@ package vn.edu.fpt.rebroland.service.impl;
 
 import vn.edu.fpt.rebroland.entity.Apartment;
 import vn.edu.fpt.rebroland.entity.Post;
+import vn.edu.fpt.rebroland.entity.ResidentialHouse;
 import vn.edu.fpt.rebroland.exception.ResourceNotFoundException;
 import vn.edu.fpt.rebroland.payload.ApartmentDTO;
 import vn.edu.fpt.rebroland.repository.ApartmentRepository;

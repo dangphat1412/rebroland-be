@@ -2,10 +2,9 @@ package vn.edu.fpt.rebroland.payload;
 
 import lombok.Data;
 
-import javax.validation.constraints.Max;
-import javax.validation.constraints.Min;
-import javax.validation.constraints.Pattern;
-import javax.validation.constraints.Size;
+import javax.validation.constraints.*;
+import java.sql.Blob;
+import java.util.Date;
 
 @Data
 public class ResidentialLandDTO extends RealEstatePostDTO {
