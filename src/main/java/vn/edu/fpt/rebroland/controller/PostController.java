@@ -370,18 +370,18 @@ public class PostController {
 
                     if (generalPostDTO.isCertification()) {
                         if (generalPostDTO.getPropertyTypeId() == 2) {
-                            if ((generalPostDTO.getBarcode() == null || generalPostDTO.getBarcode().equals("")) &&
+                            if ((generalPostDTO.getBarcode() == null || generalPostDTO.getBarcode().isEmpty()) &&
                                     (generalPostDTO.getPlotNumber() == null) &&
-                                    (generalPostDTO.getBuildingName() == null || generalPostDTO.getBuildingName().equals("")) &&
-                                    (generalPostDTO.getRoomNumber() == null || generalPostDTO.getRoomNumber().equals(""))) {
+                                    (generalPostDTO.getBuildingName() == null || generalPostDTO.getBuildingName().isEmpty()) &&
+                                    (generalPostDTO.getRoomNumber() == null || generalPostDTO.getRoomNumber().isEmpty())) {
                                 generalPostDTO.setBarcode(null);
                                 generalPostDTO.setPlotNumber(null);
                                 generalPostDTO.setBuildingName(null);
                                 generalPostDTO.setRoomNumber(null);
-                            } else if ((generalPostDTO.getBarcode() != null || !generalPostDTO.getBarcode().equals("")) &&
+                            } else if ((generalPostDTO.getBarcode() != null || !generalPostDTO.getBarcode().isEmpty()) &&
                                     (generalPostDTO.getPlotNumber() != null) &&
-                                    (generalPostDTO.getBuildingName() != null || !generalPostDTO.getBuildingName().equals("")) &&
-                                    (generalPostDTO.getRoomNumber() != null || !generalPostDTO.getRoomNumber().equals(""))) {
+                                    (generalPostDTO.getBuildingName() != null || !generalPostDTO.getBuildingName().isEmpty()) &&
+                                    (generalPostDTO.getRoomNumber() != null || !generalPostDTO.getRoomNumber().isEmpty())) {
                                 generalPostDTO.setBarcode(generalPostDTO.getBarcode());
                                 generalPostDTO.setPlotNumber(generalPostDTO.getPlotNumber());
                                 generalPostDTO.setBuildingName(generalPostDTO.getBuildingName());
@@ -390,11 +390,11 @@ public class PostController {
                                 return new ResponseEntity<>("Bạn phải điền đủ 4 trường ở trên.", HttpStatus.BAD_REQUEST);
                             }
                         } else {
-                            if ((generalPostDTO.getBarcode() == null || generalPostDTO.getBarcode().equals("")) &&
+                            if ((generalPostDTO.getBarcode() == null || generalPostDTO.getBarcode().isEmpty()) &&
                                     (generalPostDTO.getPlotNumber() == null)) {
                                 generalPostDTO.setBarcode(null);
                                 generalPostDTO.setPlotNumber(null);
-                            } else if ((generalPostDTO.getBarcode() != null || !generalPostDTO.getBarcode().equals("")) &&
+                            } else if ((generalPostDTO.getBarcode() != null || !generalPostDTO.getBarcode().isEmpty()) &&
                                     (generalPostDTO.getPlotNumber() != null)) {
                                 generalPostDTO.setBarcode(generalPostDTO.getBarcode());
                                 generalPostDTO.setPlotNumber(generalPostDTO.getPlotNumber());
@@ -541,52 +541,36 @@ public class PostController {
 
                 if (generalPostDTO.isCertification()) {
                     if (generalPostDTO.getPropertyTypeId() == 2) {
-                        if ((generalPostDTO.getBarcode() == null || generalPostDTO.getBarcode().equals("")) &&
+                        if ((generalPostDTO.getBarcode() == null || generalPostDTO.getBarcode().isEmpty()) &&
                                 (generalPostDTO.getPlotNumber() == null) &&
-                                (generalPostDTO.getOwner() == null || generalPostDTO.getOwner().equals("")) &&
-                                (generalPostDTO.getOwnerPhone() == null || generalPostDTO.getOwnerPhone().equals("")) &&
-                                (generalPostDTO.getBuildingName() == null || generalPostDTO.getBuildingName().equals("")) &&
-                                (generalPostDTO.getRoomNumber() == null || generalPostDTO.getRoomNumber().equals(""))) {
+                                (generalPostDTO.getBuildingName() == null || generalPostDTO.getBuildingName().isEmpty()) &&
+                                (generalPostDTO.getRoomNumber() == null || generalPostDTO.getRoomNumber().isEmpty())) {
                             generalPostDTO.setBarcode(null);
                             generalPostDTO.setPlotNumber(null);
-                            generalPostDTO.setOwner(null);
-                            generalPostDTO.setOwnerPhone(null);
                             generalPostDTO.setBuildingName(null);
                             generalPostDTO.setRoomNumber(null);
-                        } else if ((generalPostDTO.getBarcode() != null || !generalPostDTO.getBarcode().equals("")) &&
+                        } else if ((generalPostDTO.getBarcode() != null || !generalPostDTO.getBarcode().isEmpty()) &&
                                 (generalPostDTO.getPlotNumber() != null) &&
-                                (generalPostDTO.getOwner() != null || !generalPostDTO.getOwner().equals("")) &&
-                                (generalPostDTO.getOwnerPhone() != null || !generalPostDTO.getOwnerPhone().equals("")) &&
-                                (generalPostDTO.getBuildingName() != null || !generalPostDTO.getBuildingName().equals("")) &&
-                                (generalPostDTO.getRoomNumber() != null || !generalPostDTO.getRoomNumber().equals(""))) {
+                                (generalPostDTO.getBuildingName() != null || !generalPostDTO.getBuildingName().isEmpty()) &&
+                                (generalPostDTO.getRoomNumber() != null || !generalPostDTO.getRoomNumber().isEmpty())) {
                             generalPostDTO.setBarcode(generalPostDTO.getBarcode());
                             generalPostDTO.setPlotNumber(generalPostDTO.getPlotNumber());
-                            generalPostDTO.setOwner(generalPostDTO.getOwner());
-                            generalPostDTO.setOwnerPhone(generalPostDTO.getOwnerPhone());
                             generalPostDTO.setBuildingName(generalPostDTO.getBuildingName());
                             generalPostDTO.setRoomNumber(generalPostDTO.getRoomNumber());
                         } else {
-                            return new ResponseEntity<>("Bạn phải điền đủ 6 trường ở trên.", HttpStatus.BAD_REQUEST);
+                            return new ResponseEntity<>("Bạn phải điền đủ 4 trường ở trên.", HttpStatus.BAD_REQUEST);
                         }
                     } else {
-                        if ((generalPostDTO.getBarcode() == null || generalPostDTO.getBarcode().equals("")) &&
-                                (generalPostDTO.getPlotNumber() == null) &&
-                                (generalPostDTO.getOwner() == null || generalPostDTO.getOwner().equals("")) &&
-                                (generalPostDTO.getOwnerPhone() == null || generalPostDTO.getOwnerPhone().equals(""))) {
+                        if ((generalPostDTO.getBarcode() == null || generalPostDTO.getBarcode().isEmpty()) &&
+                                (generalPostDTO.getPlotNumber() == null)) {
                             generalPostDTO.setBarcode(null);
                             generalPostDTO.setPlotNumber(null);
-                            generalPostDTO.setOwner(null);
-                            generalPostDTO.setOwnerPhone(null);
-                        } else if ((generalPostDTO.getBarcode() != null || !generalPostDTO.getBarcode().equals("")) &&
-                                (generalPostDTO.getPlotNumber() != null) &&
-                                (generalPostDTO.getOwner() != null || !generalPostDTO.getOwner().equals("")) &&
-                                (generalPostDTO.getOwnerPhone() != null || !generalPostDTO.getOwnerPhone().equals(""))) {
+                        } else if ((generalPostDTO.getBarcode() != null || !generalPostDTO.getBarcode().isEmpty()) &&
+                                (generalPostDTO.getPlotNumber() != null)) {
                             generalPostDTO.setBarcode(generalPostDTO.getBarcode());
                             generalPostDTO.setPlotNumber(generalPostDTO.getPlotNumber());
-                            generalPostDTO.setOwner(generalPostDTO.getOwner());
-                            generalPostDTO.setOwnerPhone(generalPostDTO.getOwnerPhone());
                         } else {
-                            return new ResponseEntity<>("Bạn phải điền đủ 4 trường ở trên.", HttpStatus.BAD_REQUEST);
+                            return new ResponseEntity<>("Bạn phải điền đủ 2 trường ở trên.", HttpStatus.BAD_REQUEST);
                         }
                     }
 
@@ -910,18 +894,18 @@ public class PostController {
             }
             if (generalPostDTO.isCertification()) {
                 if (generalPostDTO.getPropertyTypeId() == 2) {
-                    if ((generalPostDTO.getBarcode() == null || generalPostDTO.getBarcode().equals("")) &&
+                    if ((generalPostDTO.getBarcode() == null || generalPostDTO.getBarcode().isEmpty()) &&
                             (generalPostDTO.getPlotNumber() == null) &&
-                            (generalPostDTO.getBuildingName() == null || generalPostDTO.getBuildingName().equals("")) &&
-                            (generalPostDTO.getRoomNumber() == null || generalPostDTO.getRoomNumber().equals(""))) {
+                            (generalPostDTO.getBuildingName() == null || generalPostDTO.getBuildingName().isEmpty()) &&
+                            (generalPostDTO.getRoomNumber() == null || generalPostDTO.getRoomNumber().isEmpty())) {
                         generalPostDTO.setBarcode(null);
                         generalPostDTO.setPlotNumber(null);
                         generalPostDTO.setBuildingName(null);
                         generalPostDTO.setRoomNumber(null);
-                    } else if ((generalPostDTO.getBarcode() != null || !generalPostDTO.getBarcode().equals("")) &&
+                    } else if ((generalPostDTO.getBarcode() != null || !generalPostDTO.getBarcode().isEmpty()) &&
                             (generalPostDTO.getPlotNumber() != null) &&
-                            (generalPostDTO.getBuildingName() != null || !generalPostDTO.getBuildingName().equals("")) &&
-                            (generalPostDTO.getRoomNumber() != null || !generalPostDTO.getRoomNumber().equals(""))) {
+                            (generalPostDTO.getBuildingName() != null || !generalPostDTO.getBuildingName().isEmpty()) &&
+                            (generalPostDTO.getRoomNumber() != null || !generalPostDTO.getRoomNumber().isEmpty())) {
                         generalPostDTO.setBarcode(generalPostDTO.getBarcode());
                         generalPostDTO.setPlotNumber(generalPostDTO.getPlotNumber());
                         generalPostDTO.setBuildingName(generalPostDTO.getBuildingName());
@@ -930,11 +914,11 @@ public class PostController {
                         return new ResponseEntity<>("Bạn phải điền đủ 4 trường ở trên.", HttpStatus.BAD_REQUEST);
                     }
                 } else {
-                    if ((generalPostDTO.getBarcode() == null || generalPostDTO.getBarcode().equals("")) &&
+                    if ((generalPostDTO.getBarcode() == null || generalPostDTO.getBarcode().isEmpty()) &&
                             (generalPostDTO.getPlotNumber() == null)) {
                         generalPostDTO.setBarcode(null);
                         generalPostDTO.setPlotNumber(null);
-                    } else if ((generalPostDTO.getBarcode() != null || !generalPostDTO.getBarcode().equals("")) &&
+                    } else if ((generalPostDTO.getBarcode() != null || !generalPostDTO.getBarcode().isEmpty()) &&
                             (generalPostDTO.getPlotNumber() != null)) {
                         generalPostDTO.setBarcode(generalPostDTO.getBarcode());
                         generalPostDTO.setPlotNumber(generalPostDTO.getPlotNumber());
