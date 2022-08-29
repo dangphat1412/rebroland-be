@@ -311,6 +311,7 @@ public class UserCareController {
             Date appointmentDate = formater.parse(s);
             Calendar cal = Calendar.getInstance(TimeZone.getTimeZone("Etc/GMT+7"));
             cal.setTime(appointmentDate);
+            cal.add(Calendar.HOUR, -7);
             cal.add(Calendar.SECOND, -alertTime);
             Date dateAlert = cal.getTime();
 
