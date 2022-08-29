@@ -157,8 +157,8 @@ public class ContactController {
 
 
     public void sendSMS(String phone, String token) {
-        Twilio.init(System.getenv("TWILIO_ACCOUNT_SID"),
-                System.getenv("TWILIO_AUTH_TOKEN"));
+        Twilio.init("ACd79616329e4784b2208b5f134088905d",
+                "dc59c60fcf2b169f0b4fc37fbb8da680");
 
         Message.creator(new PhoneNumber(phone.replaceFirst("0", "+84")),
                 new PhoneNumber("+19844647230"), token).create();

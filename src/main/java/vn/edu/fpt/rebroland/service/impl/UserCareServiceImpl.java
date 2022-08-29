@@ -141,7 +141,7 @@ public class UserCareServiceImpl implements UserCareService {
 
         //send notification to user
 //        TextMessageDTO messageDTO = new TextMessageDTO();
-        String message = "Việc chăm sóc khách hàng đã kết thúc. Vui lòng đánh giá broker!";
+        String message = "Việc chăm sóc khách hàng đã kết thúc. Vui lòng đánh giá nhà môi giới!";
 //        messageDTO.setMessage(message);
 //        template.convertAndSend("/topic/message/" + userCaredId, messageDTO);
         Pusher pusher = new Pusher("1465234", "242a962515021986a8d8", "61b1284a169f5231d7d3");

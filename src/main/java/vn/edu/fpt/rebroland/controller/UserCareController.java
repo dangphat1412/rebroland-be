@@ -86,7 +86,7 @@ public class UserCareController {
         RealEstatePostDTO realEstatePostDTO = new RealEstatePostDTO();
         int userId = getUserIdFromToken(token);
         PostDTO postDTO = postService.findPostByPostId(postId);
-        if (userId != postDTO.getUser().getId()) {
+        if(userId != postDTO.getUser().getId()){
             return new ResponseEntity<>("Bạn không phải là chủ bài viết này.", HttpStatus.BAD_REQUEST);
         }
         if ((postDTO != null) && (!postDTO.isBlock())) {
@@ -127,7 +127,7 @@ public class UserCareController {
         Contact contact = contactRepository.findById(contactId).orElseThrow(() -> new ResourceNotFoundException("Contact", "id", contactId));
         int userRequestId = contact.getUserRequestId();
         User userRequest = userRepository.getUserById(userRequestId);
-        if ((userRequest == null) || (userRequest.isBlock())) {
+        if((userRequest == null) || (userRequest.isBlock())){
             contactService.deleteContact(contactId);
             return new ResponseEntity<>("Người dùng không tồn tại hoặc đã bị chặn!", HttpStatus.BAD_REQUEST);
         }
@@ -306,7 +306,7 @@ public class UserCareController {
 
     public void sendRemindMessage(String phone, String dateAppointment, String timeAppointment, int alertTime) {
         try {
-            SimpleDateFormat formater = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+            SimpleDateFormat formater = new SimpleDateFormat("yyyy-MM-dd HH:mm");
             String s = dateAppointment + " " + timeAppointment + ":00";
             Date appointmentDate = formater.parse(s);
             Calendar cal = Calendar.getInstance(TimeZone.getTimeZone("Etc/GMT+7"));
@@ -327,7 +327,7 @@ public class UserCareController {
         TimerTask timerTask = new TimerTask() {
             @Override
             public void run() {
-                sendSMS(phone, message);
+            sendSMS(phone, message);
             }
         };
         Timer timer = new Timer();

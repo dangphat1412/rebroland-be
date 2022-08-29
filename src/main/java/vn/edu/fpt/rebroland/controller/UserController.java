@@ -112,7 +112,7 @@ public class UserController {
             String token = otpService.generateOtp(registerDTO.getPhone()) + "";
             otpService.remainCount(registerDTO.getPhone(), 3);
 
-//            sendSMS(registerDTO.getPhone(), token);
+            sendSMS(registerDTO.getPhone(), token);
             String fullName = registerDTO.getFullName().trim();
             registerDTO.setFullName(fullName);
             Pattern pattern = Pattern.compile("[$&+,:;=\\\\?@#|/'<>.^*()%!-1234567890]");
@@ -214,7 +214,7 @@ public class UserController {
         if (user != null) {
             String token = otpService.generateOtp(resetPasswordDTO.getPhone()) + "";
             otpService.remainCount(resetPasswordDTO.getPhone(), 3);
-//            sendSMS(resetPasswordDTO.getPhone(), token);
+            sendSMS(resetPasswordDTO.getPhone(), token);
             Map<String, Object> map = new HashMap<>();
             map.put("user", resetPasswordDTO);
             map.put("tokenTime", otpService.EXPIRE_MINUTES);
@@ -230,10 +230,10 @@ public class UserController {
     }
 
     public void sendSMS(String phone, String token) {
-        Twilio.init(System.getenv("TWILIO_ACCOUNT_SID"),
-                System.getenv("TWILIO_AUTH_TOKEN"));
+        Twilio.init("ACd79616329e4784b2208b5f134088905d",
+                "dc59c60fcf2b169f0b4fc37fbb8da680");
 
-        Message.creator(new PhoneNumber(phone.replaceFirst("0","+84")),
+        Message.creator(new PhoneNumber(phone.replaceFirst("0", "+84")),
                 new PhoneNumber("+19844647230"), token).create();
     }
 
@@ -514,7 +514,7 @@ public class UserController {
             String otp = otpService.generateOtp(registerDTO.getPhone()) + "";
             otpService.remainCount(registerDTO.getPhone(), 3);
 
-//                sendSMS(registerDTO.getPhone(), otp);
+            sendSMS(registerDTO.getPhone(), otp);
             Map<String, Object> map = new HashMap<>();
             map.put("phoneData", registerDTO);
             map.put("tokenTime", otpService.EXPIRE_MINUTES);

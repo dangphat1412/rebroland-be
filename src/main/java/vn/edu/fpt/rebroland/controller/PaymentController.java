@@ -8,6 +8,9 @@ import vn.edu.fpt.rebroland.repository.RoleRepository;
 import vn.edu.fpt.rebroland.repository.UserRepository;
 import vn.edu.fpt.rebroland.service.*;
 import com.pusher.rest.Pusher;
+import com.twilio.Twilio;
+import com.twilio.rest.api.v2010.account.Message;
+import com.twilio.type.PhoneNumber;
 import org.cloudinary.json.JSONObject;
 import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -244,7 +247,7 @@ public class PaymentController {
 
                 String otp = otpService.generateOtp(user.getPhone()) + "";
                 otpService.remainCount(registerDTO.getPhone(), 3);
-//                sendSMS(user.getPhone(), otp);
+                sendSMS(user.getPhone(), otp);
                 Map<String, Object> map = new HashMap<>();
                 map.put("transferData", registerDTO);
                 map.put("tokenTime", otpService.EXPIRE_MINUTES);
@@ -382,7 +385,7 @@ public class PaymentController {
 
             String otp = otpService.generateOtp(user.getPhone()) + "";
             otpService.remainCount(user.getPhone(), 3);
-//                sendSMS(user.getPhone(), otp);
+            sendSMS(user.getPhone(), otp);
             Map<String, Object> map = new HashMap<>();
             map.put("cashoutData", withdrawDTO);
             map.put("tokenTime", otpService.EXPIRE_MINUTES);
@@ -453,5 +456,13 @@ public class PaymentController {
         User user = userRepository.findByPhone(phone).
                 orElseThrow(() -> new UsernameNotFoundException("User not found with phone: " + phone));
         return user;
+    }
+
+    public void sendSMS(String phone, String token) {
+        Twilio.init("ACd79616329e4784b2208b5f134088905d",
+                "dc59c60fcf2b169f0b4fc37fbb8da680");
+
+        Message.creator(new PhoneNumber(phone.replaceFirst("0", "+84")),
+                new PhoneNumber("+19844647230"), token).create();
     }
 }
