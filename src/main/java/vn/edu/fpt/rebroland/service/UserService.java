@@ -6,9 +6,7 @@ import vn.edu.fpt.rebroland.payload.ChangePasswordDTO;
 import vn.edu.fpt.rebroland.payload.RegisterDTO;
 import vn.edu.fpt.rebroland.payload.UserDTO;
 
-import java.awt.print.Pageable;
 import java.util.List;
-import java.util.Optional;
 
 public interface UserService {
     UserDTO createUser(RegisterDTO registerDTO);

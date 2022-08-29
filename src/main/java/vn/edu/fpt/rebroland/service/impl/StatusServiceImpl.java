@@ -1,10 +1,7 @@
 package vn.edu.fpt.rebroland.service.impl;
 
-import vn.edu.fpt.rebroland.entity.Direction;
 import vn.edu.fpt.rebroland.entity.Status;
-import vn.edu.fpt.rebroland.entity.UnitPrice;
 import vn.edu.fpt.rebroland.exception.ResourceNotFoundException;
-import vn.edu.fpt.rebroland.payload.DirectionDTO;
 import vn.edu.fpt.rebroland.payload.StatusDTO;
 import vn.edu.fpt.rebroland.repository.StatusRepository;
 import vn.edu.fpt.rebroland.service.StatusService;

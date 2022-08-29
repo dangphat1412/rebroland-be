@@ -2,7 +2,8 @@ package vn.edu.fpt.rebroland.payload;
 
 import lombok.Data;
 
-import javax.validation.constraints.*;
+import javax.validation.constraints.NotEmpty;
+import javax.validation.constraints.Pattern;
 
 @Data
 public class RegisterDTO {

@@ -4,7 +4,6 @@ import lombok.Data;
 
 import javax.validation.constraints.*;
 import java.util.Date;
-import java.util.Set;
 
 @Data
 public class DerivativeDTO {

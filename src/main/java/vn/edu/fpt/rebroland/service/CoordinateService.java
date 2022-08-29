@@ -1,6 +1,5 @@
 package vn.edu.fpt.rebroland.service;
 
-import vn.edu.fpt.rebroland.entity.Coordinate;
 import vn.edu.fpt.rebroland.payload.CoordinateDTO;
 import vn.edu.fpt.rebroland.payload.RealEstateCoordinateDTO;
 

@@ -1,14 +1,9 @@
 package vn.edu.fpt.rebroland.payload;
 
-import vn.edu.fpt.rebroland.entity.Coordinate;
-import vn.edu.fpt.rebroland.entity.Image;
-import lombok.Data;
 import lombok.Getter;
 import lombok.Setter;
-import org.springframework.web.multipart.MultipartFile;
 
 import javax.validation.constraints.*;
-import java.sql.Date;
 import java.util.List;
 
 @Getter

@@ -6,7 +6,6 @@ import vn.edu.fpt.rebroland.entity.UserCare;
 import vn.edu.fpt.rebroland.entity.UserCareDetail;
 import vn.edu.fpt.rebroland.exception.ResourceNotFoundException;
 import vn.edu.fpt.rebroland.payload.CareDetailResponse;
-import vn.edu.fpt.rebroland.payload.DerivativeDTO;
 import vn.edu.fpt.rebroland.payload.UserCareDetailDTO;
 import vn.edu.fpt.rebroland.repository.UserCareDetailRepository;
 import vn.edu.fpt.rebroland.repository.UserCareRepository;
@@ -15,7 +14,6 @@ import org.modelmapper.ModelMapper;
 import org.springframework.stereotype.Service;
 
 import java.sql.Date;
-import java.text.SimpleDateFormat;
 import java.util.Calendar;
 import java.util.List;
 import java.util.stream.Collectors;

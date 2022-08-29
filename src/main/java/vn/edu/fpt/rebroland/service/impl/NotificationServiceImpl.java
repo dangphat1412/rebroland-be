@@ -1,18 +1,14 @@
 package vn.edu.fpt.rebroland.service.impl;
 
-import vn.edu.fpt.rebroland.entity.Longevity;
 import vn.edu.fpt.rebroland.entity.Notification;
 import vn.edu.fpt.rebroland.exception.ResourceNotFoundException;
-import vn.edu.fpt.rebroland.payload.LongevityDTO;
 import vn.edu.fpt.rebroland.payload.NotificationDTO;
 import vn.edu.fpt.rebroland.repository.NotificationRepository;
 import vn.edu.fpt.rebroland.service.NotificationService;
-import org.aspectj.weaver.ast.Not;
 import org.modelmapper.ModelMapper;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
-import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
 
 import java.util.Calendar;

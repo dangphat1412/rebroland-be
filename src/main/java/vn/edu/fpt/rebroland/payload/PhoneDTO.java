@@ -2,7 +2,6 @@ package vn.edu.fpt.rebroland.payload;
 
 import lombok.Data;
 
-import javax.validation.constraints.Min;
 import javax.validation.constraints.NotEmpty;
 import javax.validation.constraints.Pattern;
 

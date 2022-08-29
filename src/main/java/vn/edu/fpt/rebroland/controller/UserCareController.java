@@ -9,10 +9,8 @@ import com.twilio.Twilio;
 import com.twilio.rest.api.v2010.account.Message;
 import com.twilio.type.PhoneNumber;
 import org.cloudinary.json.JSONObject;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.*;
@@ -254,7 +252,7 @@ public class UserCareController {
             UserCare userCare = userCareRepository.findById(careId).orElseThrow(() -> new ResourceNotFoundException("UserCare", "id", careId));
             User user = userRepository.findById(userId).orElseThrow(() -> new ResourceNotFoundException("Broker", "id", userId));
             String appointmentDate = null;
-            SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+            SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm");
 
             if (user.getCurrentRole() == 3) {
                 if (userCare.isStatus()) {
@@ -270,13 +268,14 @@ public class UserCareController {
                         if (userCareDetailDTO.getAlertTime() != null) {
                             Calendar cal = Calendar.getInstance(TimeZone.getTimeZone("Etc/GMT+7"));
                             cal.setTime(date1);
+                            cal.add(Calendar.HOUR, -7);
+                            date1 = cal.getTime();
                             cal.add(Calendar.SECOND, -userCareDetailDTO.getAlertTime() * 60);
                             Date dateAlert = cal.getTime();
-                            System.out.println(dateAlert.toString());
                             if (date.compareTo(dateAlert) > 0) {
                                 return new ResponseEntity<>("Thời gian hẹn trước không đúng !", HttpStatus.BAD_REQUEST);
                             }
-                            sendRemindMessage(user.getPhone(), userCareDetailDTO.getDateAppointment(), userCareDetailDTO.getTimeAppointment(), userCareDetailDTO.getAlertTime());
+                            sendRemindMessage(user.getPhone(), userCareDetailDTO.getDateAppointment(), userCareDetailDTO.getTimeAppointment(), userCareDetailDTO.getAlertTime() * 60);
 
                         } else {
                             sendRemindMessage(user.getPhone(), userCareDetailDTO.getDateAppointment(), userCareDetailDTO.getTimeAppointment(), 0);
@@ -302,8 +301,8 @@ public class UserCareController {
 
     public void sendRemindMessage(String phone, String dateAppointment, String timeAppointment, int alertTime) {
         try {
-            SimpleDateFormat formater = new SimpleDateFormat("yyyy-MM-dd HH:mm");
-            String s = dateAppointment + " " + timeAppointment;
+            SimpleDateFormat formater = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+            String s = dateAppointment + " " + timeAppointment + ":00";
             Date appointmentDate = formater.parse(s);
             Calendar cal = Calendar.getInstance(TimeZone.getTimeZone("Etc/GMT+7"));
             cal.setTime(appointmentDate);

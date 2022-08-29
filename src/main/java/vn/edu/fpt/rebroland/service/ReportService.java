@@ -3,8 +3,8 @@ package vn.edu.fpt.rebroland.service;
 import vn.edu.fpt.rebroland.entity.User;
 import vn.edu.fpt.rebroland.payload.ReportDTO;
 import vn.edu.fpt.rebroland.payload.ReportDetailResponse;
-import vn.edu.fpt.rebroland.payload.SearchResponse;
 import vn.edu.fpt.rebroland.payload.ReportResponse;
+import vn.edu.fpt.rebroland.payload.SearchResponse;
 import org.springframework.http.HttpStatus;
 
 public interface ReportService {

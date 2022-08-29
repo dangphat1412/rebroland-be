@@ -1,10 +1,7 @@
 package vn.edu.fpt.rebroland.service;
 
 
-import vn.edu.fpt.rebroland.entity.ResidentialLand;
-import vn.edu.fpt.rebroland.payload.ApartmentHistoryDTO;
 import vn.edu.fpt.rebroland.payload.HistoryDTO;
-import vn.edu.fpt.rebroland.payload.ResidentialHouseHistoryDTO;
 import vn.edu.fpt.rebroland.payload.ResidentialLandHistoryDTO;
 
 public interface ResidentialLandHistoryService {

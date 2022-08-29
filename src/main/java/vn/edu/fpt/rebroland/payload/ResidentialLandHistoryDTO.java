@@ -3,9 +3,6 @@ package vn.edu.fpt.rebroland.payload;
 import lombok.Data;
 
 import javax.validation.constraints.*;
-import java.text.ParseException;
-import java.text.SimpleDateFormat;
-import java.util.Date;
 
 @Data
 public class ResidentialLandHistoryDTO {

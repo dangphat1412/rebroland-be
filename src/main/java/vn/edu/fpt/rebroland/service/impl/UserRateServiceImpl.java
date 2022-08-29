@@ -1,7 +1,6 @@
 package vn.edu.fpt.rebroland.service.impl;
 
 import vn.edu.fpt.rebroland.entity.AvgRate;
-import vn.edu.fpt.rebroland.entity.User;
 import vn.edu.fpt.rebroland.entity.UserRate;
 import vn.edu.fpt.rebroland.payload.RateDTO;
 import vn.edu.fpt.rebroland.payload.UserRateDTO;
@@ -14,7 +13,6 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 
 import java.text.DecimalFormat;
 import java.util.Calendar;

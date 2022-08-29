@@ -1,14 +1,11 @@
 package vn.edu.fpt.rebroland.repository;
 
 import vn.edu.fpt.rebroland.entity.Report;
-import vn.edu.fpt.rebroland.entity.ReportDetail;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
-
-import java.util.List;
 
 public interface ReportRepository extends JpaRepository<Report, Integer> {
     @Query(value = "DELETE FROM reports WHERE post_id =:postId", nativeQuery = true)

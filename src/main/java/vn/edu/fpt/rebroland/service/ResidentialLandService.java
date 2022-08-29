@@ -1,6 +1,5 @@
 package vn.edu.fpt.rebroland.service;
 
-import vn.edu.fpt.rebroland.payload.ResidentialHouseDTO;
 import vn.edu.fpt.rebroland.payload.ResidentialLandDTO;
 
 public interface ResidentialLandService {

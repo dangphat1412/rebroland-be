@@ -6,8 +6,6 @@ import com.fasterxml.jackson.annotation.JsonFormat;
 import lombok.Data;
 
 import javax.validation.constraints.*;
-import java.util.Date;
-import java.util.List;
 import java.util.Set;
 
 @Data

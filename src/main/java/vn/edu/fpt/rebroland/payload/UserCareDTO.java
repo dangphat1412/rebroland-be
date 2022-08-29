@@ -3,7 +3,7 @@ package vn.edu.fpt.rebroland.payload;
 import com.fasterxml.jackson.annotation.JsonFormat;
 import lombok.Data;
 
-import javax.validation.constraints.*;
+import javax.validation.constraints.Size;
 import java.sql.Date;
 
 @Data

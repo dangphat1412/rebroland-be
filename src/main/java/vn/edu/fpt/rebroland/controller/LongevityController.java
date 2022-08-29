@@ -2,7 +2,6 @@ package vn.edu.fpt.rebroland.controller;
 
 import vn.edu.fpt.rebroland.payload.LongevityDTO;
 import vn.edu.fpt.rebroland.service.LongevityService;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;

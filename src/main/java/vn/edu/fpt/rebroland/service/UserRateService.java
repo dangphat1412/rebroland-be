@@ -3,8 +3,6 @@ package vn.edu.fpt.rebroland.service;
 import vn.edu.fpt.rebroland.payload.UserRateDTO;
 import vn.edu.fpt.rebroland.payload.UserRateResponse;
 
-import java.util.List;
-
 public interface UserRateService {
     UserRateDTO createUserRate(UserRateDTO userRateDTO);
     float getStarRateOfUserRated(int userRatedId, int userRoleRatedId);

@@ -2,7 +2,6 @@ package vn.edu.fpt.rebroland.payload;
 
 import lombok.Data;
 
-import javax.persistence.Column;
 import javax.validation.constraints.Max;
 import javax.validation.constraints.Min;
 import java.util.Date;
