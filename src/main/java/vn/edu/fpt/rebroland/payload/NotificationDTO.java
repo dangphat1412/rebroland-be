@@ -16,7 +16,7 @@ public class NotificationDTO {
 //    @NotEmpty(message = "Nội dung thông báo không được để trống!")
     private String content;
 
-    @JsonFormat(pattern = "dd-MM-yyyy HH:mm:ss")
+    @JsonFormat(pattern = "dd-MM-yyyy HH:mm:ss", timezone = "Asia/Bangkok")
     private Date date;
     private String type;
     private boolean unRead;

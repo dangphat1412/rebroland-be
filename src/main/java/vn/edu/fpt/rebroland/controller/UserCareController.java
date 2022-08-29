@@ -125,10 +125,11 @@ public class UserCareController {
         int check = 0;
         User broker = userRepository.findById(userId).orElseThrow(() -> new ResourceNotFoundException("Broker", "id", userId));
         Contact contact = contactRepository.findById(contactId).orElseThrow(() -> new ResourceNotFoundException("Contact", "id", contactId));
-        User userRequest = contact.getUser();
-        if(userRequest.isBlock()){
+        int userRequestId = contact.getUserRequestId();
+        User userRequest = userRepository.getUserById(userRequestId);
+        if((userRequest == null) || (userRequest.isBlock())){
             contactService.deleteContact(contactId);
-            return new ResponseEntity<>("Người dùng không tồn tại!", HttpStatus.BAD_REQUEST);
+            return new ResponseEntity<>("Người dùng không tồn tại hoặc đã bị chặn!", HttpStatus.BAD_REQUEST);
         }
         UserCareDTO userCareDTO = new UserCareDTO();
         userCareDTO.setUserCaredId(contact.getUserRequestId());
@@ -257,7 +258,7 @@ public class UserCareController {
                 if (userCare.isStatus()) {
                     return new ResponseEntity<>("Việc chăm sóc khách hàng đã kết thúc.", HttpStatus.BAD_REQUEST);
                 }
-                if (userCareDetailDTO.getDateAppointment() != null && userCareDetailDTO.getTimeAppointment() != null) {
+                if ((userCareDetailDTO.getDateAppointment() != null) && (userCareDetailDTO.getTimeAppointment() != null)) {
                     appointmentDate = userCareDetailDTO.getDateAppointment() + " " + userCareDetailDTO.getTimeAppointment() + ":00";
                     Date date = new Date();
                     Date date1 = sdf.parse(appointmentDate);
@@ -318,7 +319,7 @@ public class UserCareController {
         TimerTask timerTask = new TimerTask() {
             @Override
             public void run() {
-//                sendSMS(phone, message);
+            sendSMS(phone, message);
             }
         };
         Timer timer = new Timer();

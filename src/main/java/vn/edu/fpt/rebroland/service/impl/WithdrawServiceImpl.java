@@ -6,6 +6,7 @@ import vn.edu.fpt.rebroland.payload.*;
 import vn.edu.fpt.rebroland.repository.UserRepository;
 import vn.edu.fpt.rebroland.repository.WithdrawRepository;
 import vn.edu.fpt.rebroland.service.NotificationService;
+import vn.edu.fpt.rebroland.service.PaymentService;
 import vn.edu.fpt.rebroland.service.WithdrawService;
 import com.pusher.rest.Pusher;
 import org.modelmapper.ModelMapper;
@@ -14,6 +15,7 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
+import java.util.Calendar;
 import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -25,19 +27,26 @@ public class WithdrawServiceImpl implements WithdrawService {
     private ModelMapper modelMapper;
     private NotificationService notificationService;
     private UserRepository userRepository;
+    private PaymentService paymentService;
 
     public WithdrawServiceImpl(WithdrawRepository withdrawRepository, ModelMapper modelMapper,
-                               NotificationService notificationService, UserRepository userRepository) {
+                               NotificationService notificationService, UserRepository userRepository,
+                               PaymentService paymentService) {
         this.withdrawRepository = withdrawRepository;
         this.modelMapper = modelMapper;
         this.notificationService = notificationService;
         this.userRepository = userRepository;
+        this.paymentService = paymentService;
     }
 
     @Override
     public WithdrawDTO createWithdraw(WithdrawDTO withdrawDTO) {
         long millis = System.currentTimeMillis();
-        java.sql.Date date = new java.sql.Date(millis);
+        java.sql.Date sqlDate = new java.sql.Date(millis);
+        Calendar c = Calendar.getInstance();
+        c.setTime(sqlDate);
+        c.add(Calendar.HOUR, 7);
+        java.sql.Date date = new java.sql.Date(c.getTimeInMillis());
         withdrawDTO.setStartDate(date);
         withdrawDTO.setStatus(1);
 
@@ -111,7 +120,15 @@ public class WithdrawServiceImpl implements WithdrawService {
         if(withdraw != null && withdraw.getStatus() == 1){
             withdraw.setStatus(2);
             withdrawRepository.save(withdraw);
+
             User user = withdraw.getUser();
+
+            TransactionDTO dto = new TransactionDTO();
+            dto.setUser(modelMapper.map(user, UserDTO.class));
+            dto.setDescription("Rút tiền");
+            dto.setAmount(withdraw.getMoney());
+            dto.setTypeId(6);
+            TransactionDTO transactionDTO = paymentService.createTransaction(dto);
 
 //            TextMessageDTO messageDTO = new TextMessageDTO();
 //            messageDTO.setMessage("Yêu cầu rút tiền của bạn được chấp nhận!");

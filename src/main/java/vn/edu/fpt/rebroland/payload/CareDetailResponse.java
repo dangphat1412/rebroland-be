@@ -1,17 +1,21 @@
 package vn.edu.fpt.rebroland.payload;
 
+import com.fasterxml.jackson.annotation.JsonFormat;
 import lombok.Data;
 
 import javax.validation.constraints.NotEmpty;
 import javax.validation.constraints.NotNull;
+import java.util.Date;
 
 @Data
 public class CareDetailResponse {
     private int detailId;
 
-    private String dateCreate;
+    @JsonFormat(pattern = "dd-MM-yyyy HH:mm:ss", timezone = "Asia/Bangkok")
+    private Date dateCreate;
 
-    private String appointmentTime;
+    @JsonFormat(pattern = "dd-MM-yyyy HH:mm:ss", timezone = "Asia/Bangkok")
+    private Date appointmentTime;
 
     private Float alertTime;
 

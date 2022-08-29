@@ -16,7 +16,8 @@ public interface ApartmentHistoryRepository extends JpaRepository<ApartmentHisto
     ApartmentHistory getApartmentHistoryByBarcode(String barcode);
 
 
-    @Query(value = "SELECT * FROM apartment_history WHERE barcode LIKE CONCAT(:barcode,'%') " +
+    @Query(value = "SELECT * FROM apartment_history " +
+            " WHERE IF(CHAR_LENGTH(barcode) = 13, barcode LIKE CONCAT(:barcode,'%'), SUBSTRING(barcode, 3, 5) = :barcode) " +
             " AND building_name = :buildingName " +
             " AND room_number = :roomNumber " +
             " AND plot_number = :plotNumber " +

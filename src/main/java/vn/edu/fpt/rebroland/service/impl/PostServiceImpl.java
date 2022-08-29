@@ -1023,11 +1023,19 @@ public class PostServiceImpl implements PostService {
                     historyBarcode = barcode.substring(0, 5);
                 }
                 if (barcode.length() == 15) {
-                    historyBarcode = barcode.substring(0, 7);
+                    historyBarcode = barcode.substring(2, 7);
                 }
-                List<ResidentialHouseHistory> houseHistories = houseHistoryRepository.getHouseHistoryByBarcodeAndPlotNumber(historyBarcode, house.getPlotNumber());
-                histories.remove("houseHistories");
-                histories.put("houseHistories", houseHistories);
+                try{
+                    List<ResidentialHouseHistory> houseHistories = houseHistoryRepository.getHouseHistoryByBarcodeAndPlotNumber(historyBarcode, house.getPlotNumber());
+                    histories.remove("houseHistories");
+                    if((houseHistories == null)){
+                        histories.put("houseHistories", null);
+                    }else{
+                        histories.put("houseHistories", houseHistories);
+                    }
+                }catch (Exception e){
+                    histories.put("houseHistories", null);
+                }
             }else{
                 histories.remove("houseHistories");
                 histories.put("houseHistories", null);
@@ -1043,11 +1051,19 @@ public class PostServiceImpl implements PostService {
                     historyBarcode = barcode.substring(0, 5);
                 }
                 if (barcode.length() == 15) {
-                    historyBarcode = barcode.substring(0, 7);
+                    historyBarcode = barcode.substring(2, 7);
                 }
-                List<ApartmentHistory> apartmentHistories = apartmentHistoryRepository.getApartmentHistoryByBarcode(historyBarcode, apartment.getPlotNumber(), apartment.getBuildingName(), apartment.getRoomNumber());
-                histories.remove("apartmentHistories");
-                histories.put("apartmentHistories", apartmentHistories);
+                try{
+                    List<ApartmentHistory> apartmentHistories = apartmentHistoryRepository.getApartmentHistoryByBarcode(historyBarcode, apartment.getPlotNumber(), apartment.getBuildingName(), apartment.getRoomNumber());
+                    histories.remove("apartmentHistories");
+                    if((apartmentHistories == null)){
+                        histories.put("apartmentHistories", null);
+                    }else{
+                        histories.put("apartmentHistories", apartmentHistories);
+                    }
+                }catch (Exception e){
+                    histories.put("apartmentHistories", null);
+                }
             }else{
                 histories.remove("apartmentHistories");
                 histories.put("apartmentHistories", null);
@@ -1062,11 +1078,19 @@ public class PostServiceImpl implements PostService {
                     historyBarcode = barcode.substring(0, 5);
                 }
                 if (barcode.length() == 15) {
-                    historyBarcode = barcode.substring(0, 7);
+                    historyBarcode = barcode.substring(2, 7);
                 }
-                List<ResidentialLandHistory> landHistories = landHistoryRepository.getLandHistoryByBarcodeAndPlotNumber(historyBarcode, land.getPlotNumber());
-                histories.remove("landHistories");
-                histories.put("landHistories", landHistories);
+                try{
+                    List<ResidentialLandHistory> landHistories = landHistoryRepository.getLandHistoryByBarcodeAndPlotNumber(historyBarcode, land.getPlotNumber());
+                    histories.remove("landHistories");
+                    if((landHistories == null)){
+                        histories.put("landHistories", null);
+                    }else{
+                        histories.put("landHistories", landHistories);
+                    }
+                }catch (Exception e){
+                    histories.put("landHistories", null);
+                }
             }else {
                 histories.remove("landHistories");
                 histories.put("landHistories", null);
@@ -1588,7 +1612,11 @@ public class PostServiceImpl implements PostService {
     public int changeStatusOfPost(int postId) {
         Post post = postRepository.findPostById(postId);
         long millis = System.currentTimeMillis();
-        Date date = new Date(millis);
+        Date sqlDate = new Date(millis);
+        Calendar c = Calendar.getInstance();
+        c.setTime(sqlDate);
+        c.add(Calendar.HOUR, 7);
+        Date date = new Date(c.getTimeInMillis());
         if (post != null) {
 //            Status status = new Status();
             //khong phai bai da hoan thanh giao dich
@@ -1703,10 +1731,15 @@ public class PostServiceImpl implements PostService {
         Post post = postRepository.findById(postId).orElseThrow(() -> new ResourceNotFoundException("Post", "id", postId));
         long millis = System.currentTimeMillis();
         Date dateNow = new Date(millis);
+        Calendar calendar = Calendar.getInstance();
+        calendar.setTime(dateNow);
+        calendar.add(Calendar.HOUR, 7);
+        Date sqlDate = new Date(calendar.getTimeInMillis());
+
         Calendar c = Calendar.getInstance();
         c.setTime(dateNow);
         c.add(Calendar.DAY_OF_MONTH, numberOfPostedDay);
-        post.setTransactionStartDate(dateNow);
+        post.setTransactionStartDate(sqlDate);
         post.setTransactionEndDate(c.getTime());
         Long oldPayment = post.getSpendMoney();
         post.setSpendMoney(oldPayment + totalPayment);

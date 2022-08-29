@@ -11,6 +11,7 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
+import java.util.Calendar;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -33,7 +34,11 @@ public class PaymentServiceImpl implements PaymentService {
     public TransactionDTO createTransaction(TransactionDTO transactionDTO) {
         long millis = System.currentTimeMillis();
         java.sql.Date date = new java.sql.Date(millis);
-        transactionDTO.setStartDate(date);
+        Calendar c = Calendar.getInstance();
+        c.setTime(date);
+        c.add(Calendar.HOUR, 7);
+        java.sql.Date sqlDate = new java.sql.Date(c.getTimeInMillis());
+        transactionDTO.setStartDate(sqlDate);
 
         Transactions transactions = mapToEntity(transactionDTO);
         Transactions newTransactions = paymentRepository.save(transactions);
@@ -57,6 +62,12 @@ public class PaymentServiceImpl implements PaymentService {
                 break;
             case 3:
                 pagePayment = paymentRepository.findAllDepositMoneyIntoWallet(pageable, keyword);
+                break;
+            case 4:
+                pagePayment = paymentRepository.findAllSendMoney(pageable, keyword);
+                break;
+            case 5:
+                pagePayment = paymentRepository.findAllReceiveMoney(pageable, keyword);
                 break;
             case 6:
                 pagePayment = paymentRepository.findAllWithdrawMoney(pageable, keyword);

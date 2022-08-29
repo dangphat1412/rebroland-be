@@ -19,10 +19,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.sql.Date;
 import java.text.SimpleDateFormat;
-import java.util.ArrayList;
-import java.util.Base64;
-import java.util.Collections;
-import java.util.List;
+import java.util.*;
 import java.util.stream.Collectors;
 
 
@@ -74,7 +71,11 @@ public class ReportServiceImpl implements ReportService {
 
         ReportDetailDTO detailDTO = new ReportDetailDTO();
         long millis = System.currentTimeMillis();
-        Date date = new Date(millis);
+        Date sqlDate = new Date(millis);
+        Calendar c = Calendar.getInstance();
+        c.setTime(sqlDate);
+        c.add(Calendar.HOUR, 7);
+        Date date = new Date(c.getTimeInMillis());
         detailDTO.setStartDate(date);
         detailDTO.setContent(reportPostDTO.getContent());
         detailDTO.setUser(mapper.map(userReport, UserDTO.class));
@@ -298,7 +299,11 @@ public class ReportServiceImpl implements ReportService {
             postRepository.save(post);
 
             long millis = System.currentTimeMillis();
-            Date date = new Date(millis);
+            Date sqlDate = new Date(millis);
+            Calendar c = Calendar.getInstance();
+            c.setTime(sqlDate);
+            c.add(Calendar.HOUR, 7);
+            Date date = new Date(c.getTimeInMillis());
 //            TextMessageDTO messageDTO = new TextMessageDTO();
             List<Post> listPost = postRepository.getPostOfOriginalPost(post.getPostId());
             for(Post p: listPost){
@@ -382,7 +387,11 @@ public class ReportServiceImpl implements ReportService {
     public boolean acceptReportUser(int reportId, String comment) {
         Report report = reportRepository.getReportById(reportId);
         long millis = System.currentTimeMillis();
-        Date date = new Date(millis);
+        Date sqlDate = new Date(millis);
+        Calendar c = Calendar.getInstance();
+        c.setTime(sqlDate);
+        c.add(Calendar.HOUR, 7);
+        Date date = new Date(c.getTimeInMillis());
         if(report != null && report.getStatus() == 1){
             report.setStatus(2);
             report.setComment(comment);

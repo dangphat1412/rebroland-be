@@ -21,6 +21,7 @@ import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
+import java.util.Calendar;
 import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -64,7 +65,11 @@ public class UserCareServiceImpl implements UserCareService {
         UserCare userCare = mapToEntity(userCareDTO);
         userCare.setUser(user);
         long millis = System.currentTimeMillis();
-        java.sql.Date date = new java.sql.Date(millis);
+        java.sql.Date sqlDate = new java.sql.Date(millis);
+        Calendar c = Calendar.getInstance();
+        c.setTime(sqlDate);
+        c.add(Calendar.HOUR, 7);
+        java.sql.Date date = new java.sql.Date(c.getTimeInMillis());
         Integer postId = userCareDTO.getPostId();
         if (check == 1) { // insert duplicate user-care and post not duplicate
             Post post = postRepository.findById(postId).orElseThrow(() -> new ResourceNotFoundException("Post", "id", postId));

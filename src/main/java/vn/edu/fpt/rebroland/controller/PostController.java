@@ -228,6 +228,70 @@ public class PostController {
 
     }
 
+    @GetMapping("/detail/{postId}")
+    public ResponseEntity<?> getPost(@PathVariable(name = "postId") int postId) {
+        RealEstatePostDTO realEstatePostDTO = new RealEstatePostDTO();
+        PostDTO postDTO = postService.getActiveOrFinishPostById(postId);
+        if ((postDTO != null) && (!postDTO.isBlock())) {
+            switch (postDTO.getPropertyType().getId()) {
+                case 1: // view residential house
+                    ResidentialHouseDTO residentialHouseDTO = residentialHouseService.getResidentialHouseByPostId(postId);
+                    realEstatePostDTO = residentialHouseDTO;
+                    break;
+                case 2:// view apartment
+                    ApartmentDTO apartmentDTO = apartmentService.getApartmentByPostId(postId);
+                    realEstatePostDTO = apartmentDTO;
+                    break;
+                case 3:// view residential land
+                    ResidentialLandDTO residentialLandDTO = residentialLandService.getResidentialLandByPostId(postId);
+                    realEstatePostDTO = residentialLandDTO;
+                    break;
+            }
+            postService.setDataToRealEstateDTO(realEstatePostDTO, postDTO, postId);
+
+            List<BrokerInfoOfPostDTO> list = postService.getDerivativePostOfOriginalPost(postId);
+            Map<String, Object> map = new HashMap<>();
+            map.put("post", realEstatePostDTO);
+            map.put("brokers", list);
+            return new ResponseEntity<>(map, HttpStatus.OK);
+        } else {
+            return new ResponseEntity<>("Bài viết không tồn tại hoặc là bị chặn!", HttpStatus.BAD_REQUEST);
+        }
+
+    }
+
+    @GetMapping("/all/detail/{postId}")
+    public ResponseEntity<?> getPostById(@PathVariable(name = "postId") int postId) {
+        RealEstatePostDTO realEstatePostDTO = new RealEstatePostDTO();
+        PostDTO postDTO = postService.findPostByPostId(postId);
+        if (postDTO != null) {
+            switch (postDTO.getPropertyType().getId()) {
+                case 1: // view residential house
+                    ResidentialHouseDTO residentialHouseDTO = residentialHouseService.getResidentialHouseByPostId(postId);
+                    realEstatePostDTO = residentialHouseDTO;
+                    break;
+                case 2:// view apartment
+                    ApartmentDTO apartmentDTO = apartmentService.getApartmentByPostId(postId);
+                    realEstatePostDTO = apartmentDTO;
+                    break;
+                case 3:// view residential land
+                    ResidentialLandDTO residentialLandDTO = residentialLandService.getResidentialLandByPostId(postId);
+                    realEstatePostDTO = residentialLandDTO;
+                    break;
+            }
+            postService.setDataToRealEstateDTO(realEstatePostDTO, postDTO, postId);
+
+            List<BrokerInfoOfPostDTO> list = postService.getDerivativePostOfOriginalPost(postId);
+            Map<String, Object> map = new HashMap<>();
+            map.put("post", realEstatePostDTO);
+            map.put("brokers", list);
+            return new ResponseEntity<>(map, HttpStatus.OK);
+        } else {
+            return new ResponseEntity<>("Bài viết không tồn tại hoặc là bị chặn!", HttpStatus.BAD_REQUEST);
+        }
+
+    }
+
     @GetMapping("/my-derivative/{postId}")
     public ResponseEntity<?> getDetailDerivativePost(@PathVariable(name = "postId") int postId,
                                                      @RequestHeader(name = "Authorization") String token) {
@@ -280,6 +344,11 @@ public class PostController {
         int userId = getUserIdFromToken(token);
         long millis = System.currentTimeMillis();
         java.sql.Date date = new java.sql.Date(millis);
+        Calendar c = Calendar.getInstance();
+        c.setTime(date);
+        c.add(Calendar.HOUR, 7);
+        java.sql.Date sqlDate = new java.sql.Date(c.getTimeInMillis());
+
         User user = userRepository.findById(userId).orElseThrow(() -> new ResourceNotFoundException("User", "id", userId));
         Post post = postRepository.findPostByPostId(postId);
         if(post == null){
@@ -356,7 +425,7 @@ public class PostController {
                             return new ResponseEntity<>("Tên chủ hộ không chứa ký tự đặc biệt và số", HttpStatus.BAD_REQUEST);
                         }
                     }
-                    PostDTO postDTO = postService.setDataToPostDTO(generalPostDTO, userId, date, false);
+                    PostDTO postDTO = postService.setDataToPostDTO(generalPostDTO, userId, sqlDate, false);
                     postDTO.setOriginalPost(postId);
                     postDTO.setTransactionStartDate(post.getTransactionStartDate());
                     postDTO.setTransactionEndDate(post.getTransactionEndDate());
@@ -446,6 +515,11 @@ public class PostController {
         int userId = getUserIdFromToken(token);
         long millis = System.currentTimeMillis();
         java.sql.Date date = new java.sql.Date(millis);
+        Calendar c = Calendar.getInstance();
+        c.setTime(date);
+        c.add(Calendar.HOUR, 7);
+        java.sql.Date sqlDate = new java.sql.Date(c.getTimeInMillis());
+
         User user = userRepository.findById(userId).orElseThrow(() -> new ResourceNotFoundException("User", "id", userId));
         PriceDTO priceDTO = priceService.getPriceByTypeIdAndStatus(1);
         long totalPayment = generalPostDTO.getNumberOfPostedDay() * (priceDTO.getPrice() * (100 - priceDTO.getDiscount()) / 100);
@@ -527,7 +601,7 @@ public class PostController {
                 transactionDTO.setUser(mapper.map(user, UserDTO.class));
                 transactionDTO.setDiscount(priceDTO.getDiscount());
                 paymentService.createTransaction(transactionDTO);
-                PostDTO postDTO = postService.setDataToPostDTO(generalPostDTO, userId, date, true);
+                PostDTO postDTO = postService.setDataToPostDTO(generalPostDTO, userId, sqlDate, true);
                 if (generalPostDTO.getUnitPriceId() == 3) {
                     postDTO.setPrice(null);
                 } else {
@@ -1362,7 +1436,7 @@ public class PostController {
             if(listPostDto.size() != 0){
                 for (Post p : listPostDto) {
                     User u = p.getUser();
-                    String message1 = "Giao dịch đã kết thúc. Vui lòng đánh giá người đăng bài!";
+                    String message1 = "Bài gốc bạn phái sinh đã hoàn thành giao dịch. Vui lòng đánh giá người đăng bài!";
 
                     push.setCluster("ap1");
                     push.setEncrypted(true);

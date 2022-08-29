@@ -28,7 +28,6 @@ public class PostDTO {
     @NotNull(message = "Cập nhập thông tin này.")
     private boolean certification;
 
-
     private Date startDate;
 
     private java.util.Date transactionStartDate;

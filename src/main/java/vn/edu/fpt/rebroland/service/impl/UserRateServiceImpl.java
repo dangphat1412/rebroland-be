@@ -15,6 +15,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
 import java.text.DecimalFormat;
+import java.util.Calendar;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -40,7 +41,11 @@ public class UserRateServiceImpl implements UserRateService {
         }
 
         long millis = System.currentTimeMillis();
-        java.sql.Date date = new java.sql.Date(millis);
+        java.sql.Date sqlDate = new java.sql.Date(millis);
+        Calendar c = Calendar.getInstance();
+        c.setTime(sqlDate);
+        c.add(Calendar.HOUR, 7);
+        java.sql.Date date = new java.sql.Date(c.getTimeInMillis());
         userRateDTO.setStartDate(date);
 
         UserRate userRate = mapToEntity(userRateDTO);

@@ -57,9 +57,9 @@ public class PaymentController {
     public ResponseEntity<?> createPayment(@Valid @RequestBody TransactionDTO transactionDTO,
                                            @RequestHeader(name = "Authorization") String token) throws UnsupportedEncodingException {
         SimpleDateFormat formater = new SimpleDateFormat("yyyyMMddHHmmss");
-
         Calendar expireDate = Calendar.getInstance(TimeZone.getTimeZone("Etc/GMT+7"));
-        expireDate.add(Calendar.HOUR, 8);
+        expireDate.add(Calendar.HOUR, 7);
+        expireDate.add(Calendar.MINUTE, 10);
 
         System.out.println(formater.format(expireDate.getTime()));
 
@@ -306,7 +306,7 @@ public class PaymentController {
 
                 TransactionDTO senderDto = new TransactionDTO();
                 senderDto.setUser(mapper.map(sender, UserDTO.class));
-                senderDto.setDescription(transferDTO.getContent());
+                senderDto.setDescription("Chuyển tiền đến số: " + receiver.getPhone() + " - Nội dung: " + transferDTO.getContent());
                 senderDto.setAmount(amount);
                 senderDto.setTypeId(4);
                 TransactionDTO dto = paymentService.createTransaction(senderDto);
@@ -333,7 +333,7 @@ public class PaymentController {
 
                 TransactionDTO receiverDto = new TransactionDTO();
                 receiverDto.setUser(mapper.map(receiver, UserDTO.class));
-                receiverDto.setDescription("Nhận tiền");
+                receiverDto.setDescription("Nhận tiền từ SĐT " + sender.getPhone() + " - Nội dung: " + transferDTO.getContent());
                 receiverDto.setAmount(amount);
                 receiverDto.setTypeId(5);
                 TransactionDTO transactionDTO = paymentService.createTransaction(receiverDto);

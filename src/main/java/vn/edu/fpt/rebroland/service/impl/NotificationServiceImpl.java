@@ -11,6 +11,7 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
+import java.util.Calendar;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -31,7 +32,11 @@ public class NotificationServiceImpl implements NotificationService {
 //        notificationDTO.setType("Contact");
 
         long millis = System.currentTimeMillis();
-        java.sql.Date date = new java.sql.Date(millis);
+        java.sql.Date sqlDate = new java.sql.Date(millis);
+        Calendar c = Calendar.getInstance();
+        c.setTime(sqlDate);
+        c.add(Calendar.HOUR, 7);
+        java.sql.Date date = new java.sql.Date(c.getTimeInMillis());
         notificationDTO.setDate(date);
 
         notificationDTO.setUnRead(true);

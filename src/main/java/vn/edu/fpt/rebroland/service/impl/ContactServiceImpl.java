@@ -17,6 +17,7 @@ import org.springframework.stereotype.Service;
 
 import java.sql.Date;
 import java.text.SimpleDateFormat;
+import java.util.Calendar;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -49,7 +50,11 @@ public class ContactServiceImpl implements ContactService {
             contact.setPost(post);
         }
         long millis = System.currentTimeMillis();
-        Date date = new Date(millis);
+        Date sqlDate = new Date(millis);
+        Calendar c = Calendar.getInstance();
+        c.setTime(sqlDate);
+        c.add(Calendar.HOUR, 7);
+        Date date = new Date(c.getTimeInMillis());
         contact.setStartDate(date);
         contact.setUser(user);
         contact.setUnread(true);

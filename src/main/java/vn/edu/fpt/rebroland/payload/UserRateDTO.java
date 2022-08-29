@@ -16,7 +16,7 @@ public class UserRateDTO {
 
     private float starRate;
 
-    @JsonFormat(pattern = "dd-MM-yyyy HH:mm:ss")
+    @JsonFormat(pattern = "dd-MM-yyyy HH:mm:ss", timezone = "Asia/Bangkok")
     private Date startDate;
 
     private int userRated;
