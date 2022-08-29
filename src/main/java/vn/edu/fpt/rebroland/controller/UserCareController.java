@@ -86,7 +86,7 @@ public class UserCareController {
         RealEstatePostDTO realEstatePostDTO = new RealEstatePostDTO();
         int userId = getUserIdFromToken(token);
         PostDTO postDTO = postService.findPostByPostId(postId);
-        if(userId != postDTO.getUser().getId()){
+        if (userId != postDTO.getUser().getId()) {
             return new ResponseEntity<>("Bạn không phải là chủ bài viết này.", HttpStatus.BAD_REQUEST);
         }
         if ((postDTO != null) && (!postDTO.isBlock())) {
@@ -127,7 +127,7 @@ public class UserCareController {
         Contact contact = contactRepository.findById(contactId).orElseThrow(() -> new ResourceNotFoundException("Contact", "id", contactId));
         int userRequestId = contact.getUserRequestId();
         User userRequest = userRepository.getUserById(userRequestId);
-        if((userRequest == null) || (userRequest.isBlock())){
+        if ((userRequest == null) || (userRequest.isBlock())) {
             contactService.deleteContact(contactId);
             return new ResponseEntity<>("Người dùng không tồn tại hoặc đã bị chặn!", HttpStatus.BAD_REQUEST);
         }
@@ -327,7 +327,7 @@ public class UserCareController {
         TimerTask timerTask = new TimerTask() {
             @Override
             public void run() {
-            sendSMS(phone, message);
+                sendSMS(phone, message);
             }
         };
         Timer timer = new Timer();
@@ -481,8 +481,8 @@ public class UserCareController {
     }
 
     public void sendSMS(String phone, String token) {
-        Twilio.init(System.getenv("TWILIO_ACCOUNT_SID"),
-                System.getenv("TWILIO_AUTH_TOKEN"));
+        Twilio.init("ACd79616329e4784b2208b5f134088905d",
+                "dc59c60fcf2b169f0b4fc37fbb8da680");
 
         Message.creator(new PhoneNumber(phone.replaceFirst("0", "+84")),
                 new PhoneNumber("+19844647230"), token).create();
