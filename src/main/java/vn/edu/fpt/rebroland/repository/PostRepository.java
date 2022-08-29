@@ -581,6 +581,13 @@ public interface PostRepository extends JpaRepository<Post, Integer> {
 
     @Query(value = " SELECT * FROM posts " +
             " WHERE original_post = :originalPostId" +
+            " AND (status_id = 1 OR status_id = 3)" +
+            " AND block = false ", nativeQuery = true)
+    List<Post> getActiveOrFinishDerivativePostOfOriginalPost(int originalPostId);
+
+
+    @Query(value = " SELECT * FROM posts " +
+            " WHERE original_post = :originalPostId" +
             " AND status_id != 6 ", nativeQuery = true)
     List<Post> getPostOfOriginalPost(int originalPostId);
     @Query(value = " SELECT p.*, r.status as report_status FROM `reports` r " +

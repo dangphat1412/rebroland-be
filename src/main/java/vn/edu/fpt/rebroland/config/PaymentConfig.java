@@ -1,6 +1,8 @@
 package vn.edu.fpt.rebroland.config;
 
 
+
+
 import lombok.AllArgsConstructor;
 
 import javax.crypto.Mac;
@@ -12,10 +14,10 @@ import java.util.Random;
 @AllArgsConstructor
 public class PaymentConfig {
     public static final String IPDEFAULT = "0:0:0:0:0:0:0:1";
-    //    public static final String IPDEFAULT = "192.168.100.6";
+//    public static final String IPDEFAULT = "192.168.100.6";
     public static final String CURRCODE = "VND";
     public static final String VERSIONVNPAY = "2.1.0";
-    //   public static final String COMMAND = "2.0.0";
+ //   public static final String COMMAND = "2.0.0";
     public static final String COMMAND = "pay";
     public static final String TMNCODE = "98QRZWNC";
     public static final String CHECKSUM = "QQIFCJSCRTLCMEWEGVOYCPZLJQUCUUSN";

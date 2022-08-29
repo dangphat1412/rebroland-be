@@ -474,7 +474,7 @@ public class PostServiceImpl implements PostService {
 
     @Override
     public List<BrokerInfoOfPostDTO> getDerivativePostOfOriginalPost(int originalPostId) {
-        List<Post> listPost = postRepository.getDerivativePostOfOriginalPost(originalPostId);
+        List<Post> listPost = postRepository.getActiveOrFinishDerivativePostOfOriginalPost(originalPostId);
         List<BrokerInfoOfPostDTO> listPostDto = new ArrayList<>();
         AvgRate avgRate = null;
         for (Post post : listPost) {
