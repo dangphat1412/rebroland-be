@@ -14,7 +14,6 @@ import org.modelmapper.ModelMapper;
 import org.springframework.stereotype.Service;
 
 import java.sql.Date;
-import java.util.Calendar;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -47,11 +46,11 @@ public class UserCareDetailServiceImpl implements UserCareDetailService {
         UserCare userCare = userCareRepository.findById(careId).orElseThrow(() -> new ResourceNotFoundException("Care", "id", careId));
         long millis = System.currentTimeMillis();
         Date sqlDate = new Date(millis);
-        Calendar c = Calendar.getInstance();
-        c.setTime(sqlDate);
-        c.add(Calendar.HOUR, 7);
-        Date date = new Date(c.getTimeInMillis());
-        userCareDetail.setDateCreate(date);
+//        Calendar c = Calendar.getInstance();
+//        c.setTime(sqlDate);
+//        c.add(Calendar.HOUR, 7);
+//        java.sql.Date date = new java.sql.Date(c.getTimeInMillis());
+        userCareDetail.setDateCreate(sqlDate);
         userCareDetail.setDescription(userCareDetailDTO.getDescription());
 
         userCareDetail.setUserCare(userCare);

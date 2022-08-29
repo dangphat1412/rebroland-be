@@ -272,6 +272,11 @@ public class UserCareController {
                             date1 = cal.getTime();
                             cal.add(Calendar.SECOND, -userCareDetailDTO.getAlertTime() * 60);
                             Date dateAlert = cal.getTime();
+
+                            Calendar c = Calendar.getInstance(TimeZone.getTimeZone("Etc/GMT+7"));
+                            c.setTime(date);
+                            cal.add(Calendar.HOUR, -7);
+                            date = c.getTime();
                             if (date.compareTo(dateAlert) > 0) {
                                 return new ResponseEntity<>("Thời gian hẹn trước không đúng !", HttpStatus.BAD_REQUEST);
                             }
