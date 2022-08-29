@@ -280,10 +280,12 @@ public class UserCareController {
                             if (date.compareTo(dateAlert) > 0) {
                                 return new ResponseEntity<>("Thời gian hẹn trước không đúng !", HttpStatus.BAD_REQUEST);
                             }
-                            sendRemindMessage(user.getPhone(), userCareDetailDTO.getDateAppointment(), userCareDetailDTO.getTimeAppointment(), userCareDetailDTO.getAlertTime() * 60);
+                            sendRemindMessage(user.getPhone(), userCareDetailDTO.getDateAppointment(), userCareDetailDTO.getTimeAppointment(),
+                                    userCareDetailDTO.getAlertTime() * 60, userCare.getUserCaredId(), userCareDetailDTO.getDescription());
 
                         } else {
-                            sendRemindMessage(user.getPhone(), userCareDetailDTO.getDateAppointment(), userCareDetailDTO.getTimeAppointment(), 0);
+                            sendRemindMessage(user.getPhone(), userCareDetailDTO.getDateAppointment(), userCareDetailDTO.getTimeAppointment(), 0,
+                                    userCare.getUserCaredId(), userCareDetailDTO.getDescription());
 
                         }
                         UserCareDetailDTO userCareDetailDTO1 = userCareDetailService.createUserCareDetail(careId, userCareDetailDTO, date1);
@@ -304,7 +306,7 @@ public class UserCareController {
         return new ResponseEntity<>("Create fail !", HttpStatus.BAD_REQUEST);
     }
 
-    public void sendRemindMessage(String phone, String dateAppointment, String timeAppointment, int alertTime) {
+    public void sendRemindMessage(String phone, String dateAppointment, String timeAppointment, int alertTime, int userCaredId, String description) {
         try {
             SimpleDateFormat formater = new SimpleDateFormat("yyyy-MM-dd HH:mm");
             String s = dateAppointment + " " + timeAppointment + ":00";
@@ -315,7 +317,16 @@ public class UserCareController {
             cal.add(Calendar.SECOND, -alertTime);
             Date dateAlert = cal.getTime();
 
-            String message = "Hôm nay bạn có hẹn vào lúc " + appointmentDate;
+            UserDTO userCared = userService.getUserById(userCaredId);
+            String message = "";
+            if(userCared == null){
+                message = "Bạn có hẹn vào lúc " + appointmentDate +
+                        ". Nội dung: " + description;
+            }else{
+                message = "Bạn có hẹn vào lúc " + appointmentDate +
+                        " với số điện thoại " + userCared.getPhone() + ". Nội dung: " + description;
+            }
+
 
             setTimer(dateAlert, phone, message);
         } catch (Exception e) {

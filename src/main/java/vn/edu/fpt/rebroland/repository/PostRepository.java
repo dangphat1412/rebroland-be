@@ -411,6 +411,11 @@ public interface PostRepository extends JpaRepository<Post, Integer> {
             " AND p.post_id = :postId ", nativeQuery = true)
     Post getActiveOrFinishPostById(int postId);
 
+    @Query(value = " SELECT * FROM `posts` p " +
+            " WHERE (p.status_id = 1 OR p.status_id = 2 OR p.status_id = 5) " +
+            " AND p.post_id = :postId ", nativeQuery = true)
+    Post getActiveOrFinishOrExpirePostById(int postId);
+
 
     @Query(value = " SELECT * FROM `posts` p " +
             " WHERE p.post_id = :postId ", nativeQuery = true)

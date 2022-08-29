@@ -213,12 +213,6 @@ public class PaymentController {
         }
     }
 
-//    public void autoRenewPost(boolean auto){
-//        if(auto){
-//
-//        }
-//    }
-
     @PostMapping("/transfer/send-otp")
     public ResponseEntity<?> preTransfer(@RequestHeader(name = "Authorization") String token,
                                          @Valid @RequestBody TransferDTO registerDTO) {
@@ -247,7 +241,7 @@ public class PaymentController {
 
                 String otp = otpService.generateOtp(user.getPhone()) + "";
                 otpService.remainCount(registerDTO.getPhone(), 3);
-                sendSMS(user.getPhone(), otp);
+                sendSMS(user.getPhone(), "Mã OTP của bạn là: " + otp);
                 Map<String, Object> map = new HashMap<>();
                 map.put("transferData", registerDTO);
                 map.put("tokenTime", otpService.EXPIRE_MINUTES);
@@ -385,7 +379,7 @@ public class PaymentController {
 
             String otp = otpService.generateOtp(user.getPhone()) + "";
             otpService.remainCount(user.getPhone(), 3);
-            sendSMS(user.getPhone(), otp);
+            sendSMS(user.getPhone(), "Mã OTP của bạn là: " + otp);
             Map<String, Object> map = new HashMap<>();
             map.put("cashoutData", withdrawDTO);
             map.put("tokenTime", otpService.EXPIRE_MINUTES);

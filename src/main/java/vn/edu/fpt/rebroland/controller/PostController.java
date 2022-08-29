@@ -1251,8 +1251,8 @@ public class PostController {
     @PostMapping("/history/send-otp/{postId}")
     public ResponseEntity<?> sendOtpToOwnerPhone(@PathVariable(name = "postId") int postId,
                                                  @Valid @RequestBody HistoryDTO historyDTO) {
-        Post post = postRepository.findPostByPostId(postId);
-        if (post != null && post.getStatus().getId() == 1 && post.getOriginalPost() == null) {
+        Post post = postRepository.getActiveOrFinishOrExpirePostById(postId);
+        if (post != null && post.getOriginalPost() == null) {
             if (historyDTO.getOwner() != null) {
                 Pattern pattern = Pattern.compile("[$&+,:;=\\\\?@#|/'<>.^*()%!-1234567890]");
                 if (pattern.matcher(historyDTO.getOwner()).find()) {
@@ -1305,7 +1305,7 @@ public class PostController {
             }
             String token = otpService.generateOtp(historyDTO.getPhone()) + "";
             otpService.remainCount(historyDTO.getPhone(), 3);
-            sendSMS(historyDTO.getPhone(), token);
+            sendSMS(historyDTO.getPhone(), "Mã OTP của bạn là: " + token);
             Map<String, Object> map = new HashMap<>();
             map.put("historyData", historyDTO);
             map.put("tokenTime", otpService.EXPIRE_MINUTES);
@@ -1329,7 +1329,7 @@ public class PostController {
 //    @Transactional
     public ResponseEntity<?> createRealEstateHistory(@PathVariable(name = "postId") int postId,
                                                      @Valid @RequestBody HistoryDTO historyDTO) {
-        Post post = postRepository.findPostByPostId(postId);
+        Post post = postRepository.getActiveOrFinishOrExpirePostById(postId);
         if (post.getOriginalPost() != null) {
             return new ResponseEntity<>("Không được kết thúc giao dịch ở bài phái sinh!", HttpStatus.BAD_REQUEST);
         }

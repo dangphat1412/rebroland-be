@@ -112,7 +112,7 @@ public class UserController {
             String token = otpService.generateOtp(registerDTO.getPhone()) + "";
             otpService.remainCount(registerDTO.getPhone(), 3);
 
-            sendSMS(registerDTO.getPhone(), token);
+            sendSMS(registerDTO.getPhone(), "Mã OTP của bạn là: " + token);
             String fullName = registerDTO.getFullName().trim();
             registerDTO.setFullName(fullName);
             Pattern pattern = Pattern.compile("[$&+,:;=\\\\?@#|/'<>.^*()%!-1234567890]");
@@ -214,7 +214,7 @@ public class UserController {
         if (user != null) {
             String token = otpService.generateOtp(resetPasswordDTO.getPhone()) + "";
             otpService.remainCount(resetPasswordDTO.getPhone(), 3);
-            sendSMS(resetPasswordDTO.getPhone(), token);
+            sendSMS(resetPasswordDTO.getPhone(), "Mã OTP của bạn là: " + token);
             Map<String, Object> map = new HashMap<>();
             map.put("user", resetPasswordDTO);
             map.put("tokenTime", otpService.EXPIRE_MINUTES);
@@ -514,7 +514,7 @@ public class UserController {
             String otp = otpService.generateOtp(registerDTO.getPhone()) + "";
             otpService.remainCount(registerDTO.getPhone(), 3);
 
-            sendSMS(registerDTO.getPhone(), otp);
+            sendSMS(registerDTO.getPhone(), "Mã OTP của bạn là: " + otp);
             Map<String, Object> map = new HashMap<>();
             map.put("phoneData", registerDTO);
             map.put("tokenTime", otpService.EXPIRE_MINUTES);
