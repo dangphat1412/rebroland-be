@@ -1333,7 +1333,7 @@ public class PostController {
         if (post.getOriginalPost() != null) {
             return new ResponseEntity<>("Không được kết thúc giao dịch ở bài phái sinh!", HttpStatus.BAD_REQUEST);
         }
-        if (post != null && post.getStatus().getId() == 1) {
+        if (post != null) {
             long spendMoney = post.getSpendMoney();
             long refundMoney = 0;
             RefundPercentDTO refundPercentDTO = new RefundPercentDTO();
